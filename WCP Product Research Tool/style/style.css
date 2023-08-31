@@ -1,0 +1,150 @@
+:root {
+  --primary-color: #010041;
+  --secondary-color: #26219c;
+  --selected-color: #fbff00;
+  --selected-color-icon: invert(17%) sepia(99%) saturate(3872%)
+    hue-rotate(356deg) brightness(109%) contrast(107%);
+  --icon-padding: 1.5em;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+blockquote,
+dl,
+dd {
+  margin: 0;
+}
+
+html,
+body {
+  font-family: Arial, sans-serif;
+  height: 100%;
+}
+
+.layout-page {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto 1fr;
+}
+
+.top {
+  grid-column: span 2;
+  height: auto;
+  z-index: 2;
+}
+
+.top-background {
+  background-color: var(--primary-color);
+  color: white;
+  border-bottom: black 2px;
+}
+
+.top-layout {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+}
+
+.top-layout:first-child {
+  padding: 1em;
+  padding-left: var(--icon-padding);
+}
+
+.brand {
+  font-size: 2rem;
+  right: 0;
+}
+
+.side {
+  width: auto;
+}
+
+.side-background {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.side-layout {
+  display: grid;
+}
+
+.tab-layout {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  padding: var(--icon-padding);
+  gap: 0em;
+  transition: ease-in-out 300ms;
+}
+
+.icon {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.tab-name {
+  font-size: 0rem;
+  margin-top: auto;
+  margin-bottom: auto;
+  text-align: left;
+  transition: ease-in-out 300ms;
+}
+
+.tab:hover {
+  cursor: pointer;
+}
+
+.tab:hover,
+.icon-menu:hover {
+  background-color: #ffffff4b;
+  transform: scale(1.1);
+  cursor: pointer;
+  z-index: 1;
+}
+
+.tab-name-extended {
+  font-size: 1.25rem;
+}
+
+.tab-layout-extended {
+  gap: var(--icon-padding);
+}
+
+.tab-name-selected {
+  color: var(--selected-color);
+}
+
+.tab-icon-selected {
+  filter: var(--selected-color-icon);
+}
+
+.main {
+  padding: 2em;
+  position: relative;
+  z-index: 2;
+}
+
+.darkClass {
+  background-color: grey;
+  filter: alpha(opacity=70); /* IE */
+  opacity: 0.7; /* Safari, Opera */
+  -moz-opacity: 0.7; /* FireFox */
+  z-index: 1000;
+  height: 100%;
+  width: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+}
