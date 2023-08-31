@@ -92,6 +92,10 @@ body {
   height: 2.5rem;
 }
 
+.icon-menu {
+  transition: ease-in-out 300ms;
+}
+
 .tab-name {
   font-size: 0rem;
   margin-top: auto;

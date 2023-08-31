@@ -1,11 +1,10 @@
-document.addEventListener("DOMContentLoaded", function () {
-  const menuBtn = document.getElementById("menu");
-  const tabs = document.querySelectorAll(".tab");
-  var menuToggle = true;
+$(document).ready(function () {
   var tabIdSelected = "tab0";
+  var menuToggle = true;
 
   selectTab(tabIdSelected, null);
-  menuBtn.addEventListener("click", function () {
+
+  $("#menu").click(function () {
     if (menuToggle) {
       menuExtend();
       contentDisable();
@@ -16,11 +15,9 @@ document.addEventListener("DOMContentLoaded", function () {
     menuToggle = !menuToggle;
   });
 
-  tabs.forEach(function (tab) {
-    tab.addEventListener("click", function () {
-      selectTab(tab.id, tabIdSelected);
-      tabIdSelected = tab.id;
-    });
+  $(".tab").click(function () {
+    selectTab($(this).attr("id"), tabIdSelected);
+    tabIdSelected = $(this).attr("id");
   });
 });
 
@@ -58,13 +55,13 @@ function menuCollapse() {
 }
 
 function selectTab(tabIdSelected, tabIdPrevious) {
-  const tabNameSelected = document.getElementById(tabIdSelected + "-name");
-  const tabIconSelected = document.getElementById(tabIdSelected + "-icon");
-  const content = document.getElementById("content");
+  const tabNameSelected = $("#" + tabIdSelected + "-name");
+  const tabIconSelected = $("#" + tabIdSelected + "-icon");
+  const content = $("#content");
 
   if (tabIdPrevious) {
-    const tabNamePrevious = document.getElementById(tabIdPrevious + "-name");
-    const tabIconPrevious = document.getElementById(tabIdPrevious + "-icon");
+    const tabNamePrevious = $("#" + tabIdPrevious + "-name");
+    const tabIconPrevious = $("#" + tabIdPrevious + "-icon");
     tabNamePrevious.classList.remove("tab-name-selected");
     tabIconPrevious.classList.remove("tab-icon-selected");
   }
@@ -74,7 +71,10 @@ function selectTab(tabIdSelected, tabIdPrevious) {
 
   switch (tabIdSelected) {
     case "tab0":
-      $("#content").load("../html/login.html");
+      content.innerHTML = `
+            <h1>Welcome to Tab 0</h1>
+            <p>This is the content of Tab 0.</p>
+            `;
       break;
     case "tab1":
       content.innerHTML = `
