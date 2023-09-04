@@ -138,6 +138,8 @@ body {
   z-index: 2;
 }
 
+
+
 .darkClass {
   background-color: grey;
   filter: alpha(opacity=70); /* IE */

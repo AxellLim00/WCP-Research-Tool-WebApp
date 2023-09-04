@@ -7,14 +7,53 @@
     <link rel="stylesheet" href="../style/styleScreen.css" />
   </head>
   <body>
-    <p>
+    <p class="description-dashboard">
       Quantity of Products to be researched by Team <span id="teamName"></span>:
-      <span id="teamAmount"></span>.
+      <span id="teamAmount"></span>
     </p>
-    <p>
+    <p class="description-dashboard">
       Quantity of Products to be researched by User <span id="userName"></span>:
-      <span id="userAmount"></span>.
+      <span id="userAmount"></span>
     </p>
+    <div class="split-layout-dashboard">
+      <section class="grid-section">
+        <label>Research Product per User</label>
+        <table id="user-research-table">
+          <tr>
+            <th>User</th>
+            <th>Quantity</th>
+          </tr>
+        </table>
+      </section>
+      <section class="grid-section">
+        <label>Research Product within Period</label>
+        <div id="period-picker">
+          <label>Date From</label>
+          <label>Date To</label>
+          <input
+            type="date"
+            id="date-from"
+            min="2018-01-01"
+            class="date-picker"
+          />
+          <input
+            type="date"
+            id="date-from"
+            min="2018-01-01"
+            class="date-picker"
+          />
+        </div>
+        <table id="user-research-table">
+          <tr>
+            <th>User</th>
+            <th>Part Type</th>
+            <th>IC Number</th>
+            <th>IC Description</th>
+          </tr>
+        </table>
+        <button>Export</button>
+      </section>
+    </div>
   </body>
   <script src="../script/dashboard.js"></script>
 </html>
