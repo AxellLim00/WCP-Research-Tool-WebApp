@@ -7,11 +7,11 @@
     <link rel="stylesheet" href="../style/styleScreen.css" />
   </head>
   <body>
-    <p class="description-dashboard">
+    <p class="description">
       Quantity of Products to be researched by Team <span id="teamName"></span>:
       <span id="teamAmount"></span>
     </p>
-    <p class="description-dashboard">
+    <p class="description">
       Quantity of Products to be researched by User <span id="userName"></span>:
       <span id="userAmount"></span>
     </p>
@@ -19,10 +19,12 @@
       <section class="grid-section">
         <label>Research Product per User</label>
         <table id="user-research-table">
-          <tr>
-            <th>User</th>
-            <th>Quantity</th>
-          </tr>
+          <tbody>
+            <tr>
+              <th>User</th>
+              <th>Quantity</th>
+            </tr>
+          </tbody>
         </table>
       </section>
       <section class="grid-section">
@@ -43,13 +45,15 @@
             class="date-picker"
           />
         </div>
-        <table id="user-research-table">
-          <tr>
-            <th>User</th>
-            <th>Part Type</th>
-            <th>IC Number</th>
-            <th>IC Description</th>
-          </tr>
+        <table id="period-research-table">
+          <tbody>
+            <tr>
+              <th>User</th>
+              <th>Part Type</th>
+              <th>IC Number</th>
+              <th>IC Description</th>
+            </tr>
+          </tbody>
         </table>
         <button>Export</button>
       </section>

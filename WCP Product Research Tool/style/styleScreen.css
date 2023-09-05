@@ -34,7 +34,12 @@ body {
   height: 100%;
 }
 
-.description-dashboard {
+p,
+label {
+  font-weight: bold;
+}
+
+.description {
   padding-bottom: 1rem;
 }
 
@@ -60,8 +65,9 @@ table {
 
 td,
 th {
-  border: 1px solid #ddd;
+  border: 2px solid #ddd;
   padding: 8px;
+  height: 1.5rem;
 }
 
 tr:nth-child(even) {
@@ -69,7 +75,7 @@ tr:nth-child(even) {
 }
 
 tr:hover {
-  background-color: #ddd;
+  background-color: #c0e5ee81;
 }
 
 th {
@@ -80,11 +86,16 @@ th {
   color: white;
 }
 
-#period-picker {
+#period-picker,
+#search-filters-product {
   display: grid;
-  grid-template-columns: auto 1fr;
   grid-column-gap: 2em;
   grid-row-gap: 0.5em;
+}
+
+#period-picker,
+#search-filters-product {
+  grid-template-columns: auto 1fr;
 }
 
 .date-picker {
@@ -92,6 +103,10 @@ th {
   height: 3em;
   background-color: rgb(241, 241, 241);
   border-radius: 5px;
+}
+
+.date-picker:hover {
+  cursor: pointer;
 }
 
 button {

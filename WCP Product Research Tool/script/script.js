@@ -1,6 +1,6 @@
 $(document).ready(function () {
   productChosen = "Test product1";
-  var tabIdSelected = "tab0";
+  var tabIdSelected = "tab1";
   var menuToggle = true;
 
   selectTab(tabIdSelected, null);
@@ -56,10 +56,7 @@ function selectTab(tabIdSelected, tabIdPrevious) {
       $("#content").load("../html/dashboard.html");
       break;
     case "tab1":
-      content.html(`
-            <h1>Welcome to Tab 1</h1>
-            <p>This is the content of Tab 1.</p>
-          `);
+      $("#content").load("../html/product.html");
       break;
     case "tab2":
       content.html(`
