@@ -7,12 +7,81 @@
     <link rel="stylesheet" href="../style/styleScreen.css" />
   </head>
   <body>
-    <label class="description">Search By:</label>
-    <div id="search-filters-product">
+    <section class="product-sections">
+      <label class="description">Search By:</label>
+    </section>
+    <section id="search-filters-product">
       <label>Supplier Number</label>
-      <label>Date To</label>
-      <input type="text" id="date-from"/>
-      <input type="text" id="date-from"/>
-    </div>
+      <label>OEM Number</label>
+      <input
+        type="text"
+        name="suppName"
+        list="supplierList"
+        class="filter-text-input"
+      />
+      <datalist id="supplierList"> </datalist>
+      <input
+        type="text"
+        name="oemNum"
+        list="oemList"
+        class="filter-text-input"
+      />
+      <datalist id="oemList"> </datalist>
+    </section>
+    <section class="product-sections">
+      <table id="productTable">
+        <tbody>
+          <tr>
+            <th>Research ID</th>
+            <th>SKU</th>
+            <th>Make</th>
+            <th>Model</th>
+            <th>Part Type</th>
+            <th>IC Number</th>
+            <th>IC Description</th>
+            <th>Status</th>
+            <th>Aftermarket/Genuine OEM</th>
+          </tr>
+          <tr>
+            <td>
+              <input type="text" id="idSearch" class="searchbar-table" /><i
+                >Search Bar</i
+              >
+            </td>
+            <td>
+              <input type="text" id="skuSearch" class="searchbar-table" />
+            </td>
+            <td>
+              <input type="text" id="makeSearch" class="searchbar-table" />
+            </td>
+            <td>
+              <input type="text" id="modelSearch" class="searchbar-table" />
+            </td>
+            <td>
+              <input type="text" id="partSearch" class="searchbar-table" />
+            </td>
+            <td>
+              <input type="text" id="icNumSearch" class="searchbar-table" />
+            </td>
+            <td>
+              <input type="text" id="icDescSearch" class="searchbar-table" />
+            </td>
+            <td>
+              <input type="text" id="statusSearch" class="searchbar-table" />
+            </td>
+            <td>
+              <input type="text" id="oemSearch" class="searchbar-table" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+    <section class="product-sections flex-buttons">
+      <button name="saveBtn">Save</button>
+      <button name="newBtn">New</button>
+      <button name="importBtn">Import</button>
+      <button name="exportBtn">Export</button>
+    </section>
   </body>
+  <script src="../script/product.js"></script>
 </html>

@@ -2,20 +2,20 @@ $(document).ready(function () {
   const userTable_Column = 2;
   const periodTable_Column = 4;
 
-  $("#teamAmount").text(productChosen);
+  // $("#teamAmount").text(~ insert text here ~);
 
   //Load table from SQL
 
   // if loading from SQL empty
   var isEmptyData = true;
 
-  const default_UserTable_Row_Amount = 15;
-  const default_PeriodTable_Row_Amount = 15;
+  const default_UserTable_Row_Amount = 10;
+  const default_PeriodTable_Row_Amount = 10;
   if (isEmptyData) {
-    $("#user-research-table > tbody:last-child").append(
+    $("#userResearchTable > tbody:last-child").append(
       getEmptyRow(default_UserTable_Row_Amount, userTable_Column)
     );
-    $("#period-research-table > tbody:last-child").append(
+    $("#periodResearchTable > tbody:last-child").append(
       getEmptyRow(default_PeriodTable_Row_Amount, periodTable_Column)
     );
   } else {
@@ -34,15 +34,3 @@ $(document).ready(function () {
     }
   }
 });
-
-/**
- *
- * @param {*} rowQuantity How many empty rows to create
- * @param {*} columnQuantity How many column are there in the table, default is 1
- * @returns
- */
-function getEmptyRow(rowQuantity, columnQuantity = 1) {
-  return ("<tr>" + "<td></td>".repeat(columnQuantity) + "</tr>").repeat(
-    rowQuantity
-  );
-}
