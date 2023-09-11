@@ -41,7 +41,6 @@ body {
 
 .top {
   grid-column: span 2;
-  height: auto;
   z-index: 2;
 }
 
@@ -63,7 +62,6 @@ body {
 
 .brand {
   font-size: 2rem;
-  right: 0;
 }
 
 .side {
@@ -136,9 +134,8 @@ body {
   padding: 2em;
   position: relative;
   z-index: 2;
+  overflow: auto;
 }
-
-
 
 .darkClass {
   background-color: grey;

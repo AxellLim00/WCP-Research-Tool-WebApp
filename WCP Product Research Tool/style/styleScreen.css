@@ -43,20 +43,14 @@ label {
 table {
   font-family: Arial, Helvetica, sans-serif;
   border-collapse: collapse;
-  width: 100%;
-  overflow-x: auto;
+}
+
+input {
+  font-size: 1rem;
 }
 
 .description {
   padding-bottom: 1rem;
-}
-
-.split-layout-dashboard {
-  display: grid;
-  grid-template-columns: 1fr 3fr;
-  gap: 1rem;
-  padding-top: 1%;
-  padding-bottom: 1%;
 }
 
 .grid-section {
@@ -64,11 +58,20 @@ table {
   gap: 1rem;
 }
 
+/* Table Section */
+
+table {
+  overflow: auto;
+  table-layout: fixed;
+  white-space: nowrap;
+}
+
 td,
 th {
   border: 2px solid #ddd;
   padding: 8px;
   height: 1.5rem;
+  text-align: left;
 }
 
 tr:nth-child(even) {
@@ -86,6 +89,18 @@ th {
   background-color: var(--tertiary-color);
   color: white;
 }
+
+.searchbar-Table td {
+  padding: 1px;
+}
+
+.searchbar-Table td input {
+  background-color: transparent;
+  border: none;
+  width: 100%;
+}
+
+/* Filters */
 
 #period-picker,
 #search-filters-product {
@@ -117,6 +132,12 @@ th {
   cursor: pointer;
 }
 
+#search-filters-product {
+  padding-bottom: 20px;
+}
+
+/* Buttons */
+
 button {
   font-weight: bold;
   width: 7.5em;
@@ -131,16 +152,44 @@ button:hover {
   cursor: pointer;
 }
 
-.product-sections,
-#search-filters-product {
-  padding-bottom: 20px;
-}
-
 .flex-buttons {
   display: flex;
   gap: 10px;
 }
 
-.searchbar-Table {
-  padding: 0px;
+/* Dashboard Tab specific */
+
+.split-layout-dashboard {
+  display: grid;
+  grid-template-columns: 1fr 3fr;
+  gap: 1rem;
+  padding-top: 1%;
+  padding-bottom: 1%;
+}
+
+/* Profuct Tab specific */
+
+.product-sections {
+  padding-bottom: 20px;
+  overflow: auto;
+}
+
+/* Stats Tab specific */
+.stats-layout {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr;
+  padding-bottom: 50px;
+}
+
+#productInfo {
+  gap: 2rem;
+}
+
+.stats-table,
+#note {
+  width: 100%;
+}
+
+#vinNumberTable {
+  height: 100%;
 }

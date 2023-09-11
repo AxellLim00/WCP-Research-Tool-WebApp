@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stats</title>
+    <link rel="stylesheet" href="../style/styleScreen.css" />
+  </head>
+  <body>
+    <section class="grid-section stats-layout">
+      <div id="productInfo" class="grid-section">
+        <div>
+          <label for="requestValue">Requests</label>
+          <br />
+          <input id="requestValue" type="text" />
+        </div>
+        <div>
+          <label for="nfValue">N/F</label>
+          <br />
+          <input id="nfValue" type="text" />
+        </div>
+        <div>
+          <label for="stdValue">Std B $</label>
+          <br />
+          <input id="stdValue" type="text" />
+        </div>
+        <div>
+          <label for="salesValue">Sales Number</label>
+          <br />
+          <input id="salesValue" type="text" />
+        </div>
+        <div>
+          <label for="estSalesVolValue">Estimated Sales Volume</label>
+          <br />
+          <input id="estSalesVolValue" type="text" />
+        </div>
+      </div>
+      <div>
+        <table id="vinNumberTable" class="stats-table">
+          <tbody>
+            <tr>
+              <th>Vin Numbers</th>
+            </tr>
+            <tr class="searchbar-Table">
+              <td>
+                <input
+                  type="text"
+                  id="vinSearch"
+                  placeholder="Search Vin Number"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <table id="oemTable" class="stats-table">
+          <tbody>
+            <tr>
+              <th>OEMs</th>
+            </tr>
+            <tr class="searchbar-Table">
+              <td>
+                <input
+                  type="text"
+                  id="vinSearch"
+                  placeholder="Search Vin Number"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <br />
+        <label for="note">Notes</label>
+        <br />
+        <textarea id="note" rows="12" cols="50"></textarea>
+      </div>
+    </section>
+    <section class="product-sections flex-buttons">
+      <button name="saveBtn">Save</button>
+      <button name="importBtn">Import</button>
+      <button name="exportBtn">Export</button>
+    </section>
+  </body>
+  <script src="../script/stats.js"></script>
+</html>

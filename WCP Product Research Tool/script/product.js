@@ -6,10 +6,22 @@ $(document).ready(function () {
   // if loading from SQL empty
   var isEmptyData = true;
 
-  const default_UserTable_Row_Amount = 15;
+  const default_ProductTable_Row_Amount = 15;
   if (isEmptyData) {
     $("#productTable").append(
-      getEmptyRow(default_UserTable_Row_Amount, productTable_Column)
+      getEmptyRow(default_ProductTable_Row_Amount, productTable_Column)
     );
+  } else {
+    let productTable_Data;
+    //fill in table with the data
+
+    if (productTable_Data < default_ProductTable_Row_Amount) {
+      $("#productTable > tbody:last-child").append(
+        getEmptyRow(
+          default_ProductTable_Row_Amount - productTable_Data,
+          productTable_Column
+        )
+      );
+    }
   }
 });
