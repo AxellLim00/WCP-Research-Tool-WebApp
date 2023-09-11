@@ -58,6 +58,10 @@ input {
   gap: 1rem;
 }
 
+.grid-wide-gap {
+  gap: 50px;
+}
+
 /* Table Section */
 
 table {
@@ -192,4 +196,30 @@ button:hover {
 
 #vinNumberTable {
   height: 100%;
+}
+
+/* Cost n Vol Specific */
+
+#costVolTable td {
+  width: 20rem;
+}
+
+/* Alt Index Specific */
+
+#altIndexTable {
+  width: 100%;
+}
+
+#altIndexTable tr {
+  /* min-width: 10rem; */
+}
+
+.altIndex-Table-Section {
+  overflow: auto;
+}
+
+/* ebay Specific */
+
+.ebay-tables-section {
+  grid-template-columns: 1fr 1fr;
 }

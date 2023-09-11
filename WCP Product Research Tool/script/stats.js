@@ -20,7 +20,7 @@ $(document).ready(function () {
     //fill in table with the data
 
     if (vinNumberTable_Data < default_VinTable_Row_Amount) {
-      $("#productTable > tbody:last-child").append(
+      $("#vinNumberTable > tbody:last-child").append(
         getEmptyRow(
           default_VinTable_Row_Amount - vinNumberTable_Data,
           statsTable_Column
@@ -28,7 +28,7 @@ $(document).ready(function () {
       );
     }
     if (oemTable_Data < default_OemTable_Row_Amount) {
-      $("#productTable > tbody:last-child").append(
+      $("#oemTable > tbody:last-child").append(
         getEmptyRow(
           default_OemTable_Row_Amount - oemTable_Data,
           statsTable_Column

@@ -3,10 +3,50 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ebay</title>
+    <title>eBay Tab</title>
+    <link rel="stylesheet" href="../style/styleScreen.css" />
   </head>
   <body>
-    <h1>Welcome to Tab 5</h1>
-    <p>This is the content of Tab 5.</p>
+    <div class="grid-section grid-wide-gap ">
+      <section class="grid-section ebay-tables-section">
+        <table id="kTypeTable">
+          <tbody>
+            <tr>
+              <th>K Types</th>
+            </tr>
+            <tr class="searchbar-Table">
+              <td>
+                <input
+                  type="text"
+                  id="kTypeSearch"
+                  placeholder="Search K Type"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <table id="epIDTable">
+          <tbody>
+            <tr>
+              <th>EPIDs</th>
+            </tr>
+            <tr class="searchbar-Table">
+              <td>
+                <input
+                  type="text"
+                  id="epIDSearch"
+                  placeholder="Search EPID"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      <section class="flex-buttons">
+        <button name="saveBtn">Save</button>
+        <button name="exportBtn">Export</button>
+      </section>
+    </div>
   </body>
+  <script src="../script/ebay.js"></script>
 </html>

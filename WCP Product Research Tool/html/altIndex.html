@@ -3,10 +3,93 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>alternative index</title>
+    <title>Alternative Index Tab</title>
+    <link rel="stylesheet" href="../style/styleScreen.css" />
   </head>
   <body>
-    <h1>Welcome to Tab 4</h1>
-    <p>This is the content of Tab 4.</p>
+    <div class="grid-section grid-wide-gap">
+      <section class="altIndex-Table-Section">
+        <table id="altIndexTable">
+          <tbody>
+            <tr>
+              <th>Supplier Name</th>
+              <th>Supplier Number</th>
+              <th>MOQ</th>
+              <th>Cost Currency</th>
+              <th>Cost AUD</th>
+              <th>Date Last Updated</th>
+              <th>Quality</th>
+              <th>Supplier's Part Type</th>
+              <th>WCP's Part Type</th>
+              <th>Main Supplier</th>
+            </tr>
+            <tr class="searchbar-Table">
+              <td>
+                <input
+                  type="text"
+                  id="nameSearch"
+                  placeholder="Search Supplier Name"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  id="numberSearch"
+                  placeholder="Search Supplier Number"
+                />
+              </td>
+              <td>
+                <input type="text" id="moqSearch" placeholder="Search MOQ" />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  id="costCurrSearch"
+                  placeholder="Search Cost Currency"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  id="costAUDSearch"
+                  placeholder="Search Cost AUD"
+                />
+              </td>
+              <td>
+                <input type="date" id="dateSearch" />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  id="qualitySearch"
+                  placeholder="Search Quality"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  id="SupPTSearch"
+                  placeholder="Search Supplier's Part Type"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  id="wcpPTSearch"
+                  placeholder="Search WCP's Part Type"
+                />
+              </td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      <section class="flex-buttons">
+        <button name="saveBtn">Save</button>
+        <button name="importBtn">Import</button>
+        <button name="exportBtn">Export</button>
+      </section>
+    </div>
+    <script src="../script/altIndex.js"></script>
   </body>
 </html>
