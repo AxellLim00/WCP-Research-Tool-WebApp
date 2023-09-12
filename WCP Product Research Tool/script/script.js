@@ -1,6 +1,6 @@
 $(document).ready(function () {
   productChosen = "Test product1";
-  var tabIdSelected = "tab5";
+  var tabIdSelected = "tab1";
   var menuToggle = true;
 
   selectTab(tabIdSelected, null);

@@ -24,4 +24,19 @@ $(document).ready(function () {
       );
     }
   }
+
+  $("#productTable").DataTable({
+    responsive: true,
+    pagingType: "full_numbers",
+  });
+
+  // searchbar logic
+  const rows = $("#productTable tr");
+
+  $("#idSearch").on("keyup", function () {
+    var value = $(this).val().toLowerCase();
+    // filter data
+    // remove rows from table
+    // insert new filter data into table
+  });
 });
