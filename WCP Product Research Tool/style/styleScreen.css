@@ -161,6 +161,56 @@ button:hover {
   gap: 10px;
 }
 
+.cancel{
+  background-color: #b10000
+}
+
+.cancel:hover{
+  background-color: #a04040
+}
+
+/* New Form */
+.popup-form {
+  display: flex;
+  position: fixed;
+  left: 35%;
+  top: 15%;
+  width: 30%;
+  height: 70%;
+  background-color: white;
+  border-color: black;
+  border: solid;
+  padding: 20px;
+  justify-content: space-between;
+  flex-direction: column;
+}
+
+.flex-form {
+  justify-content: space-between;
+  flex-direction: column;
+  display: flex;
+  overflow: auto;
+}
+
+form h2 {
+  text-align: center;
+}
+
+.form-button {
+  align-items: center;
+  justify-content: center;
+}
+
+.form-information{
+  gap: 2rem;
+}
+
+.form-information div input,
+select{
+  width: 50%;
+  height: 70%;
+}
+
 /* Dashboard Tab specific */
 
 .split-layout-dashboard {
@@ -171,11 +221,17 @@ button:hover {
   padding-bottom: 1%;
 }
 
-/* Profuct Tab specific */
+/* Product Tab specific */
 
 .product-sections {
   padding-bottom: 20px;
   overflow: auto;
+}
+
+tbody, tr td select{
+  font-size: 1rem;
+  height: 1.5rem;
+  width: 100%;
 }
 
 /* Stats Tab specific */

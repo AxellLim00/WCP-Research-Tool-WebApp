@@ -25,10 +25,10 @@ $(document).ready(function () {
     }
   }
 
-  $("#productTable").DataTable({
-    responsive: true,
-    pagingType: "full_numbers",
-  });
+  // $("#productTable").DataTable({
+  //   responsive: true,
+  //   pagingType: "full_numbers",
+  // });
 
   // searchbar logic
   const rows = $("#productTable tr");
@@ -38,5 +38,19 @@ $(document).ready(function () {
     // filter data
     // remove rows from table
     // insert new filter data into table
+  });
+
+  // new product
+
+  $('button[name="newBtn"]').on("click", function () {
+    $("#popupForm").show();
+  });
+
+  $('button[name="saveForm"]').on("click", function () {
+    $("#popupForm").hide();
+  });
+
+  $('button[name="cancelForm"]').on("click", function () {
+    $("#popupForm").hide();
   });
 });

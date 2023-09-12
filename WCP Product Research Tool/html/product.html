@@ -4,11 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>New Product</title>
+    <script
+      src="https://code.jquery.com/jquery-3.7.1.min.js"
+      integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+      crossorigin="anonymous"
+    ></script>
     <link rel="stylesheet" href="../style/styleScreen.css" />
   </head>
   <body>
     <section class="product-sections">
-      <label  >Search By:</label>
+      <label>Search By:</label>
     </section>
     <section id="search-filters-product">
       <label>Supplier Number</label>
@@ -51,25 +56,13 @@
               />
             </td>
             <td>
-              <input
-                type="text"
-                id="skuSearch"
-                placeholder="Search SKU"
-              />
+              <input type="text" id="skuSearch" placeholder="Search SKU" />
             </td>
             <td>
-              <input
-                type="text"
-                id="makeSearch"
-                placeholder="Search make"
-              />
+              <input type="text" id="makeSearch" placeholder="Search make" />
             </td>
             <td>
-              <input
-                type="text"
-                id="modelSearch"
-                placeholder="Search model"
-              />
+              <input type="text" id="modelSearch" placeholder="Search model" />
             </td>
             <td>
               <input
@@ -79,11 +72,7 @@
               />
             </td>
             <td>
-              <input
-                type="text"
-                id="icNumSearch"
-                placeholder="Search IC no."
-              />
+              <input type="text" id="icNumSearch" placeholder="Search IC no." />
             </td>
             <td>
               <input
@@ -93,29 +82,101 @@
               />
             </td>
             <td>
-              <input
-                type="text"
-                id="statusSearch"
-                placeholder="Search status"
-              />
+              <select id="statusSearch">
+                <option value="">Search status</option>
+                <option value="research">Research OEM</option>
+                <option value="waiting">Waiting on Vendor Quote</option>
+                <option value="costDone">Costing Completed</option>
+                <option value="approval">Waiting Approval</option>
+                <option value="pinnacle">Added to Pinnacle</option>
+                <option value="peach">Added to Peach</option>
+              </select>
             </td>
             <td>
-              <input
-                type="text"
-                id="oemSearch"
-                placeholder="Search OEM"
-              />
+              <select id="oemSearch">
+                <option value="">Search OEM</option>
+                <option value="research">Aftermarket</option>
+                <option value="waiting">Genuine</option>
+              </select>
             </td>
           </tr>
         </tbody>
       </table>
     </section>
     <section class="product-sections flex-buttons">
-      <button name="saveBtn">Save</button>
-      <button name="newBtn">New</button>
-      <button name="importBtn">Import</button>
-      <button name="exportBtn">Export</button>
+      <button type="button" name="saveBtn">Save</button>
+      <button type="button" name="newBtn">New</button>
+      <button type="button" name="importBtn">Import</button>
+      <button type="button" name="exportBtn">Export</button>
     </section>
+    <div id="popupForm" class="popup-form" style="display: none">
+      <form class="flex-form" style="height: 100%">
+        <h2>New Product</h2>
+        <section class="flex-form form-information">
+          <div>
+            <label>Research ID</label>
+            <h3 id="ID">test</h3>
+          </div>
+          <div>
+            <label for="newSku">SKU</label>
+            <br />
+            <input id="newSku" type="text" />
+          </div>
+          <div>
+            <label for="newMake">Make</label>
+            <br />
+            <input id="newMake" type="text" />
+          </div>
+          <div>
+            <label for="newModel">Model</label>
+            <br />
+            <input id="newModel" type="text" />
+          </div>
+          <div>
+            <label for="newType">Part Type</label>
+            <br />
+            <input id="newType" type="text" />
+          </div>
+          <div>
+            <label for="newNum">IC Number</label>
+            <br />
+            <input id="newNum" type="text" />
+          </div>
+          <div>
+            <label for="newDesc">IC Description</label>
+            <br />
+            <input id="newDesc" type="text" />
+          </div>
+          <div>
+            <label for="newStatus">Status</label>
+            <br />
+            <select id="newStatus">
+              <option value="">--Please choose a status--</option>
+              <option value="research">Research OEM</option>
+              <option value="waiting">Waiting on Vendor Quote</option>
+              <option value="costDone">Costing Completed</option>
+              <option value="approval">Waiting Approval</option>
+              <option value="pinnacle">Added to Pinnacle</option>
+              <option value="peach">Added to Peach</option>
+            </select>
+          </div>
+          <div>
+            <label for="newOem">Aftermarket/Genuine OEM</label>
+            <br />
+            <select id="newOem">
+              <option value="">--Please choose a status--</option>
+              <option value="aftermarket">Aftermarket</option>
+              <option value="genuine">Genuine</option>
+            </select>
+          </div>
+        </section>
+        <section class="flex-buttons form-button">
+          <button type="button" name="saveForm">Save</button>
+          <button type="button" name="cancelForm" class="cancel">Cancel</button>
+        </section>
+      </form>
+    </div>
   </body>
+  <script src="../script/helper.js"></script>
   <script src="../script/product.js"></script>
 </html>
