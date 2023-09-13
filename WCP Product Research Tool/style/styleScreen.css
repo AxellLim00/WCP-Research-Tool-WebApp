@@ -161,12 +161,12 @@ button:hover {
   gap: 10px;
 }
 
-.cancel{
-  background-color: #b10000
+.cancel {
+  background-color: #b10000;
 }
 
-.cancel:hover{
-  background-color: #a04040
+.cancel:hover {
+  background-color: #a04040;
 }
 
 /* New Form */
@@ -201,14 +201,48 @@ form h2 {
   justify-content: center;
 }
 
-.form-information{
+.form-information {
   gap: 2rem;
 }
 
 .form-information div input,
-select{
+select {
   width: 50%;
   height: 70%;
+}
+
+.info-icon {
+  width: 1rem;
+}
+
+.info-icon:hover {
+  cursor: help;
+}
+
+/* Alerts */
+.alert {
+  padding: 20px;
+  background-color: #f44336;
+  color: white;
+  position: fixed;
+  width: 100%;
+  bottom: 0;
+  z-index: 9999;
+}
+
+.closebtn {
+  margin-left: 15px;
+  color: white;
+  font-weight: bold;
+  float: right;
+  font-size: 22px;
+  line-height: 20px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.closebtn:hover {
+  color: black;
 }
 
 /* Dashboard Tab specific */
@@ -228,7 +262,8 @@ select{
   overflow: auto;
 }
 
-tbody, tr td select{
+tbody,
+tr td select {
   font-size: 1rem;
   height: 1.5rem;
   width: 100%;

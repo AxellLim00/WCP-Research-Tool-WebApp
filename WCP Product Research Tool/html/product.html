@@ -111,8 +111,12 @@
     </section>
     <div id="popupForm" class="popup-form" style="display: none">
       <form class="flex-form" style="height: 100%">
-        <h2>New Product</h2>
-        <section class="flex-form form-information">
+        <h2 name="formTitle">Title</h2>
+        <section
+          id="newForm"
+          class="flex-form form-information"
+          style="display: none"
+        >
           <div>
             <label>Research ID</label>
             <h3 id="ID">test</h3>
@@ -168,6 +172,69 @@
               <option value="aftermarket">Aftermarket</option>
               <option value="genuine">Genuine</option>
             </select>
+          </div>
+        </section>
+        <section 
+          id="importForm"
+          class="flex-form form-information"
+          style="display: none"
+        >
+          <div>
+            <label for="importfile">File to import </label>
+            <br />
+            <input id="importfile" type="file" accept=".xls, .xlsx, .csv" />
+          </div>
+          <div>
+            <label for="importSku">SKU Header </label>
+            <br />
+            <input id="importSku" type="text" />
+          </div>
+          <div>
+            <label for="importMake">Make Header </label>
+            <br />
+            <input id="importMake" type="text" />
+          </div>
+          <div>
+            <label for="importModel">Model Header </label>
+            <br />
+            <input id="importModel" type="text" />
+          </div>
+          <div>
+            <label for="importType">Part Type Header </label>
+            <br />
+            <input id="importType" type="text" />
+          </div>
+          <div>
+            <label for="importNum">IC Number Header </label>
+            <br />
+            <input id="importNum" type="text" />
+          </div>
+          <div>
+            <label for="importDesc">IC Description Header </label>
+            <br />
+            <input id="importDesc" type="text" />
+          </div>
+          <div>
+            <label for="importStatus">Status Header </label>
+            <img
+              src="../icon/info.png"
+              alt="Info Icon"
+              class="info-icon"
+              title="Optional: defaults to Research OEM"
+            />
+            <br />
+            <input id="importStatus" type="text" />
+          </div>
+          <div>
+            <label for="importOem">Aftermarket/Genuine OEM Header </label>
+            <img
+              src="../icon/info.png"
+              alt="Info Icon"
+              class="info-icon"
+              title="Optional: defaults to Aftermarket OEM"
+            />
+            <br />
+            <input id="importOem" type="text" />
           </div>
         </section>
         <section class="flex-buttons form-button">

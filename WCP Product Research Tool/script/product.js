@@ -1,5 +1,6 @@
 $(document).ready(function () {
   const productTable_Column = 9;
+  var form_Selected;
 
   //Load table from SQL
 
@@ -43,14 +44,42 @@ $(document).ready(function () {
   // new product
 
   $('button[name="newBtn"]').on("click", function () {
+    $('h2[name="formTitle"]').text("New Product");
+    form_Selected = "new";
     $("#popupForm").show();
+    $(`#${form_Selected}Form`).show();
+  });
+
+  $('button[name="importBtn"]').on("click", function () {
+    $('h2[name="formTitle"]').text("Import Product(s)");
+    form_Selected = "import";
+    $("#popupForm").show();
+    $(`#${form_Selected}Form`).show();
   });
 
   $('button[name="saveForm"]').on("click", function () {
-    $("#popupForm").hide();
+    //check if mandatory field
+    var isFormFilled = $(`#${form_Selected}Sku`).value &&;
+    
+
+    if (isFormFilled) {
+      $("#popupForm").hide();
+      $(`#${form_Selected}Form`).hide();
+    } else {
+      if (!$(".alert").length) {
+        $("body").append(`
+          <div class="alert">
+            <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span> 
+            <strong>Error!</strong> Please complete all non-optional fields.
+          </div>`);
+      } else if ($(".alert").is(":hidden")) {
+        $(".alert").show();
+      }
+    }
   });
 
   $('button[name="cancelForm"]').on("click", function () {
     $("#popupForm").hide();
+    $(`#${form_Selected}Form`).hide();
   });
 });
