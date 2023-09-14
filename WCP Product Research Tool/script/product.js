@@ -7,31 +7,46 @@ $(document).ready(function () {
   // if loading from SQL empty
   var isEmptyData = true;
 
-  const default_ProductTable_Row_Amount = 15;
+  const default_ProductTable_Row_Amount = 10;
   if (isEmptyData) {
     $("#productTable").append(
       getEmptyRow(default_ProductTable_Row_Amount, productTable_Column)
     );
   } else {
     let productTable_Data;
-    //fill in table with the data
 
-    if (productTable_Data < default_ProductTable_Row_Amount) {
-      $("#productTable > tbody:last-child").append(
-        getEmptyRow(
-          default_ProductTable_Row_Amount - productTable_Data,
-          productTable_Column
-        )
-      );
-    }
+    // fill in table with the data
+    // $("#productTable > tbody:last-child").append(
+    // html here
+    // );
   }
 
-  // $("#productTable").DataTable({
-  //   responsive: true,
-  //   pagingType: "full_numbers",
+  const table = new DataTable("#productTable", {
+    orderCellsTop: true,
+    columns: [
+      { data: "id" },
+      {
+        data: "sku",
+        defaultContent: "<i>Not set</i>",
+      },
+      { data: "make" },
+      { data: "model" },
+      { data: "type" },
+      { data: "num" },
+      { data: "desc" },
+      { data: "status" },
+      { data: "oem" },
+    ],
+  });
+
+  $("#productTable_filter").remove();
+
+  // table.on("click", "tbody tr", function () {
+  //   let data = table.row(this).data();
+  //   Logic to select row's data after clicking here
   // });
 
-  // searchbar logic
+  //#region Searchbar Logic
   const rows = $("#productTable tr");
 
   $("#idSearch").on("keyup", function () {
@@ -40,32 +55,83 @@ $(document).ready(function () {
     // remove rows from table
     // insert new filter data into table
   });
+  //#endregion
 
-  // new product
+  //#region Screen Button
 
+  // Save changes Button
+  $('button[name="saveBtn"]').on("click", function () {
+    // find changes
+    // save changes to SQL
+  });
+
+  // New product Button
   $('button[name="newBtn"]').on("click", function () {
     $('h2[name="formTitle"]').text("New Product");
     form_Selected = "new";
     $("#popupForm").show();
     $(`#${form_Selected}Form`).show();
+    $("#darkLayer").show();
+    $("#darkLayer").css("position", "fixed");
   });
 
+  // Import product Button
   $('button[name="importBtn"]').on("click", function () {
     $('h2[name="formTitle"]').text("Import Product(s)");
     form_Selected = "import";
     $("#popupForm").show();
     $(`#${form_Selected}Form`).show();
+    $("#darkLayer").css("position", "fixed");
+    $("#darkLayer").show();
   });
 
+  // Export table Button
+  $('button[name="exportBtn"]').on("click", function () {
+    $("#productTable").tableExport({
+      type: "excel",
+      fileName: "Research Product Table",
+      mso: {
+        fileFormat: "xlsx",
+      },
+      ignoreRow: ["#searchRow"],
+    });
+  });
+
+  //#endregion
+
+  //#region Form Button
   $('button[name="saveForm"]').on("click", function () {
     //check if mandatory field
-    var isFormFilled = $(`#${form_Selected}Sku`).value &&;
-    
+    var isFormFilled =
+      $(`#${form_Selected}Make`).val() &&
+      $(`#${form_Selected}Model`).val() &&
+      $(`#${form_Selected}Type`).val() &&
+      $(`#${form_Selected}Num`).val() &&
+      $(`#${form_Selected}Desc`).val();
+    //extra validation on new product
+    form_Selected == "new" &&
+      (isFormFilled &=
+        $(`#${form_Selected}Stat`).val() && $(`#${form_Selected}Oem`).val());
 
+    // extra validation on import product
+    form_Selected == "import" &&
+      (isFormFilled &= Boolean($(`#${form_Selected}file`).val()));
+
+    // Successful Save
     if (isFormFilled) {
+      // save data
       $("#popupForm").hide();
       $(`#${form_Selected}Form`).hide();
-    } else {
+      $(".alert").hide();
+      $("#darkLayerBody").hide();
+      $("#darkLayer").css("position", "absolute");
+
+      // reset values
+      $(`#${form_Selected}Form input`).val("");
+      $(`#${form_Selected}Form select`).val("");
+    }
+    // Unsuccessful Save
+    else {
       if (!$(".alert").length) {
         $("body").append(`
           <div class="alert">
@@ -78,8 +144,14 @@ $(document).ready(function () {
     }
   });
 
+  // Cancel Form - NOTE: keep last thing written
   $('button[name="cancelForm"]').on("click", function () {
     $("#popupForm").hide();
     $(`#${form_Selected}Form`).hide();
+    $(".alert").hide();
+    $("#darkLayer").hide();
+    $("#darkLayer").css("position", "absolute");
   });
+
+  //#endregion
 });

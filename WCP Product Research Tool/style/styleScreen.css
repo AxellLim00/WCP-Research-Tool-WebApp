@@ -72,18 +72,7 @@ table {
 
 td,
 th {
-  border: 2px solid #ddd;
-  padding: 8px;
   height: 1.5rem;
-  text-align: left;
-}
-
-tr:nth-child(even) {
-  background-color: #f2f2f2;
-}
-
-tr:hover {
-  background-color: #c0e5ee81;
 }
 
 th {
@@ -96,6 +85,7 @@ th {
 
 .searchbar-Table td {
   padding: 1px;
+  background-color: #eeeeee;
 }
 
 .searchbar-Table td input {
@@ -183,6 +173,7 @@ button:hover {
   padding: 20px;
   justify-content: space-between;
   flex-direction: column;
+  z-index: 200;
 }
 
 .flex-form {
@@ -205,8 +196,7 @@ form h2 {
   gap: 2rem;
 }
 
-.form-information div input,
-select {
+.form-information div input {
   width: 50%;
   height: 70%;
 }
@@ -227,7 +217,7 @@ select {
   position: fixed;
   width: 100%;
   bottom: 0;
-  z-index: 9999;
+  z-index: 999;
 }
 
 .closebtn {
