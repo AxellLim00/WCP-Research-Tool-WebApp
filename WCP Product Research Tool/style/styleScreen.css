@@ -130,6 +130,20 @@ th {
   padding-bottom: 20px;
 }
 
+.product-searchbar {
+  padding: 1rem;
+  margin-bottom: 2%;
+  width: 25%;
+  min-width: 300px;
+  border: 1px solid black;
+  background-color: #d0d2e4;
+}
+
+.product-searchbar input{
+  width: 100%;
+}
+
+
 /* Buttons */
 
 button {
@@ -240,7 +254,7 @@ form h2 {
 .split-layout-dashboard {
   display: grid;
   grid-template-columns: 1fr 3fr;
-  gap: 1rem;
+  gap: 2.5%;
   padding-top: 1%;
   padding-bottom: 1%;
 }
@@ -263,36 +277,38 @@ tr td select {
 .stats-layout {
   display: grid;
   grid-template-columns: auto 1fr 1fr;
-  padding-bottom: 50px;
+  padding-bottom: 1%;
+  gap: 2.5%;
 }
 
-#productInfo {
-  gap: 2rem;
-}
-
-.stats-table,
 #note {
   width: 100%;
 }
 
-#vinNumberTable {
-  height: 100%;
+#productInfo.grid-section {
+  height: fit-content;
+  gap: 20%;
 }
 
 /* Cost n Vol Specific */
 
-#costVolTable td {
-  width: 20rem;
+#costVolTable tbody td {
+  min-width: 15rem;
+}
+
+table.verticalDisplay tr > * {
+  display: block;
+}
+
+table.verticalDisplay tr {
+  display: table-cell;
+  vertical-align: top;
 }
 
 /* Alt Index Specific */
 
 #altIndexTable {
   width: 100%;
-}
-
-#altIndexTable tr {
-  /* min-width: 10rem; */
 }
 
 .altIndex-Table-Section {

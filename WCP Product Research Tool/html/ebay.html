@@ -7,46 +7,42 @@
     <link rel="stylesheet" href="../style/styleScreen.css" />
   </head>
   <body>
-    <div class="grid-section grid-wide-gap ">
-      <section class="grid-section ebay-tables-section">
-        <table id="kTypeTable">
-          <tbody>
+    <section class="product-searchbar">
+      <label>
+        Product:
+        <br />
+        <input type="text" id="productSelected" list="productList" />
+        <datalist id="productList">
+          <option value="Banana"></option>
+          <option value="Orange"></option>
+          <option value="kiwi"></option>
+        </datalist>
+      </label>
+    </section>
+    <section class="grid-section grid-wide-gap ">
+      <div class="grid-section ebay-tables-section">
+        <table id="kTypeTable" class="compact hover order-column row-border">
+          <thead>
             <tr>
               <th>K Types</th>
-            </tr>
-            <tr class="searchbar-Table">
-              <td>
-                <input
-                  type="text"
-                  id="kTypeSearch"
-                  placeholder="Search K Type"
-                />
-              </td>
-            </tr>
+            </tr></thead>
+          <tbody>
           </tbody>
         </table>
-        <table id="epIDTable">
-          <tbody>
+        <table id="epIDTable" class="compact hover order-column row-border">
+          <thead>
             <tr>
               <th>EPIDs</th>
-            </tr>
-            <tr class="searchbar-Table">
-              <td>
-                <input
-                  type="text"
-                  id="epIDSearch"
-                  placeholder="Search EPID"
-                />
-              </td>
-            </tr>
+            </tr></thead>
+          <tbody>
           </tbody>
         </table>
-      </section>
-      <section class="flex-buttons">
+      </div>
+      <div class="flex-buttons">
         <button name="saveBtn">Save</button>
         <button name="exportBtn">Export</button>
-      </section>
-    </div>
+      </div>
+    </section>
   </body>
   <script src="../script/ebay.js"></script>
 </html>

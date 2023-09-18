@@ -6,7 +6,7 @@ $(document).ready(function () {
     // if loading from SQL empty
     var isEmptyData = true;
 
-    const default_ebayTable_Row_Amount = 20;
+    const default_ebayTable_Row_Amount = 10;
     if (isEmptyData) {
       $("#kTypeTable").append(
         getEmptyRow(default_ebayTable_Row_Amount, ebayTable_Column)
@@ -18,21 +18,16 @@ $(document).ready(function () {
       let kTypeTable_Data, epIDTable_Data;
       //fill in table with the data
 
-      if (kTypeTable_Data < default_ebayTable_Row_Amount) {
-        $("#kTypeTable > tbody:last-child").append(
-          getEmptyRow(
-            default_ebayTable_Row_Amount - kTypeTable_Data,
-            ebayTable_Column
-          )
-        );
-      }
-      if (epIDTable_Data < default_ebayTable_Row_Amount) {
-        $("#epIDTable > tbody:last-child").append(
-          getEmptyRow(
-            default_OemTable_Row_Amount - epIDTable_Data,
-            ebayTable_Column
-          )
-        );
-      }
-    }
+      // $("#kTypeTable > tbody:last-child").append(
+      // html here
+      // );
+      // $("#epIDTable > tbody:last-child").append(
+      // html here
+      // );
+  }
+  
+    const kTypeTable = new DataTable("#kTypeTable");
+    const epIDTable = new DataTable("#epIDTable");
+
+    $(".dataTables_length").css("padding-bottom", "1%");
 });

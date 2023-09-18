@@ -19,13 +19,18 @@
     <div class="split-layout-dashboard">
       <section class="grid-section">
         <label>Research Product per User</label>
-        <table id="userResearchTable">
-          <tbody>
+        <table
+          id="userResearchTable"
+          class="compact hover order-column row-border"
+          data-order='[[ 0, "asc" ]]'
+        >
+          <thead>
             <tr>
               <th>User</th>
               <th>Quantity</th>
             </tr>
-          </tbody>
+          </thead>
+          <tbody></tbody>
         </table>
       </section>
       <section class="grid-section">
@@ -35,26 +40,31 @@
           <label>Date To</label>
           <input
             type="date"
-            id="date-from"
+            id="dateFrom"
             min="2018-01-01"
             class="date-picker"
           />
           <input
             type="date"
-            id="date-from"
+            id="dateTo"
             min="2018-01-01"
             class="date-picker"
           />
         </div>
-        <table id="periodResearchTable">
-          <tbody>
+        <table
+          id="periodResearchTable"
+          class="compact hover order-column row-border"
+          data-order='[[ 0, "asc" ]]'
+        >
+          <thead>
             <tr>
               <th>User</th>
               <th>Part Type</th>
               <th>IC Number</th>
               <th>IC Description</th>
             </tr>
-          </tbody>
+          </thead>
+          <tbody></tbody>
         </table>
         <button name="exportBtn">Export</button>
       </section>

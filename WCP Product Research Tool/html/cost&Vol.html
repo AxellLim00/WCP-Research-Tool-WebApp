@@ -7,38 +7,41 @@
     <link rel="stylesheet" href="../style/styleScreen.css" />
   </head>
   <body>
-    <div class="grid-section grid-wide-gap">
-      <section>
-        <table id="costVolTable">
-          <tr id="researchID">
-            <th>Research ID</th>
-          </tr>
-          <tr id="costUSD">
-            <th>Cost Price USD</th>
-          </tr>
-          <tr id="costAUD">
-            <th>Cost Price AUD</th>
-          </tr>
-          <tr id="estCostAUD">
-            <th>Estimate on cost AUD</th>
-          </tr>
-          <tr id="estSell">
-            <th>Estimate Sell</th>
-          </tr>
-          <tr id="postage">
-            <th>Postage</th>
-          </tr>
-          <tr id="extGP">
-            <th>Ext GP%</th>
-          </tr>
+    <section class="product-searchbar">
+      <label>
+        Product:
+        <br />
+        <input type="text" id="productSelected" list="productList" />
+        <datalist id="productList">
+          <option value="Banana"></option>
+          <option value="Orange"></option>
+          <option value="kiwi"></option>
+        </datalist>
+      </label>
+    </section>
+    <section class="grid-section grid-wide-gap">
+      <div>
+        <table id="costVolTable" class="hover verticalDisplay">
+          <thead>
+            <tr>
+              <th>Research ID</th>
+              <th>Cost Price USD</th>
+              <th>Cost Price AUD</th>
+              <th>Estimate on cost AUD</th>
+              <th>Estimate Sell</th>
+              <th>Postage</th>
+              <th>Ext GP%</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
         </table>
-      </section>
-      <section class="flex-buttons">
+      </div>
+      <div class="flex-buttons">
         <button name="saveBtn">Save</button>
         <button name="importBtn">Import</button>
         <button name="exportBtn">Export</button>
-      </section>
-    </div>
+      </div>
+    </section>
     <script src="../script/cost&Vol.js"></script>
   </body>
 </html>

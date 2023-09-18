@@ -40,6 +40,7 @@ $(document).ready(function () {
   });
 
   $("#productTable_filter").remove();
+  $(".dataTables_length").css("padding-bottom", "1%");
 
   // table.on("click", "tbody tr", function () {
   //   let data = table.row(this).data();
