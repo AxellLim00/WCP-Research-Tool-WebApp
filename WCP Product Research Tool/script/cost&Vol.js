@@ -20,6 +20,6 @@ $(document).ready(function () {
     // );
   }
 
-  const table = new DataTable("#costVolTable");
-  $(".dataTables_length").css("padding-bottom", "1%");
+  // const table = new DataTable("#costVolTable");
+  // $(".dataTables_length").css("padding-bottom", "1%");
 });

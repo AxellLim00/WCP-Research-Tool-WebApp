@@ -139,10 +139,9 @@ th {
   background-color: #d0d2e4;
 }
 
-.product-searchbar input{
+.product-searchbar input {
   width: 100%;
 }
-
 
 /* Buttons */
 
@@ -296,13 +295,31 @@ tr td select {
   min-width: 15rem;
 }
 
-table.verticalDisplay tr > * {
+/* table.verticalDisplay tr > * {
   display: block;
 }
 
 table.verticalDisplay tr {
   display: table-cell;
   vertical-align: top;
+} */
+table.verticalDisplay thead {
+  float: left;
+}
+table.verticalDisplay thead th {
+  display: block;
+}
+
+table.verticalDisplay tbody {
+  float: right;
+}
+
+table.verticalDisplay tbody tr {
+  display: inline-block;
+}
+
+table.verticalDisplay tbody td {
+  display: block;
 }
 
 /* Alt Index Specific */
