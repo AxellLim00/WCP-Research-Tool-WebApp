@@ -41,4 +41,26 @@ $(document).ready(function () {
   //   $("#productList").append($("<option>").attr("value", i).text(item));
   // });
   $("#productSelected").val(productChosen);
+
+  //#region Screen Button
+
+  // Save changes Button
+  $('button[name="saveBtn"]').on("click", function () {
+    // find changes
+    // save changes to SQL
+  });
+
+  // Export table Button
+  $('button[name="exportBtn"]').on("click", function () {
+    $("table").tableExport({
+      type: "excel",
+      fileName: `${productChosen} - eBay Compatibility Table`,
+      mso: {
+        fileFormat: "xlsx",
+        worksheetName: ["K Types", "EPIDs"],
+      },
+    });
+  });
+
+  //#endregion
 });

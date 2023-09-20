@@ -77,6 +77,50 @@
       <button name="importBtn">Import</button>
       <button name="exportBtn">Export</button>
     </section>
+    <div id="popupForm" class="popup-form" style="display: none">
+      <form class="flex-form" style="height: 100%">
+        <h2 name="formTitle">Title</h2>
+        <section
+          id="importForm"
+          class="flex-form form-information"
+          style="display: none"
+        >
+          <label>
+            File to import
+            <br />
+            <input id="importFile" type="file" accept=".xls, .xlsx, .csv" />
+          </label>
+          <label>
+            Vin Number Header
+            <br />
+            <input id="importVin" type="text" />
+          </label>
+          <label>
+            Oem Header
+            <br />
+            <input id="importOem" type="text" />
+          </label>
+          <label>
+            Tables On Different Worksheets
+            <input id="importDiffWS" type="checkbox" />
+          </label>
+          <label class="ws-name" style="display: none">
+            Vin Number Worksheet Name
+            <br />
+            <input id="importVinWS" type="text" />
+          </label>
+          <label class="ws-name" style="display: none">
+            Oem Worksheet Name
+            <br />
+            <input id="importOemWS" type="text" />
+          </label>
+        </section>
+        <section class="flex-buttons form-button">
+          <button type="button" name="saveForm">Save</button>
+          <button type="button" name="cancelForm" class="cancel">Cancel</button>
+        </section>
+      </form>
+    </div>
   </body>
   <script src="../script/stats.js"></script>
 </html>

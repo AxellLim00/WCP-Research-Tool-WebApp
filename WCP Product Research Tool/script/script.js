@@ -1,5 +1,5 @@
 $(document).ready(function () {
-  var tabIdSelected = "tab4";
+  var tabIdSelected = "tab2";
   var menuToggle = true;
 
   selectTab(tabIdSelected, null);

@@ -65,6 +65,7 @@ $(document).ready(function () {
         mso: {
           fileFormat: "xlsx",
         },
+        ignoreRow: ["#searchRow"],
       });
     }
   });
