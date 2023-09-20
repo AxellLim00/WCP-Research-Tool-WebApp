@@ -12,11 +12,7 @@
         Product:
         <br />
         <input type="text" id="productSelected" list="productList" />
-        <datalist id="productList">
-          <option value="Banana"></option>
-          <option value="Orange"></option>
-          <option value="kiwi"></option>
-        </datalist>
+        <datalist id="productList"> </datalist>
       </label>
     </section>
     <section class="grid-section grid-wide-gap">
@@ -71,11 +67,12 @@
                 <input type="date" id="dateSearch" />
               </td>
               <td>
-                <input
-                  type="text"
-                  id="qualitySearch"
-                  placeholder="Search Quality"
-                />
+                <select id="qualitySearch">
+                  <option value="">Search Quality</option>
+                  <option value="good">Good</option>
+                  <option value="normal">Normal</option>
+                  <option value="bad">Bad</option>
+                </select>
               </td>
               <td>
                 <input
@@ -103,6 +100,62 @@
         <button name="exportBtn">Export</button>
       </div>
     </section>
+    <div id="popupForm" class="popup-form" style="display: none">
+      <form class="flex-form" style="height: 100%">
+        <h2 name="formTitle">Title</h2>
+        <section
+          id="importForm"
+          class="flex-form form-information"
+          style="display: none"
+        >
+          <label>
+            File to import
+            <br />
+            <input id="importfile" type="file" accept=".xls, .xlsx, .csv" />
+          </label>
+          <label>
+            Supplier Number (From Pinnacle)
+            <br />
+            <input id="importNum" type="text" />
+          </label>
+          <label>
+            MOQ Header
+            <br />
+            <input id="importMoq" type="text" />
+          </label>
+          <label>
+            Cost Currency Header
+            <br />
+            <input id="importCostCur" type="text" />
+          </label>
+          <label>
+            Quality Header
+            <img
+              src="../icon/info.png"
+              alt="Info Icon"
+              class="info-icon"
+              title="Optional (Defaults to normal)"
+            />
+            <br />
+            <input id="importQuality" type="text" />
+          </label>
+          <label>
+            Supplier's Part Type Header
+            <br />
+            <input id="importSupPartType" type="text" />
+          </label>
+          <label>
+            WCP's Part Type Header
+            <br />
+            <input id="importWcpPartType" type="text" />
+          </label>
+        </section>
+        <section class="flex-buttons form-button">
+          <button type="button" name="saveForm">Save</button>
+          <button type="button" name="cancelForm" class="cancel">Cancel</button>
+        </section>
+      </form>
+    </div>
     <script src="../script/altIndex.js"></script>
   </body>
 </html>

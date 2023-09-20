@@ -293,33 +293,25 @@ tr td select {
 
 #costVolTable tbody td {
   min-width: 15rem;
+  text-align: right;
+  padding-right: 1rem;
 }
 
-/* table.verticalDisplay tr > * {
+table.verticalDisplay tr > * {
   display: block;
 }
 
 table.verticalDisplay tr {
   display: table-cell;
   vertical-align: top;
-} */
-table.verticalDisplay thead {
-  float: left;
-}
-table.verticalDisplay thead th {
-  display: block;
 }
 
-table.verticalDisplay tbody {
-  float: right;
-}
-
-table.verticalDisplay tbody tr {
-  display: inline-block;
-}
-
-table.verticalDisplay tbody td {
-  display: block;
+table.verticalDisplay td,
+table.verticalDisplay th{
+  height: auto;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  border: 1px solid #777;
 }
 
 /* Alt Index Specific */

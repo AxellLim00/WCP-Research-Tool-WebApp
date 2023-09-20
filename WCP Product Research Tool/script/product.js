@@ -1,6 +1,7 @@
 $(document).ready(function () {
   const productTable_Column = 9;
   var form_Selected;
+  productChosen = "test";
 
   //Load table from SQL
 
@@ -45,6 +46,7 @@ $(document).ready(function () {
   // table.on("click", "tbody tr", function () {
   //   let data = table.row(this).data();
   //   Logic to select row's data after clicking here
+  //   productChosen = data.text ? Get product Research ID clicked
   // });
 
   //#region Searchbar Logic
@@ -103,20 +105,21 @@ $(document).ready(function () {
   //#region Form Button
   $('button[name="saveForm"]').on("click", function () {
     //check if mandatory field
-    var isFormFilled =
+    var isFormFilled = Boolean(
       $(`#${form_Selected}Make`).val() &&
-      $(`#${form_Selected}Model`).val() &&
-      $(`#${form_Selected}Type`).val() &&
-      $(`#${form_Selected}Num`).val() &&
-      $(`#${form_Selected}Desc`).val();
+        $(`#${form_Selected}Model`).val() &&
+        $(`#${form_Selected}Type`).val() &&
+        $(`#${form_Selected}Num`).val() &&
+        $(`#${form_Selected}Desc`).val()
+    );
     //extra validation on new product
-    form_Selected == "new" &&
-      (isFormFilled &=
-        $(`#${form_Selected}Stat`).val() && $(`#${form_Selected}Oem`).val());
-
+    if (form_Selected == "new")
+      isFormFilled &= Boolean(
+        $(`#${form_Selected}Stat`).val() && $(`#${form_Selected}Oem`).val()
+      );
     // extra validation on import product
-    form_Selected == "import" &&
-      (isFormFilled &= Boolean($(`#${form_Selected}file`).val()));
+    else if (form_Selected == "import")
+      isFormFilled &= Boolean($(`#${form_Selected}File`).val());
 
     // Successful Save
     if (isFormFilled) {
@@ -124,7 +127,7 @@ $(document).ready(function () {
       $("#popupForm").hide();
       $(`#${form_Selected}Form`).hide();
       $(".alert").hide();
-      $("#darkLayerBody").hide();
+      $("#darkLayer").hide();
       $("#darkLayer").css("position", "absolute");
 
       // reset values

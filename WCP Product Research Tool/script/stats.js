@@ -34,4 +34,15 @@ $(document).ready(function () {
     orderCellsTop: true,
   });
   $(".dataTables_length").css("padding-bottom", "2%");
+
+  //  TO DO: Get List of all products in an array
+  //  Details:
+  //  Add options to the datalist:
+  // - "attr" helps if you need an i.d to identify each option.
+  // - "text" is the content to be displayed.
+  // productList = get_list
+  // $.each(productList, function (i, item) {
+  //   $("#productList").append($("<option>").attr("value", i).text(item));
+  // });
+  $("#productSelected").val(productChosen);
 });
