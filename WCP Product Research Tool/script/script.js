@@ -1,10 +1,13 @@
 $(document).ready(function () {
-  var tabIdSelected = "tab2";
+  var tabIdChosen = "";
+  var tabIdCurrent = "tab1";
   var menuToggle = true;
+  var tempTab;
 
-  selectTab(tabIdSelected, null);
+  selectTab(tabIdCurrent, null);
+  sessionStorage.setItem("hasChanges", false);
 
-  $("#menu").click(function () {
+  $("#menu").on("click", function () {
     if (menuToggle) {
       menuExtend();
       contentDisable();
@@ -15,9 +18,34 @@ $(document).ready(function () {
     menuToggle = !menuToggle;
   });
 
-  $(".tab").click(function () {
-    selectTab($(this).attr("id"), tabIdSelected);
-    tabIdSelected = $(this).attr("id");
+  $(".tab").on("click", function () {
+    tabIdChosen = $(this).attr("id");
+    var hasChanges = sessionStorage.getItem("hasChanges") == "true";
+    if (hasChanges) {
+      $(".confirmation").show();
+      $("#darkLayer").show();
+      $("#darkLayer").css("position", "fixed");
+    } else {
+      selectTab(tabIdChosen, tabIdCurrent);
+      tabIdCurrent = tabIdChosen;
+      tabIdChosen = "";
+    }
+  });
+
+  $('button[name="yes"]').on("click", function () {
+    sessionStorage.setItem("hasChanges", false);
+    $(".confirmation").hide();
+    $("#darkLayer").hide();
+    $("#darkLayer").css("position", "absolute");
+    selectTab($(`#${tabIdChosen}`).attr("id"), tabIdCurrent);
+    tabIdCurrent = tabIdChosen;
+    tabIdChosen = "";
+  });
+
+  $('button[name="no"]').on("click", function () {
+    $(".confirmation").hide();
+    $("#darkLayer").hide();
+    $("#darkLayer").css("position", "absolute");
   });
 });
 
@@ -40,10 +68,10 @@ function menuCollapse() {
   $("#sidebar").removeClass("side-extended");
 }
 
-function selectTab(tabIdSelected, tabIdPrevious) {
-  if (tabIdPrevious) {
-    $("#" + tabIdPrevious + "-name").removeClass("tab-name-selected");
-    $("#" + tabIdPrevious + "-icon").removeClass("tab-icon-selected");
+function selectTab(tabIdSelected, tabIdCurrently) {
+  if (tabIdCurrently) {
+    $("#" + tabIdCurrently + "-name").removeClass("tab-name-selected");
+    $("#" + tabIdCurrently + "-icon").removeClass("tab-icon-selected");
   }
 
   $("#" + tabIdSelected + "-name").addClass("tab-name-selected");

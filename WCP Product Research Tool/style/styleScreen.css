@@ -173,6 +173,21 @@ button:hover {
 }
 
 /* New Form */
+.confirmation {
+  position: fixed;
+  top: calc(50% - (10em / 2));
+  left: calc(50% - (25em / 2));
+  width: 25em;
+  height: 10em;
+  background-color: white;
+  border-color: black;
+  border: solid;
+  padding: 20px;
+  justify-content: space-between;
+  flex-direction: column;
+  z-index: 200;
+}
+
 .popup-form {
   display: flex;
   position: fixed;
@@ -196,8 +211,14 @@ button:hover {
   overflow: auto;
 }
 
-form h2 {
+form h2,
+.confirmation h2,
+.confirmation h3 {
   text-align: center;
+}
+
+.confirmation h3 {
+  padding-bottom: 1.5em;
 }
 
 .form-button {
@@ -307,7 +328,7 @@ table.verticalDisplay tr {
 }
 
 table.verticalDisplay td,
-table.verticalDisplay th{
+table.verticalDisplay th {
   height: auto;
   padding-top: 1rem;
   padding-bottom: 1rem;

@@ -44,6 +44,9 @@ $(document).ready(function () {
   $('button[name="saveBtn"]').on("click", function () {
     // find changes
     // save changes to SQL
+
+    // if save successful
+    sessionStorage.setItem("hasChanges", false);
   });
 
   // Export table Button
@@ -96,6 +99,8 @@ $(document).ready(function () {
 
     // Successful Save
     if (isFormFilled) {
+      sessionStorage.setItem("hasChanges", true);
+
       // save data
       $("#popupForm").hide();
       $(`#${form_Selected}Form`).hide();

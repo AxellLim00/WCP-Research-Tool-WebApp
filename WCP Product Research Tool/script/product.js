@@ -1,12 +1,12 @@
 $(document).ready(function () {
   const productTable_Column = 9;
   var form_Selected;
+  var isEmptyData = true;
   productChosen = "test";
 
   //Load table from SQL
 
   // if loading from SQL empty
-  var isEmptyData = true;
 
   const default_ProductTable_Row_Amount = 10;
   if (isEmptyData) {
@@ -66,6 +66,9 @@ $(document).ready(function () {
   $('button[name="saveBtn"]').on("click", function () {
     // find changes
     // save changes to SQL
+
+    //on successful save
+    sessionStorage.setItem("hasChanges", false);
   });
 
   // New product Button
@@ -103,7 +106,7 @@ $(document).ready(function () {
   //#endregion
 
   //#region Form Button
-  $('button[name="saveForm"]').on("click", function () {
+  $('button[name="saveForm"]').on("click", async function () {
     //check if mandatory field
     var isFormFilled = Boolean(
       $(`#${form_Selected}Make`).val() &&
@@ -123,7 +126,13 @@ $(document).ready(function () {
 
     // Successful Save
     if (isFormFilled) {
-      // save data
+      sessionStorage.setItem("hasChanges", true);
+
+      // put data into table
+      let file = $("#importFile").prop('files');
+      const workbook = XLSX.read(file);
+
+      // finally hide form
       $("#popupForm").hide();
       $(`#${form_Selected}Form`).hide();
       $(".alert").hide();

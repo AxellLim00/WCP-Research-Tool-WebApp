@@ -13,10 +13,6 @@
       type="text/javascript"
       src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"
     ></script>
-    <script
-      type="text/javascript"
-      src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"
-    ></script>
     <link
       rel="stylesheet"
       href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css"
@@ -25,15 +21,13 @@
       type="text/javascript"
       src="https://cdnjs.cloudflare.com/ajax/libs/amcharts/3.21.15/plugins/export/libs/FileSaver.js/FileSaver.min.js"
     ></script>
-    <script src="..\script\ultimate-export\libs\js-xlsx\xlsx.core.min.js"></script>
-    <script src="..\script\ultimate-export\libs\jsPDF\polyfills.umd.min.js"></script>
-    <script
-      type="text/javascript"
-      src="https://unpkg.com/jspdf@2.0.0/dist/jspdf.umd.min.js"
-    ></script>
-    <script src="..\script\ultimate-export\libs\html2canvas\html2canvas.min.js"></script>
     <script src="..\script\ultimate-export\tableExport.min.js"></script>
+    <script
+      lang="javascript"
+      src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"
+    ></script>
     <link rel="stylesheet" href="../style/style.css" />
+    <link rel="stylesheet" href="../style/styleScreen.css" />
   </head>
   <body class="layout-page">
     <header class="top top-background">
@@ -109,6 +103,14 @@
     <div class="main">
       <div id="darkLayer" class="darkClass" style="display: none"></div>
       <section id="content"></section>
+    </div>
+    <div class="confirmation" style="display: none">
+      <h2>There are unsaved changes.</h2>
+      <h3>Are you sure you want to Switch Tab?</h3>
+      <section class="flex-buttons form-button">
+        <button type="button" name="yes">Yes</button>
+        <button type="button" name="no" class="cancel">Cancel</button>
+      </section>
     </div>
     <script type="text/javascript">
       var productChosen = "default";
