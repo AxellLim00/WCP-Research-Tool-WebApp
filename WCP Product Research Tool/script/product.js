@@ -129,8 +129,13 @@ $(document).ready(function () {
       sessionStorage.setItem("hasChanges", true);
 
       // put data into table
-      let file = $("#importFile").prop('files');
-      const workbook = XLSX.read(file);
+      let file = $("#importFile").prop("files");
+      let reader = new FileReader();
+      reader.readAsArrayBuffer(file[0]);
+      reader.onload = function (e) {
+        let data = new Uint8Array(reader.result);
+        let workbook = XLSX.read(data, { type: "array" });
+      };
 
       // finally hide form
       $("#popupForm").hide();
