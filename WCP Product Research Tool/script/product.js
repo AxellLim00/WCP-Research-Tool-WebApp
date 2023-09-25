@@ -131,9 +131,9 @@ $(document).ready(function () {
 
     // Successful Save
     if (isFormFilled) {
-      if (!isEmptyData) {
+      if (isEmptyData) {
         isEmptyData = false;
-        $(`${tableName} tbody`).empty();
+        table.clear().draw();
       }
 
       sessionStorage.setItem("hasChanges", true);
@@ -154,17 +154,31 @@ $(document).ready(function () {
           });
         };
       } else if (form_Selected == "new") {
-        // let make = $("#newMake").val();
-        // let make = $("#newMake").val();
-        // let make = $("#newMake").val();
-        // let make = $("#newMake").val();
-        // let make = $("#newMake").val();
-        newRow = $(
-          ```<tr>
-        <td><td>
-        </tr>```
+        let newProduct = new Product(
+          $("#ID").text(),
+          $("#newSku").val(),
+          $("#newMake").val(),
+          $("#newModel").val(),
+          $("#newType").val(),
+          $("#newNum").val(),
+          $("#newDesc").val(),
+          $("#newStat").val(),
+          $("#newOem").val()
         );
-        $(`${tableName} tbody`).append(newRow);
+
+        table.row
+          .add({
+            id: newProduct.id,
+            sku: newProduct.sku,
+            make: newProduct.make,
+            model: newProduct.model,
+            type: newProduct.partType,
+            num: newProduct.IcNum,
+            desc: newProduct.IcDesc,
+            status: newProduct.status,
+            oem: newProduct.oemCategory,
+          })
+          .draw();
       }
 
       // finally hide form
@@ -272,4 +286,59 @@ function areAllFieldsFilled() {
   var model = $("#newModel").val();
   var partType = $("#newType").val();
   return make.length >= 3 && model.length >= 3 && partType.length >= 3;
+}
+
+class Product {
+  constructor(
+    id,
+    sku,
+    make,
+    model,
+    partType,
+    iCNum,
+    iCDesc,
+    status,
+    oemCategory
+  ) {
+    this.id = id;
+    this.sku = sku;
+    this.make = make;
+    this.model = model;
+    this.partType = partType;
+    this.iCNum = iCNum;
+    this.iCDesc = iCDesc;
+    switch (status) {
+      case "research":
+        this.status = "Research OEM";
+        break;
+      case "waiting":
+        this.status = "Waiting on Vendor Quote";
+        break;
+      case "costDone":
+        this.status = "Costing Completed";
+        break;
+      case "approval":
+        this.status = "Waiting Approval";
+        break;
+      case "pinnacle":
+        this.status = "Added to Pinnacle";
+        break;
+      case "peach":
+        this.status = "Added to Peach";
+        break;
+      default:
+        this.status = status;
+    }
+    switch (status) {
+      case "aftermarket":
+        this.status = "Aftermarket Oem";
+        break;
+      case "genuine":
+        this.status = "Genuine Oem";
+        break;
+      default:
+        this.status = status;
+    }
+    this.oemCategory = oemCategory;
+  }
 }

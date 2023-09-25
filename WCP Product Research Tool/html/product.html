@@ -4,6 +4,28 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>New Product</title>
+    <script
+      src="https://code.jquery.com/jquery-3.7.1.min.js"
+      integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+      crossorigin="anonymous"
+    ></script>
+    <script
+      type="text/javascript"
+      src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"
+    ></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css"
+    />
+    <script
+      type="text/javascript"
+      src="https://cdnjs.cloudflare.com/ajax/libs/amcharts/3.21.15/plugins/export/libs/FileSaver.js/FileSaver.min.js"
+    ></script>
+    <script src="..\script\ultimate-export\tableExport.min.js"></script>
+    <script
+      lang="javascript"
+      src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"
+    ></script>
     <link rel="stylesheet" href="../style/style.css" />
     <link rel="stylesheet" href="../style/styleScreen.css" />
   </head>
@@ -91,8 +113,8 @@
             <td>
               <select id="oemSearch">
                 <option value="">Search OEM</option>
-                <option value="research">Aftermarket</option>
-                <option value="waiting">Genuine</option>
+                <option value="aftermarket">Aftermarket</option>
+                <option value="genuine">Genuine</option>
               </select>
             </td>
           </tr>
