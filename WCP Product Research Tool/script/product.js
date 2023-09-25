@@ -1,8 +1,13 @@
 $(document).ready(function () {
   const productTable_Column = 9;
+  const tableName = "#productTable";
   var form_Selected;
   var isEmptyData = true;
-  productChosen = "test";
+  // temp variables for new product form
+  var prevMake = "";
+  var prevModel = "";
+  var prevPartType = "";
+  var prevID = "";
 
   //Load table from SQL
 
@@ -10,7 +15,7 @@ $(document).ready(function () {
 
   const default_ProductTable_Row_Amount = 10;
   if (isEmptyData) {
-    $("#productTable").append(
+    $(tableName).append(
       getEmptyRow(default_ProductTable_Row_Amount, productTable_Column)
     );
   } else {
@@ -22,7 +27,7 @@ $(document).ready(function () {
     // );
   }
 
-  const table = new DataTable("#productTable", {
+  const table = new DataTable(tableName, {
     orderCellsTop: true,
     columns: [
       { data: "id" },
@@ -40,7 +45,7 @@ $(document).ready(function () {
     ],
   });
 
-  $("#productTable_filter").remove();
+  $(`${tableName}_filter`).remove();
   $(".dataTables_length").css("padding-bottom", "1%");
 
   // table.on("click", "tbody tr", function () {
@@ -50,7 +55,7 @@ $(document).ready(function () {
   // });
 
   //#region Searchbar Logic
-  const rows = $("#productTable tr");
+  const rows = $(`${tableName} tr`);
 
   $("#idSearch").on("keyup", function () {
     var value = $(this).val().toLowerCase();
@@ -93,7 +98,7 @@ $(document).ready(function () {
 
   // Export table Button
   $('button[name="exportBtn"]').on("click", function () {
-    $("#productTable").tableExport({
+    $(tableName).tableExport({
       type: "excel",
       fileName: "Research Product Table",
       mso: {
@@ -108,7 +113,7 @@ $(document).ready(function () {
   //#region Form Button
   $('button[name="saveForm"]').on("click", async function () {
     //check if mandatory field
-    var isFormFilled = Boolean(
+    let isFormFilled = Boolean(
       $(`#${form_Selected}Make`).val() &&
         $(`#${form_Selected}Model`).val() &&
         $(`#${form_Selected}Type`).val() &&
@@ -126,16 +131,41 @@ $(document).ready(function () {
 
     // Successful Save
     if (isFormFilled) {
-      sessionStorage.setItem("hasChanges", true);
+      if (!isEmptyData) {
+        isEmptyData = false;
+        $(`${tableName} tbody`).empty();
+      }
 
-      // put data into table
-      let file = $("#importFile").prop("files");
-      let reader = new FileReader();
-      reader.readAsArrayBuffer(file[0]);
-      reader.onload = function (e) {
-        let data = new Uint8Array(reader.result);
-        let workbook = XLSX.read(data, { type: "array" });
-      };
+      sessionStorage.setItem("hasChanges", true);
+      if (form_Selected == "import") {
+        // put data into table
+        let file = $("#importFile").prop("files");
+        let reader = new FileReader();
+        reader.readAsArrayBuffer(file[0]);
+        reader.onload = function () {
+          let data = new Uint8Array(reader.result);
+          let workbook = XLSX.read(data, { type: "array" });
+
+          // Assuming the first sheet of the workbook is the relevant one
+          var sheetName = workbook.SheetNames[0];
+          var sheet = workbook.Sheets[sheetName];
+          var sheetData = XLSX.utils.sheet_to_json(sheet, {
+            header: 1,
+          });
+        };
+      } else if (form_Selected == "new") {
+        // let make = $("#newMake").val();
+        // let make = $("#newMake").val();
+        // let make = $("#newMake").val();
+        // let make = $("#newMake").val();
+        // let make = $("#newMake").val();
+        newRow = $(
+          ```<tr>
+        <td><td>
+        </tr>```
+        );
+        $(`${tableName} tbody`).append(newRow);
+      }
 
       // finally hide form
       $("#popupForm").hide();
@@ -148,15 +178,18 @@ $(document).ready(function () {
       $(`#${form_Selected}Form input`).val("");
       $(`#${form_Selected}Form select`).val("");
     }
-    // Unsuccessful Save
+    // on Unsuccessful Save
     else {
+      // Check if alert has been made before
       if (!$(".alert").length) {
         $("body").append(`
           <div class="alert">
             <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span> 
             <strong>Error!</strong> Please complete all non-optional fields.
           </div>`);
-      } else if ($(".alert").is(":hidden")) {
+      }
+      // Show previously made alert
+      else if ($(".alert").is(":hidden")) {
         $(".alert").show();
       }
     }
@@ -164,12 +197,79 @@ $(document).ready(function () {
 
   // Cancel Form - NOTE: keep last thing written
   $('button[name="cancelForm"]').on("click", function () {
+    // hide the form
     $("#popupForm").hide();
     $(`#${form_Selected}Form`).hide();
     $(".alert").hide();
     $("#darkLayer").hide();
+    // turn darkLayer into previous size
     $("#darkLayer").css("position", "absolute");
+  });
+
+  // Event handler for when ID is ready to be created
+  $("#popupForm").on("input", function () {
+    var make = $("#newMake").val();
+    var model = $("#newModel").val();
+    var partType = $("#newType").val();
+    // Check if all input fields are non-empty and have at least 3 characters
+    if (
+      areAllFieldsFilled() &&
+      (make.substring(0, 3) !== prevMake ||
+        model.substring(0, 3) !== prevModel ||
+        partType.substring(0, 3) !== prevPartType)
+    ) {
+      // Update the previous values
+      prevMake = make.substring(0, 3);
+      prevModel = model.substring(0, 3);
+      prevPartType = partType.substring(0, 3);
+
+      // Generate and display the product ID
+      var productID = generateProductID(make, model, partType);
+      prevID = productID;
+      $("#ID").text(productID);
+    } else if (
+      areAllFieldsFilled() &&
+      make.substring(0, 3) == prevMake &&
+      model.substring(0, 3) == prevModel &&
+      partType.substring(0, 3) == prevPartType
+    ) {
+      $("#ID").text(prevID);
+    } else {
+      // Clear the product ID if any input field is empty or has less than 3 characters
+      $("#ID").text("Fill the form to make an ID");
+    }
   });
 
   //#endregion
 });
+
+// Function to generate the product ID
+function generateProductID(make, model, partType) {
+  // Extract the first 3 letters from make, model, and partType
+  var makePrefix = make.substring(0, 3).toUpperCase();
+  var modelPrefix = model.substring(0, 3).toUpperCase();
+  var partTypePrefix = partType.substring(0, 3).toUpperCase();
+
+  // Combine the prefixes and shortened UUID to create the product ID
+  var productID =
+    makePrefix + modelPrefix + partTypePrefix + "-" + generateShortUUID();
+
+  return productID;
+}
+
+// Function to generate a short UUID
+function generateShortUUID() {
+  // A shorter UUID consisting of 8 hexadecimal digits
+  var uuid = "xxxxxxxx".replace(/[x]/g, function () {
+    return ((Math.random() * 16) | 0).toString(16);
+  });
+  return uuid;
+}
+
+// Function to check if all input fields are filled with at least 3 characters
+function areAllFieldsFilled() {
+  var make = $("#newMake").val();
+  var model = $("#newModel").val();
+  var partType = $("#newType").val();
+  return make.length >= 3 && model.length >= 3 && partType.length >= 3;
+}
