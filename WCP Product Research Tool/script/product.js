@@ -22,6 +22,7 @@ $(document).ready(function () {
     let productTable_Data;
 
     // fill in table with the data
+    // table.row.add[{}]
     // $("#productTable > tbody:last-child").append(
     // html here
     // );
@@ -30,18 +31,18 @@ $(document).ready(function () {
   const table = new DataTable(tableName, {
     orderCellsTop: true,
     columns: [
-      { data: "id" },
+      { data: "Id" },
       {
-        data: "sku",
+        data: "Sku",
         defaultContent: "<i>Not set</i>",
       },
-      { data: "make" },
-      { data: "model" },
-      { data: "type" },
-      { data: "num" },
-      { data: "desc" },
-      { data: "status" },
-      { data: "oem" },
+      { data: "Make" },
+      { data: "Model" },
+      { data: "Type" },
+      { data: "Num" },
+      { data: "Desc" },
+      { data: "Status" },
+      { data: "Oem" },
     ],
   });
 
@@ -112,22 +113,31 @@ $(document).ready(function () {
 
   //#region Form Button
   $('button[name="saveForm"]').on("click", async function () {
+    const skuValue = $(`#${form_Selected}Sku`).val();
+    const makeValue = $(`#${form_Selected}Make`).val();
+    const modelValue = $(`#${form_Selected}Model`).val();
+    const typeValue = $(`#${form_Selected}Type`).val();
+    const numValue = $(`#${form_Selected}Num`).val();
+    const descValue = $(`#${form_Selected}Desc`).val();
+    let fileValue = "";
+    let statValue = "";
+    let oemValue = "";
+
     //check if mandatory field
     let isFormFilled = Boolean(
-      $(`#${form_Selected}Make`).val() &&
-        $(`#${form_Selected}Model`).val() &&
-        $(`#${form_Selected}Type`).val() &&
-        $(`#${form_Selected}Num`).val() &&
-        $(`#${form_Selected}Desc`).val()
+      makeValue && modelValue && typeValue && numValue && descValue
     );
     //extra validation on new product
-    if (form_Selected == "new")
-      isFormFilled &= Boolean(
-        $(`#${form_Selected}Stat`).val() && $(`#${form_Selected}Oem`).val()
-      );
+    if (form_Selected == "new") {
+      statValue = $(`#${form_Selected}Stat`).val();
+      oemValue = $(`#${form_Selected}Oem`).val();
+      isFormFilled &= Boolean(statValue && oemValue);
+    }
     // extra validation on import product
-    else if (form_Selected == "import")
-      isFormFilled &= Boolean($(`#${form_Selected}File`).val());
+    else if (form_Selected == "import") {
+      fileValue = $(`#${form_Selected}File`).val();
+      isFormFilled &= Boolean(fileValue);
+    }
 
     // Successful Save
     if (isFormFilled) {
@@ -138,47 +148,57 @@ $(document).ready(function () {
 
       sessionStorage.setItem("hasChanges", true);
       if (form_Selected == "import") {
-        // put data into table
-        let file = $("#importFile").prop("files");
-        let reader = new FileReader();
+        // Keeping Column header name
+        let isSkuEmpty = skuValue.trim().length == 0;
+
+        // Read file
+        const file = $("#importFile").prop("files");
+        const reader = new FileReader();
         reader.readAsArrayBuffer(file[0]);
         reader.onload = function () {
-          let data = new Uint8Array(reader.result);
-          let workbook = XLSX.read(data, { type: "array" });
+          const XLSX = require("xlsx");
+          const data = new Uint8Array(reader.result);
+          const workbook = XLSX.read(data, { type: "array" });
 
           // Assuming the first sheet of the workbook is the relevant one
-          var sheetName = workbook.SheetNames[0];
-          var sheet = workbook.Sheets[sheetName];
-          var sheetData = XLSX.utils.sheet_to_json(sheet, {
-            header: 1,
+          const sheetName = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[sheetName];
+          const sheetData = XLSX.utils.sheet_to_json(sheet);
+
+          // Put data into table
+          const importProducts = data.map((row) => {
+            return new Product(
+              generateProductID(
+                row[makeValue],
+                row[modelValue],
+                row[typeValue]
+              ),
+              isSkuEmpty ? "" : row[skuValue],
+              row[makeValue],
+              row[modelValue],
+              row[typeValue],
+              row[numValue],
+              row[descValue],
+              row[statValue],
+              row[oemValue]
+            );
           });
+          table.rows.add(importProducts).draw();
         };
       } else if (form_Selected == "new") {
         let newProduct = new Product(
           $("#ID").text(),
-          $("#newSku").val(),
-          $("#newMake").val(),
-          $("#newModel").val(),
-          $("#newType").val(),
-          $("#newNum").val(),
-          $("#newDesc").val(),
-          $("#newStat").val(),
-          $("#newOem").val()
+          skuValue,
+          makeValue,
+          modelValue,
+          typeValue,
+          numValue,
+          descValue,
+          statValue,
+          oemValue
         );
 
-        table.row
-          .add({
-            id: newProduct.id,
-            sku: newProduct.sku,
-            make: newProduct.make,
-            model: newProduct.model,
-            type: newProduct.partType,
-            num: newProduct.IcNum,
-            desc: newProduct.IcDesc,
-            status: newProduct.status,
-            oem: newProduct.oemCategory,
-          })
-          .draw();
+        table.row.add(newProduct).draw();
       }
 
       // finally hide form
@@ -289,56 +309,49 @@ function areAllFieldsFilled() {
 }
 
 class Product {
-  constructor(
-    id,
-    sku,
-    make,
-    model,
-    partType,
-    iCNum,
-    iCDesc,
-    status,
-    oemCategory
-  ) {
-    this.id = id;
-    this.sku = sku;
-    this.make = make;
-    this.model = model;
-    this.partType = partType;
-    this.iCNum = iCNum;
-    this.iCDesc = iCDesc;
-    switch (status) {
+  constructor(id, sku, make, model, type, num, desc, status, oem) {
+    this.Id = id;
+    if (sku.trim().length > 0) {
+      this.Sku = sku;
+    } else {
+      this.Sku = "<i>Not set</i>";
+    }
+    this.Make = make;
+    this.Model = model;
+    this.Type = type;
+    this.Num = num;
+    this.Desc = desc;
+    switch (status.toLowerCase()) {
       case "research":
-        this.status = "Research OEM";
+        this.Status = "Research OEM";
         break;
       case "waiting":
-        this.status = "Waiting on Vendor Quote";
+        this.Status = "Waiting on Vendor Quote";
         break;
-      case "costDone":
-        this.status = "Costing Completed";
+      case "costdone":
+        this.Status = "Costing Completed";
         break;
       case "approval":
-        this.status = "Waiting Approval";
+        this.Status = "Waiting Approval";
         break;
       case "pinnacle":
-        this.status = "Added to Pinnacle";
+        this.Status = "Added to Pinnacle";
         break;
       case "peach":
-        this.status = "Added to Peach";
+        this.Status = "Added to Peach";
         break;
       default:
-        this.status = status;
+        this.Status = status;
     }
-    switch (status) {
+    switch (oem.toLowerCase()) {
       case "aftermarket":
-        this.status = "Aftermarket Oem";
+        this.Oem = "Aftermarket OEM";
         break;
       case "genuine":
-        this.status = "Genuine Oem";
+        this.Oem = "Genuine OEM";
         break;
       default:
-        this.status = status;
+        this.Oem = oem;
     }
-    this.oemCategory = oemCategory;
   }
 }
