@@ -1,26 +1,24 @@
 $(document).ready(function () {
-  const productTable_Column = 9;
-  const tableName = "#productTable";
-  var form_Selected;
+  const COLUMN_AMOUNT = 9;
+  const TABLE_NAME = "#productTable";
+  var formSelected;
   var isEmptyData = true;
-  // temp variables for new product form
+  // Temporary variables for the new product form
   var prevMake = "";
   var prevModel = "";
   var prevPartType = "";
   var prevID = "";
 
+  //#region Initialize Page
   //Load table from SQL
 
   // if loading from SQL empty
 
-  const default_ProductTable_Row_Amount = 10;
+  const ROW_AMOUNT = 10;
   if (isEmptyData) {
-    $(tableName).append(
-      getEmptyRow(default_ProductTable_Row_Amount, productTable_Column)
-    );
+    $(TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
   } else {
-    let productTable_Data;
-
+    // let productTable_Data;
     // fill in table with the data
     // table.row.add[{}]
     // $("#productTable > tbody:last-child").append(
@@ -28,7 +26,7 @@ $(document).ready(function () {
     // );
   }
 
-  const table = new DataTable(tableName, {
+  const TABLE = new DataTable(TABLE_NAME, {
     orderCellsTop: true,
     columns: [
       { data: "Id" },
@@ -44,10 +42,13 @@ $(document).ready(function () {
       { data: "Status" },
       { data: "Oem" },
     ],
+    stateSave: true,
   });
 
-  $(`${tableName}_filter`).remove();
+  $(`${TABLE_NAME}_filter`).remove();
   $(".dataTables_length").css("padding-bottom", "1%");
+
+  //#endregion
 
   // table.on("click", "tbody tr", function () {
   //   let data = table.row(this).data();
@@ -56,7 +57,7 @@ $(document).ready(function () {
   // });
 
   //#region Searchbar Logic
-  const rows = $(`${tableName} tr`);
+  const rows = $(`${TABLE_NAME} tr`);
 
   $("#idSearch").on("keyup", function () {
     var value = $(this).val().toLowerCase();
@@ -74,15 +75,15 @@ $(document).ready(function () {
     // save changes to SQL
 
     //on successful save
-    sessionStorage.setItem("hasChanges", false);
+    editHasChanges(false);
   });
 
   // New product Button
   $('button[name="newBtn"]').on("click", function () {
     $('h2[name="formTitle"]').text("New Product");
-    form_Selected = "new";
+    formSelected = "new";
     $("#popupForm").show();
-    $(`#${form_Selected}Form`).show();
+    $(`#${formSelected}Form`).show();
     $("#darkLayer").show();
     $("#darkLayer").css("position", "fixed");
   });
@@ -90,16 +91,16 @@ $(document).ready(function () {
   // Import product Button
   $('button[name="importBtn"]').on("click", function () {
     $('h2[name="formTitle"]').text("Import Product(s)");
-    form_Selected = "import";
+    formSelected = "import";
     $("#popupForm").show();
-    $(`#${form_Selected}Form`).show();
+    $(`#${formSelected}Form`).show();
     $("#darkLayer").css("position", "fixed");
     $("#darkLayer").show();
   });
 
   // Export table Button
   $('button[name="exportBtn"]').on("click", function () {
-    $(tableName).tableExport({
+    $(TABLE_NAME).tableExport({
       type: "excel",
       fileName: "Research Product Table",
       mso: {
@@ -113,119 +114,155 @@ $(document).ready(function () {
 
   //#region Form Button
   $('button[name="saveForm"]').on("click", async function () {
-    const skuValue = $(`#${form_Selected}Sku`).val();
-    const makeValue = $(`#${form_Selected}Make`).val();
-    const modelValue = $(`#${form_Selected}Model`).val();
-    const typeValue = $(`#${form_Selected}Type`).val();
-    const numValue = $(`#${form_Selected}Num`).val();
-    const descValue = $(`#${form_Selected}Desc`).val();
+    const SKU_VALUE = $(`#${formSelected}Sku`).val();
+    const MAKE_VALUE = $(`#${formSelected}Make`).val();
+    const MODEL_VALUE = $(`#${formSelected}Model`).val();
+    const PART_TYPE_VALUE = $(`#${formSelected}Type`).val();
+    const IC_NUMBER_VALUE = $(`#${formSelected}Num`).val();
+    const IC_DESCRIPTION_VALUE = $(`#${formSelected}Desc`).val();
+    const STATUS_VALUE = $(`#${formSelected}Status`).val();
+    const OEM_CATEGORY_VALUE = $(`#${formSelected}Oem`).val();
     let fileValue = "";
-    let statValue = "";
-    let oemValue = "";
 
     //check if mandatory field
     let isFormFilled = Boolean(
-      makeValue && modelValue && typeValue && numValue && descValue
+      MAKE_VALUE &&
+        MODEL_VALUE &&
+        PART_TYPE_VALUE &&
+        IC_NUMBER_VALUE &&
+        IC_DESCRIPTION_VALUE
     );
     //extra validation on new product
-    if (form_Selected == "new") {
-      statValue = $(`#${form_Selected}Stat`).val();
-      oemValue = $(`#${form_Selected}Oem`).val();
-      isFormFilled &= Boolean(statValue && oemValue);
+    if (formSelected == "new") {
+      isFormFilled &= Boolean(STATUS_VALUE && OEM_CATEGORY_VALUE);
     }
     // extra validation on import product
-    else if (form_Selected == "import") {
-      fileValue = $(`#${form_Selected}File`).val();
+    else if (formSelected == "import") {
+      fileValue = $(`#${formSelected}File`).val();
       isFormFilled &= Boolean(fileValue);
     }
 
-    // Successful Save
+    // On Form being filled Completely
     if (isFormFilled) {
-      if (isEmptyData) {
-        isEmptyData = false;
-        table.clear().draw();
-      }
-
-      sessionStorage.setItem("hasChanges", true);
-      if (form_Selected == "import") {
-        // Keeping Column header name
-        let isSkuEmpty = skuValue.trim().length == 0;
+      // For Import Products
+      if (formSelected == "import") {
+        // Keeping Column header name\
+        let isSkuEmpty = SKU_VALUE.trim().length == 0;
+        let isStatusEmtpy = STATUS_VALUE.trim().length == 0;
+        let isOemCategoryEmtpy = OEM_CATEGORY_VALUE.trim().length == 0;
 
         // Read file
-        const file = $("#importFile").prop("files");
-        const reader = new FileReader();
-        reader.readAsArrayBuffer(file[0]);
-        reader.onload = function () {
-          const XLSX = require("xlsx");
-          const data = new Uint8Array(reader.result);
-          const workbook = XLSX.read(data, { type: "array" });
+        const FILE = $("#importFile").prop("files");
+        const READER = new FileReader();
+        READER.readAsArrayBuffer(FILE[0]);
+        READER.onload = function () {
+          const FILE_DATA = new Uint8Array(READER.result);
+          const WORKBOOK = XLSX.read(FILE_DATA, { type: "array" });
 
           // Assuming the first sheet of the workbook is the relevant one
-          const sheetName = workbook.SheetNames[0];
-          const sheet = workbook.Sheets[sheetName];
-          const sheetData = XLSX.utils.sheet_to_json(sheet);
+          const SHEET_NAME = WORKBOOK.SheetNames[0];
+          const SHEET = WORKBOOK.Sheets[SHEET_NAME];
+          const SHEET_JSON = XLSX.utils.sheet_to_json(SHEET);
+          debugger;
+          let missingHeader = "";
+
+          // Check if file is empty or blank
+          if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {
+            showAlert(
+              `<strong>Error!</strong> <i>${FILE[0].name}</i> File is empty or blank.`
+            );
+            return;
+          }
+
+          missingHeader = findMissingColumnHeader(SHEET_JSON[0], [
+            isSkuEmpty ? null : SKU_VALUE,
+            MAKE_VALUE,
+            MODEL_VALUE,
+            PART_TYPE_VALUE,
+            IC_NUMBER_VALUE,
+            IC_DESCRIPTION_VALUE,
+            isStatusEmtpy ? null : STATUS_VALUE,
+            isOemCategoryEmtpy ? null : OEM_CATEGORY_VALUE,
+          ]);
+
+          // Check if all headers from input are inside the file
+          if (Boolean(missingHeader)) {
+            showAlert(
+              `<strong>Error!</strong> Column ${missingHeader} Header not found in file.`
+            );
+            return;
+          }
 
           // Put data into table
-          const importProducts = data.map((row) => {
+          const IMPORT_PRODUCTS = SHEET_JSON.map((row) => {
             return new Product(
               generateProductID(
-                row[makeValue],
-                row[modelValue],
-                row[typeValue]
+                row[MAKE_VALUE],
+                row[MODEL_VALUE],
+                row[PART_TYPE_VALUE]
               ),
-              isSkuEmpty ? "" : row[skuValue],
-              row[makeValue],
-              row[modelValue],
-              row[typeValue],
-              row[numValue],
-              row[descValue],
-              row[statValue],
-              row[oemValue]
+              isSkuEmpty ? "" : row[SKU_VALUE],
+              row[MAKE_VALUE],
+              row[MODEL_VALUE],
+              row[PART_TYPE_VALUE],
+              row[IC_NUMBER_VALUE],
+              row[IC_DESCRIPTION_VALUE],
+              isStatusEmtpy ? "" : row[STATUS_VALUE],
+              isOemCategoryEmtpy ? "" : row[OEM_CATEGORY_VALUE]
             );
           });
-          table.rows.add(importProducts).draw();
+          // Empty Data if data before is is empty
+          if (isEmptyData) {
+            isEmptyData = false;
+            TABLE.clear().draw();
+          }
+          // Toggle hasChanges On
+          editHasChanges(true);
+          // Add data to table
+          TABLE.rows.add(IMPORT_PRODUCTS).draw();
         };
-      } else if (form_Selected == "new") {
+        // For New Product
+      } else if (formSelected == "new") {
         let newProduct = new Product(
           $("#ID").text(),
-          skuValue,
-          makeValue,
-          modelValue,
-          typeValue,
-          numValue,
-          descValue,
-          statValue,
-          oemValue
+          SKU_VALUE,
+          MAKE_VALUE,
+          MODEL_VALUE,
+          PART_TYPE_VALUE,
+          IC_NUMBER_VALUE,
+          IC_DESCRIPTION_VALUE,
+          STATUS_VALUE,
+          OEM_CATEGORY_VALUE
         );
 
-        table.row.add(newProduct).draw();
+        // Empty Data if data before is is empty
+        if (isEmptyData) {
+          isEmptyData = false;
+          TABLE.clear().draw();
+        }
+        // Toggle hasChanges On
+        editHasChanges(true);
+        // Add data to table
+        TABLE.row.add(newProduct).draw();
       }
 
-      // finally hide form
+      // Finally hide Form from user
       $("#popupForm").hide();
-      $(`#${form_Selected}Form`).hide();
+      $(`#${formSelected}Form`).hide();
       $(".alert").hide();
       $("#darkLayer").hide();
       $("#darkLayer").css("position", "absolute");
 
-      // reset values
-      $(`#${form_Selected}Form input`).val("");
-      $(`#${form_Selected}Form select`).val("");
+      // Reset textboxes' and selectboxes' values
+      $(`#${formSelected}Form input`).val("");
+      $(`#${formSelected}Form select`).val("");
     }
-    // on Unsuccessful Save
+    // On Form being filled Incompletely
     else {
-      // Check if alert has been made before
-      if (!$(".alert").length) {
-        $("body").append(`
-          <div class="alert">
-            <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span> 
-            <strong>Error!</strong> Please complete all non-optional fields.
-          </div>`);
-      }
-      // Show previously made alert
-      else if ($(".alert").is(":hidden")) {
-        $(".alert").show();
-      }
+      showAlert(
+        "<strong>Error!</strong> Please complete all non-optional fields."
+      );
+      return;
     }
   });
 
@@ -233,7 +270,7 @@ $(document).ready(function () {
   $('button[name="cancelForm"]').on("click", function () {
     // hide the form
     $("#popupForm").hide();
-    $(`#${form_Selected}Form`).hide();
+    $(`#${formSelected}Form`).hide();
     $(".alert").hide();
     $("#darkLayer").hide();
     // turn darkLayer into previous size
@@ -280,21 +317,18 @@ $(document).ready(function () {
 // Function to generate the product ID
 function generateProductID(make, model, partType) {
   // Extract the first 3 letters from make, model, and partType
-  var makePrefix = make.substring(0, 3).toUpperCase();
-  var modelPrefix = model.substring(0, 3).toUpperCase();
-  var partTypePrefix = partType.substring(0, 3).toUpperCase();
+  let makePrefix = make.substring(0, 3).toUpperCase();
+  let modelPrefix = model.substring(0, 3).toUpperCase();
+  let partTypePrefix = partType.substring(0, 3).toUpperCase();
 
   // Combine the prefixes and shortened UUID to create the product ID
-  var productID =
-    makePrefix + modelPrefix + partTypePrefix + "-" + generateShortUUID();
-
-  return productID;
+  return makePrefix + modelPrefix + partTypePrefix + "-" + generateShortUUID();
 }
 
 // Function to generate a short UUID
 function generateShortUUID() {
   // A shorter UUID consisting of 8 hexadecimal digits
-  var uuid = "xxxxxxxx".replace(/[x]/g, function () {
+  let uuid = "xxxxxxxx".replace(/[x]/g, function () {
     return ((Math.random() * 16) | 0).toString(16);
   });
   return uuid;
@@ -302,56 +336,58 @@ function generateShortUUID() {
 
 // Function to check if all input fields are filled with at least 3 characters
 function areAllFieldsFilled() {
-  var make = $("#newMake").val();
-  var model = $("#newModel").val();
-  var partType = $("#newType").val();
+  let make = $("#newMake").val();
+  let model = $("#newModel").val();
+  let partType = $("#newType").val();
   return make.length >= 3 && model.length >= 3 && partType.length >= 3;
 }
 
-class Product {
-  constructor(id, sku, make, model, type, num, desc, status, oem) {
-    this.Id = id;
-    if (sku.trim().length > 0) {
-      this.Sku = sku;
-    } else {
-      this.Sku = "<i>Not set</i>";
+function editHasChanges(hasChange) {
+  // change hasChanges value in session storage
+  sessionStorage.setItem("hasChanges", hasChange);
+  // Change save button to warning color (yellow) when true
+  if (hasChange) {
+    $("button[name=saveBtn]").css("background-color", "#ffc205");
+    // Apply hover effect
+    $("button[name=saveBtn]")
+      .on("mouseenter", function () {
+        $(this).css("background-color", "#ffda69");
+      })
+      .on("mouseleave", function () {
+        $(this).css("background-color", "#ffc205");
+      });
+    // Change save button back to normal when false
+  } else {
+    $("button[name=saveBtn]").removeAttr("style");
+    $("button[name=saveBtn]").off("mouseenter mouseleave");
+  }
+}
+
+function findMissingColumnHeader(rowObject, arrayHeader) {
+  for (let header of arrayHeader) {
+    if (header == null) {
+      continue;
     }
-    this.Make = make;
-    this.Model = model;
-    this.Type = type;
-    this.Num = num;
-    this.Desc = desc;
-    switch (status.toLowerCase()) {
-      case "research":
-        this.Status = "Research OEM";
-        break;
-      case "waiting":
-        this.Status = "Waiting on Vendor Quote";
-        break;
-      case "costdone":
-        this.Status = "Costing Completed";
-        break;
-      case "approval":
-        this.Status = "Waiting Approval";
-        break;
-      case "pinnacle":
-        this.Status = "Added to Pinnacle";
-        break;
-      case "peach":
-        this.Status = "Added to Peach";
-        break;
-      default:
-        this.Status = status;
+    if (!rowObject.hasOwnProperty(header)) {
+      return header;
     }
-    switch (oem.toLowerCase()) {
-      case "aftermarket":
-        this.Oem = "Aftermarket OEM";
-        break;
-      case "genuine":
-        this.Oem = "Genuine OEM";
-        break;
-      default:
-        this.Oem = oem;
-    }
+  }
+  return "";
+}
+
+function showAlert(message) {
+  // Check if alert has been made before
+  if (!$(".alert").length) {
+    $("body").append(`
+          <div class="alert">
+            <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span> 
+            <div id=AlertMessage>${message}</div>
+          </div>`);
+  }
+  // Show previously made alert
+  else if ($(".alert").is(":hidden")) {
+    $("#AlertMessage").html(message);
+    $(".alert").show();
+  } else {
   }
 }
