@@ -195,6 +195,7 @@ $(document).ready(function () {
 
           // Put data into table
           const IMPORT_PRODUCTS = SHEET_JSON.map((row) => {
+            // TO DO Check if MAKE MODEL AND PART TYPE is more than 3 character long
             return new Product(
               generateProductID(
                 row[MAKE_VALUE],
