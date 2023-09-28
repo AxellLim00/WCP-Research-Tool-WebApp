@@ -1,7 +1,8 @@
 $(document).ready(function () {
   const COLUMN_AMOUNT = 9;
+  const ROW_AMOUNT = 10;
   const TABLE_NAME = "#productTable";
-  var formSelected;
+  var formSelected = "";
   var isEmptyData = true;
   // Temporary variables for the new product form
   var prevMake = "";
@@ -14,11 +15,10 @@ $(document).ready(function () {
 
   // if loading from SQL empty
 
-  const ROW_AMOUNT = 10;
   if (isEmptyData) {
     $(TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
   } else {
-    // let productTable_Data;
+    let productData;
     // fill in table with the data
     // table.row.add[{}]
     // $("#productTable > tbody:last-child").append(
@@ -163,7 +163,6 @@ $(document).ready(function () {
           const SHEET_NAME = WORKBOOK.SheetNames[0];
           const SHEET = WORKBOOK.Sheets[SHEET_NAME];
           const SHEET_JSON = XLSX.utils.sheet_to_json(SHEET);
-          debugger;
           let missingHeader = "";
 
           // Check if file is empty or blank
@@ -194,8 +193,14 @@ $(document).ready(function () {
           }
 
           // Put data into table
-          const IMPORT_PRODUCTS = SHEET_JSON.map((row) => {
-            // TO DO Check if MAKE MODEL AND PART TYPE is more than 3 character long
+          let importProducts = SHEET_JSON.map((row) => {
+            if (
+              row[MAKE_VALUE].length < 3 ||
+              row[MODEL_VALUE].length < 3 ||
+              row[PART_TYPE_VALUE].length < 3
+            ) {
+              return false;
+            }
             return new Product(
               generateProductID(
                 row[MAKE_VALUE],
@@ -212,15 +217,22 @@ $(document).ready(function () {
               isOemCategoryEmtpy ? "" : row[OEM_CATEGORY_VALUE]
             );
           });
-          // Empty Data if data before is is empty
+          if (importProducts.includes(false)) {
+            showAlert(
+              `<strong>Error!</strong> Value in Make, Model and Part Type must be at least 3 characters long.`
+            );
+            return;
+          }
           if (isEmptyData) {
+            // Empty Data if data before is is empty
             isEmptyData = false;
             TABLE.clear().draw();
           }
           // Toggle hasChanges On
           editHasChanges(true);
           // Add data to table
-          TABLE.rows.add(IMPORT_PRODUCTS).draw();
+          TABLE.rows.add(importProducts).draw();
+          hidePopUpForm(formSelected);
         };
         // For New Product
       } else if (formSelected == "new") {
@@ -245,18 +257,9 @@ $(document).ready(function () {
         editHasChanges(true);
         // Add data to table
         TABLE.row.add(newProduct).draw();
+        hidePopUpForm(formSelected);
       }
-
-      // Finally hide Form from user
-      $("#popupForm").hide();
-      $(`#${formSelected}Form`).hide();
-      $(".alert").hide();
-      $("#darkLayer").hide();
-      $("#darkLayer").css("position", "absolute");
-
-      // Reset textboxes' and selectboxes' values
-      $(`#${formSelected}Form input`).val("");
-      $(`#${formSelected}Form select`).val("");
+      return;
     }
     // On Form being filled Incompletely
     else {
@@ -343,52 +346,4 @@ function areAllFieldsFilled() {
   return make.length >= 3 && model.length >= 3 && partType.length >= 3;
 }
 
-function editHasChanges(hasChange) {
-  // change hasChanges value in session storage
-  sessionStorage.setItem("hasChanges", hasChange);
-  // Change save button to warning color (yellow) when true
-  if (hasChange) {
-    $("button[name=saveBtn]").css("background-color", "#ffc205");
-    // Apply hover effect
-    $("button[name=saveBtn]")
-      .on("mouseenter", function () {
-        $(this).css("background-color", "#ffda69");
-      })
-      .on("mouseleave", function () {
-        $(this).css("background-color", "#ffc205");
-      });
-    // Change save button back to normal when false
-  } else {
-    $("button[name=saveBtn]").removeAttr("style");
-    $("button[name=saveBtn]").off("mouseenter mouseleave");
-  }
-}
 
-function findMissingColumnHeader(rowObject, arrayHeader) {
-  for (let header of arrayHeader) {
-    if (header == null) {
-      continue;
-    }
-    if (!rowObject.hasOwnProperty(header)) {
-      return header;
-    }
-  }
-  return "";
-}
-
-function showAlert(message) {
-  // Check if alert has been made before
-  if (!$(".alert").length) {
-    $("body").append(`
-          <div class="alert">
-            <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span> 
-            <div id=AlertMessage>${message}</div>
-          </div>`);
-  }
-  // Show previously made alert
-  else if ($(".alert").is(":hidden")) {
-    $("#AlertMessage").html(message);
-    $(".alert").show();
-  } else {
-  }
-}

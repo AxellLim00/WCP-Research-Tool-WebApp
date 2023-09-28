@@ -1,6 +1,6 @@
 $(document).ready(function () {
   var tabIdChosen = "";
-  var tabIdCurrent = "tab1";
+  var tabIdCurrent = "tab4";
   var menuToggle = true;
   var tempTab;
 

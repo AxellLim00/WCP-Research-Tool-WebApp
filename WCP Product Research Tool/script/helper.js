@@ -10,6 +10,68 @@ function getEmptyRow(rowQuantity, columnQuantity = 1) {
   );
 }
 
+function showAlert(message) {
+  // Check if alert has been made before
+  if (!$(".alert").length) {
+    $("body").append(`
+          <div class="alert">
+            <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span> 
+            <div id=AlertMessage>${message}</div>
+          </div>`);
+  }
+  // Show previously made alert
+  else if ($(".alert").is(":hidden")) {
+    $("#AlertMessage").html(message);
+    $(".alert").show();
+  }
+}
+
+function editHasChanges(hasChange) {
+  // change hasChanges value in session storage
+  sessionStorage.setItem("hasChanges", hasChange);
+  // Change save button to warning color (yellow) when true
+  if (hasChange) {
+    $("button[name=saveBtn]").css("background-color", "#ffc205");
+    // Apply hover effect
+    $("button[name=saveBtn]")
+      .on("mouseenter", function () {
+        $(this).css("background-color", "#ffda69");
+      })
+      .on("mouseleave", function () {
+        $(this).css("background-color", "#ffc205");
+      });
+    // Change save button back to normal when false
+  } else {
+    $("button[name=saveBtn]").removeAttr("style");
+    $("button[name=saveBtn]").off("mouseenter mouseleave");
+  }
+}
+
+function findMissingColumnHeader(rowObject, arrayHeader) {
+  for (let header of arrayHeader) {
+    if (header == null) {
+      continue;
+    }
+    if (!rowObject.hasOwnProperty(header)) {
+      return header;
+    }
+  }
+  return "";
+}
+
+function hidePopUpForm(type) {
+  // Finally hide Form from user
+  $("#popupForm").hide();
+  $(`#${type}Form`).hide();
+  $(".alert").hide();
+  $("#darkLayer").hide();
+  $("#darkLayer").css("position", "absolute");
+
+  // Reset textboxes' and selectboxes' values
+  $(`#${type}Form input`).val("");
+  $(`#${type}Form select`).val("");
+}
+
 class Product {
   constructor(id, sku, make, model, type, num, desc, status, oem) {
     this.Id = id;

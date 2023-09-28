@@ -1,18 +1,18 @@
 $(document).ready(function () {
-  const altIndexTable_Column = 10;
+  const COLUMN_AMOUNT = 10;
+  const ROW_AMOUNT = 10;
+  const TABLE_NAME = "#altIndexTable";
+  var isEmptyData = true;
+  var formSelected = "";
 
   //Load table from SQL
 
   // if loading from SQL empty
-  var isEmptyData = true;
 
-  const default_AltIndexTable_Row_Amount = 10;
   if (isEmptyData) {
-    $("#altIndexTable").append(
-      getEmptyRow(default_AltIndexTable_Row_Amount, altIndexTable_Column)
-    );
+    $(TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
   } else {
-    let altIndexTable_Data;
+    let altIndexData;
 
     // TO DO: fill in table with the data
     // $("#altIndexTable > tbody:last-child").append(
@@ -20,11 +20,24 @@ $(document).ready(function () {
     // );
   }
 
-  const table = new DataTable("#altIndexTable", {
+  const TABLE = new DataTable(TABLE_NAME, {
     orderCellsTop: true,
+    columns: [
+      { data: "Name" },
+      { data: "Num" },
+      { data: "Moq" },
+      { data: "CostCurrency" },
+      { data: "CostAud" },
+      { data: "LastUpdated" },
+      { data: "Qualtiy" },
+      { data: "SupplierType" },
+      { data: "WcpType" },
+      { data: "isMain" },
+    ],
+    stateSave: true,
   });
 
-  $("#altIndexTable_filter").remove();
+  $(`${TABLE_NAME}_filter`).remove();
   $(".dataTables_length").css("padding-bottom", "1%");
 
   //  TO DO: Get List of all products in an array
@@ -46,7 +59,7 @@ $(document).ready(function () {
     // save changes to SQL
 
     // if save successful
-    sessionStorage.setItem("hasChanges", false);
+    editHasChanges(false);
   });
 
   // Export table Button
@@ -62,7 +75,7 @@ $(document).ready(function () {
         $(".alert").show();
       }
     } else {
-      $("#altIndexTable").tableExport({
+      $(TABLE_NAME).tableExport({
         type: "excel",
         fileName: `${productChosen} - Alternate Index Table`,
         mso: {
@@ -76,9 +89,9 @@ $(document).ready(function () {
   // Import product Button
   $('button[name="importBtn"]').on("click", function () {
     $('h2[name="formTitle"]').text("Import Alternate Index");
-    form_Selected = "import";
+    formSelected = "import";
     $("#popupForm").show();
-    $(`#${form_Selected}Form`).show();
+    $(`#${formSelected}Form`).show();
     $("#darkLayer").css("position", "fixed");
     $("#darkLayer").show();
   });
@@ -87,49 +100,68 @@ $(document).ready(function () {
 
   //#region Form Button
   $('button[name="saveForm"]').on("click", function () {
+    const FILE_VALUE = $(`#${formSelected}file`).val();
+    const SUPPLIER_NUMBER_VALUE = $(`#${formSelected}Num`).val();
+    const MOQ_VALUE = $(`#${formSelected}Moq`).val();
+    const COST_CURRENCY_VALUE = $(`#${formSelected}CostCur`).val();
+    const SUPPLIER_PART_TYPE_VALUE = $(`#${formSelected}SupPartType`).val();
+    const WCP_PART_TYPE_VALUE = $(`#${formSelected}WcpPartType`).val();
+    const QUALITY_VALUE = $(`#${formSelected}Quality`).val();
+
     //check if mandatory field
-    var isFormFilled = Boolean(
-      $(`#${form_Selected}file`).val() &&
-        $(`#${form_Selected}Num`).val() &&
-        $(`#${form_Selected}Moq`).val() &&
-        $(`#${form_Selected}CostCur`).val() &&
-        $(`#${form_Selected}SupPartType`).val() &&
-        $(`#${form_Selected}WcpPartType`).val()
+    let isFormFilled = Boolean(
+      FILE_VALUE &&
+        SUPPLIER_NUMBER_VALUE &&
+        MOQ_VALUE &&
+        COST_CURRENCY_VALUE &&
+        SUPPLIER_PART_TYPE_VALUE &&
+        WCP_PART_TYPE_VALUE
     );
 
     // Successful Save
     if (isFormFilled) {
-      sessionStorage.setItem("hasChanges", true);
+      // TO DO continue importing function
+      let isQualityEmpty = QUALITY_VALUE.trim().length == 0;
+      // Read file
+      const FILE = $("#importFile").prop("files");
+      const READER = new FileReader();
+      READER.readAsArrayBuffer(FILE[0]);
+      READER.onload = function () {
+        const FILE_DATA = new Uint8Array(READER.result);
+        const WORKBOOK = XLSX.read(FILE_DATA, { type: "array" });
+
+        // Assuming the first sheet of the workbook is the relevant one
+        const SHEET_NAME = WORKBOOK.SheetNames[0];
+        const SHEET = WORKBOOK.Sheets[SHEET_NAME];
+        const SHEET_JSON = XLSX.utils.sheet_to_json(SHEET);
+      };
+
+      editHasChanges(true);
 
       // save data
       $("#popupForm").hide();
-      $(`#${form_Selected}Form`).hide();
+      $(`#${formSelected}Form`).hide();
       $(".alert").hide();
       $("#darkLayer").hide();
       $("#darkLayer").css("position", "absolute");
 
       // reset values
-      $(`#${form_Selected}Form input`).val("");
-      $(`#${form_Selected}Form select`).val("");
+      $(`#${formSelected}Form input`).val("");
+      $(`#${formSelected}Form select`).val("");
     }
     // Unsuccessful Save
     else {
-      if (!$(".alert").length) {
-        $("body").append(`
-          <div class="alert">
-            <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span> 
-            <strong>Error!</strong> Please complete all non-optional fields.
-          </div>`);
-      } else if ($(".alert").is(":hidden")) {
-        $(".alert").show();
-      }
+      showAlert(
+        "<strong>Error!</strong> Please complete all non-optional fields."
+      );
+      return;
     }
   });
 
   // Cancel Form - NOTE: keep last thing written
   $('button[name="cancelForm"]').on("click", function () {
     $("#popupForm").hide();
-    $(`#${form_Selected}Form`).hide();
+    $(`#${formSelected}Form`).hide();
     $(".alert").hide();
     $("#darkLayer").hide();
     $("#darkLayer").css("position", "absolute");
@@ -137,3 +169,4 @@ $(document).ready(function () {
 
   //#endregion
 });
+ 
