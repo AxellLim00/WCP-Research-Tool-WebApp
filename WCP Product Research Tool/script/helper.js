@@ -129,7 +129,40 @@ class Product {
 }
 
 class AlternateIndex {
-  constructor(index) {
-    
+  constructor(
+    name,
+    number,
+    moq,
+    costCurrency,
+    costAud,
+    lastUpdated,
+    quality,
+    supplierPartType,
+    wcpPartType,
+    isMain
+  ) {
+    this.Name = name;
+    this.Number = number;
+    this.Moq = moq;
+    this.CostCurrency = costCurrency;
+    this.CostAud = costAud;
+    this.LastUpdated = lastUpdated;
+    if (quality.trim().length <= 0) {
+      this.Oem = "Good";
+    } else {
+      switch (quality.toLowerCase().replace(" ", " ")) {
+        case "good" || "goodquality":
+          this.Quality = "Good";
+        case "normal" || "normalquality":
+          this.Quality = "Normal";
+        case "bad" || "badquality":
+          this.Quality = "Bad";
+        default:
+          this.Quality = quality;
+      }
+    }
+    this.SupplierPartType = supplierPartType;
+    this.WcpPartType = wcpPartType;
+    this.IsMain = isMain ? "MAIN" : "";
   }
 }

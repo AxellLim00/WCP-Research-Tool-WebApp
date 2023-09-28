@@ -24,16 +24,25 @@ $(document).ready(function () {
     orderCellsTop: true,
     columns: [
       { data: "Name" },
-      { data: "Num" },
+      { data: "Number" },
       { data: "Moq" },
       { data: "CostCurrency" },
       { data: "CostAud" },
-      { data: "LastUpdated" },
-      { data: "Qualtiy" },
-      { data: "SupplierType" },
-      { data: "WcpType" },
-      { data: "isMain" },
+      {
+        data: "LastUpdated",
+        render: DataTable.render.datetime("D MMM YYYY"),
+      },
+      { data: "Quality" },
+      { data: "SupplierPartType" },
+      { data: "WcpPartType" },
+      { data: "IsMain" },
     ],
+    // columnDefs: [
+    //   {
+    //     targets: 5,
+    //     render: DataTable.render.datetime("d MMM yyyy"),
+    //   },
+    // ],
     stateSave: true,
   });
 
@@ -100,7 +109,7 @@ $(document).ready(function () {
 
   //#region Form Button
   $('button[name="saveForm"]').on("click", function () {
-    const FILE_VALUE = $(`#${formSelected}file`).val();
+    const FILE_VALUE = $(`#${formSelected}File`).val();
     const SUPPLIER_NUMBER_VALUE = $(`#${formSelected}Num`).val();
     const MOQ_VALUE = $(`#${formSelected}Moq`).val();
     const COST_CURRENCY_VALUE = $(`#${formSelected}CostCur`).val();
@@ -118,9 +127,8 @@ $(document).ready(function () {
         WCP_PART_TYPE_VALUE
     );
 
-    // Successful Save
+    // On Form being filled Completely
     if (isFormFilled) {
-      // TO DO continue importing function
       let isQualityEmpty = QUALITY_VALUE.trim().length == 0;
       // Read file
       const FILE = $("#importFile").prop("files");
@@ -152,38 +160,71 @@ $(document).ready(function () {
           WCP_PART_TYPE_VALUE,
           isQualityEmpty ? null : QUALITY_VALUE,
         ]);
+
+        // Check if all headers from input are inside the file
+        if (Boolean(missingHeader)) {
+          showAlert(
+            `<strong>Error!</strong> Column ${missingHeader} Header not found in file.`
+          );
+          return;
+        }
+
+        // TO DO: Get supplier list from SQL to json format
+        // Will look like dictionary
+        let supplierListJson = {};
+
+        let problemEncountered = [];
+        let importAltIndexes = SHEET_JSON.map((row) => {
+          // Temporary Code TO DO: DELETE THIS
+          supplierListJson[row[SUPPLIER_NUMBER_VALUE]] =
+            "Temporary Supplier Name";
+          // DELETE UNTIL HERE
+
+          // TO DO: Find supplier from Json list
+          if (!supplierListJson.hasOwnProperty(row[SUPPLIER_NUMBER_VALUE])) {
+            problemEncountered.push(
+              `<i>Supplier Number ${row[SUPPLIER_NUMBER_VALUE]}</i> not found.`
+            );
+            return null;
+          }
+          costAud = calculateAUD(row[COST_CURRENCY_VALUE]);
+          if (typeof costAud === "string" || costAud instanceof String) {
+            problemEncountered.push(costAud);
+            return null;
+          }
+          return new AlternateIndex(
+            supplierListJson[row[SUPPLIER_NUMBER_VALUE]],
+            row[SUPPLIER_NUMBER_VALUE],
+            row[MOQ_VALUE],
+            row[COST_CURRENCY_VALUE],
+            costAud,
+            new Date(),
+            isQualityEmpty ? "" : row[QUALITY_VALUE],
+            row[SUPPLIER_PART_TYPE_VALUE],
+            row[WCP_PART_TYPE_VALUE],
+            false
+          );
+        });
+
+        if (problemEncountered.length > 0) {
+          showAlert(`<strong>Error!</strong> ${problemEncountered.join("\n")}`);
+          return;
+        }
+
+        // Empty Data if data before is is empty
+        if (isEmptyData) {
+          isEmptyData = false;
+          TABLE.clear().draw();
+        }
+        // Toggle hasChanges On
+        editHasChanges(true);
+        // Add data to table
+        TABLE.rows.add(importAltIndexes).draw();
+        hidePopUpForm(formSelected);
       };
-
-      // Check if all headers from input are inside the file
-      if (Boolean(missingHeader)) {
-        showAlert(
-          `<strong>Error!</strong> Column ${missingHeader} Header not found in file.`
-        );
-        return;
-      }
-
-      // TO DO: Get supplier list from SQL to json format
-      supplierListJson
-
-      let importAltIndexes = SHEET_JSON.map((row) => {
-        // TO DO: Find supplier from Json list
-        
-      })
-
-      editHasChanges(true);
-
-      // save data
-      $("#popupForm").hide();
-      $(`#${formSelected}Form`).hide();
-      $(".alert").hide();
-      $("#darkLayer").hide();
-      $("#darkLayer").css("position", "absolute");
-
-      // reset values
-      $(`#${formSelected}Form input`).val("");
-      $(`#${formSelected}Form select`).val("");
+      return;
     }
-    // Unsuccessful Save
+    // On Form being filled Incompletely
     else {
       showAlert(
         "<strong>Error!</strong> Please complete all non-optional fields."
@@ -203,3 +244,13 @@ $(document).ready(function () {
 
   //#endregion
 });
+
+function calculateAUD(costCurrency) {
+  let costInAud = 0;
+
+  if (false)
+    // when currency not Found
+    return `<i>Cost Currency ${costCurrency}</i> not found and cannot be converted.`;
+
+  return costInAud;
+}

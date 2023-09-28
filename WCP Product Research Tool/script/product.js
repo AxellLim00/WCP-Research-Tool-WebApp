@@ -146,7 +146,7 @@ $(document).ready(function () {
     if (isFormFilled) {
       // For Import Products
       if (formSelected == "import") {
-        // Keeping Column header name\
+        // Keeping Column header name
         let isSkuEmpty = SKU_VALUE.trim().length == 0;
         let isStatusEmtpy = STATUS_VALUE.trim().length == 0;
         let isOemCategoryEmtpy = OEM_CATEGORY_VALUE.trim().length == 0;
@@ -247,7 +247,6 @@ $(document).ready(function () {
           STATUS_VALUE,
           OEM_CATEGORY_VALUE
         );
-
         // Empty Data if data before is is empty
         if (isEmptyData) {
           isEmptyData = false;
@@ -345,5 +344,3 @@ function areAllFieldsFilled() {
   let partType = $("#newType").val();
   return make.length >= 3 && model.length >= 3 && partType.length >= 3;
 }
-
-
