@@ -134,7 +134,41 @@ $(document).ready(function () {
         const SHEET_NAME = WORKBOOK.SheetNames[0];
         const SHEET = WORKBOOK.Sheets[SHEET_NAME];
         const SHEET_JSON = XLSX.utils.sheet_to_json(SHEET);
+        let missingHeader = "";
+
+        // Check if file is empty or blank
+        if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {
+          showAlert(
+            `<strong>Error!</strong> <i>${FILE[0].name}</i> File is empty or blank.`
+          );
+          return;
+        }
+
+        missingHeader = findMissingColumnHeader(SHEET_JSON[0], [
+          SUPPLIER_NUMBER_VALUE,
+          MOQ_VALUE,
+          COST_CURRENCY_VALUE,
+          SUPPLIER_PART_TYPE_VALUE,
+          WCP_PART_TYPE_VALUE,
+          isQualityEmpty ? null : QUALITY_VALUE,
+        ]);
       };
+
+      // Check if all headers from input are inside the file
+      if (Boolean(missingHeader)) {
+        showAlert(
+          `<strong>Error!</strong> Column ${missingHeader} Header not found in file.`
+        );
+        return;
+      }
+
+      // TO DO: Get supplier list from SQL to json format
+      supplierListJson
+
+      let importAltIndexes = SHEET_JSON.map((row) => {
+        // TO DO: Find supplier from Json list
+        
+      })
 
       editHasChanges(true);
 
@@ -169,4 +203,3 @@ $(document).ready(function () {
 
   //#endregion
 });
- 

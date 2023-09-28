@@ -127,3 +127,9 @@ class Product {
     }
   }
 }
+
+class AlternateIndex {
+  constructor(index) {
+    
+  }
+}
