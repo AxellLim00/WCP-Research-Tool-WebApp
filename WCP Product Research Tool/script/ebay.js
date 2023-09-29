@@ -1,19 +1,15 @@
-$(document).ready(function () {
-  const ebayTable_Column = 1;
-
+$(function () {
+  const COLUMN_AMOUNT = 1;
+  const ROW_AMOUNT = 10;
+  const K_TYPE_TABLE_NAME = "#kTypeTable";
+  const EPID_TABLE_NAME = "#epIDTable";
+  var isEmptyData = true;
   //Load table from SQL
 
   // if loading from SQL empty
-  var isEmptyData = true;
-
-  const default_ebayTable_Row_Amount = 10;
   if (isEmptyData) {
-    $("#kTypeTable").append(
-      getEmptyRow(default_ebayTable_Row_Amount, ebayTable_Column)
-    );
-    $("#epIDTable").append(
-      getEmptyRow(default_ebayTable_Row_Amount, ebayTable_Column)
-    );
+    $(K_TYPE_TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
+    $(EPID_TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
   } else {
     let kTypeTable_Data, epIDTable_Data;
     //fill in table with the data
@@ -26,8 +22,14 @@ $(document).ready(function () {
     // );
   }
 
-  const kTypeTable = new DataTable("#kTypeTable");
-  const epIDTable = new DataTable("#epIDTable");
+  const K_TYPE_TABLE = new DataTable(K_TYPE_TABLE_NAME, {
+    orderCellsTop: true,
+    stateSave: true,
+  });
+  const EPID_TABLE = new DataTable(EPID_TABLE_NAME, {
+    orderCellsTop: true,
+    stateSave: true,
+  });
 
   $(".dataTables_length").css("padding-bottom", "1%");
 
@@ -48,19 +50,26 @@ $(document).ready(function () {
   $('button[name="saveBtn"]').on("click", function () {
     // find changes
     // save changes to SQL
+    editHasChanges(false);
   });
 
   // Export table Button
   $('button[name="exportBtn"]').on("click", function () {
-    $("table").tableExport({
-      type: "excel",
-      fileName: `${productChosen} - eBay Compatibility Table`,
-      mso: {
-        fileFormat: "xlsx",
-        worksheetName: ["K Types", "EPIDs"],
-      },
-    });
+    if (isEmptyData) {
+      showAlert("<strong>Error!</strong> No data found in table.");
+    } else {
+      $("table").tableExport({
+        type: "excel",
+        fileName: `${productChosen} - eBay Compatibility Table`,
+        mso: {
+          fileFormat: "xlsx",
+          worksheetName: ["K Types", "EPIDs"],
+        },
+      });
+    }
   });
+
+  // TO DO: make new button to add new rows to either K types or EPIDs
 
   //#endregion
 });

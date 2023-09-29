@@ -1,4 +1,4 @@
-$(document).ready(function () {
+$(function () {
   var tabIdChosen = "";
   var tabIdCurrent = "tab4";
   var menuToggle = true;
@@ -100,7 +100,7 @@ function selectTab(tabIdSelected, tabIdCurrently) {
     default:
       content.html(`
             <h1>Welcome to Empty Tab</h1>
-            <p>This is the content of current Empty Tab.</p>
+            <p>This is the content of current Empty Tab with the wrong tab ID.</p>
           `);
       break;
   }

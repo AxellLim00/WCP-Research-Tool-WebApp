@@ -1,23 +1,21 @@
-$(document).ready(function () {
-  const statsTable_Column = 1;
-  var form_Selected = "";
+$(function () {
+  const COLUMN_AMOUNT = 1;
+  const ROW_AMOUNT_VIN = 10;
+  const ROW_AMOUNT_OEM = 10;
+  const VIN_TABLE_NAME = "#vinTable";
+  const OEM_TABLE_NAME = "#oemTable";
+  var formSelected = "";
+  var isEmptyData = true;
 
   //Load table from SQL
 
   // if loading from SQL empty
-  var isEmptyData = true;
 
-  const default_VinTable_Row_Amount = 10;
-  const default_OemTable_Row_Amount = 10;
   if (isEmptyData) {
-    $("#vinTable").append(
-      getEmptyRow(default_VinTable_Row_Amount, statsTable_Column)
-    );
-    $("#oemTable").append(
-      getEmptyRow(default_OemTable_Row_Amount, statsTable_Column)
-    );
+    $(VIN_TABLE_NAME).append(getEmptyRow(ROW_AMOUNT_VIN, COLUMN_AMOUNT));
+    $(OEM_TABLE_NAME).append(getEmptyRow(ROW_AMOUNT_OEM, COLUMN_AMOUNT));
   } else {
-    let vinNumberTable_Data, oemTable_Data;
+    let vinTableData, oemTableData;
     //fill in table with the data
 
     // $("#vinTable > tbody:last-child").append(
@@ -28,11 +26,13 @@ $(document).ready(function () {
     // );
   }
 
-  const vinTable = new DataTable("#vinTable", {
+  const VIN_TABLE = new DataTable(VIN_TABLE_NAME, {
     orderCellsTop: true,
+    stateSave: true,
   });
-  const oemTable = new DataTable("#oemTable", {
+  const OEM_TABLE = new DataTable(OEM_TABLE_NAME, {
     orderCellsTop: true,
+    stateSave: true,
   });
   $(".dataTables_length").css("padding-bottom", "2%");
 
@@ -55,35 +55,35 @@ $(document).ready(function () {
     // save changes to SQL
 
     // if save successful
-    sessionStorage.setItem("hasChanges", false);
+    editHasChanges(false);
   });
 
   // Import product Button
   $('button[name="importBtn"]').on("click", function () {
-    $('h2[name="formTitle"]').text(`Import Vin Numbers and OEMs`);
-    form_Selected = "import";
-    $("#popupForm").show();
-    $(`#${form_Selected}Form`).show();
-    $("#darkLayer").css("position", "fixed");
-    $("#darkLayer").show();
+    formSelected = "import";
+    showPopUpForm(formSelected, "Import Vin Numbers and OEMs");
   });
 
   // Export table Button
   $('button[name="exportBtn"]').on("click", function () {
-    $("table").tableExport({
-      type: "excel",
-      fileName: `${productChosen} - Stats Table`,
-      mso: {
-        fileFormat: "xlsx",
-        worksheetName: ["Vin Numbers", "OEMs"],
-      },
-    });
+    if (isEmptyData) {
+      showAlert("<strong>Error!</strong> No data found in table.");
+    } else {
+      $("table").tableExport({
+        type: "excel",
+        fileName: `${productChosen} - Stats Table`,
+        mso: {
+          fileFormat: "xlsx",
+          worksheetName: ["Vin Numbers", "OEMs"],
+        },
+      });
+    }
   });
 
   //#endregion
 
   //#region Form Button
-  $("#importDiffWS").change(function () {
+  $("#importDiffWS").on("change", function () {
     if ($(this).is(":checked")) {
       $(".ws-name").show();
     } else {
@@ -93,57 +93,44 @@ $(document).ready(function () {
 
   $('button[name="saveForm"]').on("click", function () {
     //check if mandatory field
-    var isFormFilled = Boolean(
-      $(`#${form_Selected}File`).val() &&
-        ($(`#${form_Selected}Vin`).val() || $(`#${form_Selected}Oem`).val())
-    );
+    const FILE_VALUE = $(`#${formSelected}File`).val();
+    const VIN_VALUE = $(`#${formSelected}Vin`).val();
+    const OEM_VALUE = $(`#${formSelected}Oem`).val();
+    const VIN_WORKSHEET_VALUE = $(`#${formSelected}VinWS`).val();
+    const OEM_WORKSHEET_VALUE = $(`#${formSelected}OemWS`).val();
 
-    if ($(`#${form_Selected}DiffWS`).is(":checked")) {
-      if ($(`#${form_Selected}Vin`).val()) {
-        isFormFilled &= Boolean($(`#${form_Selected}VinWS`).val());
+    var isFormFilled = Boolean(FILE_VALUE && (VIN_VALUE || OEM_VALUE));
+
+    if ($(`#${formSelected}DiffWS`).is(":checked")) {
+      if (VIN_VALUE) {
+        isFormFilled &= Boolean(VIN_WORKSHEET_VALUE);
       }
-      if ($(`#${form_Selected}Oem`).val()) {
-        isFormFilled &= Boolean($(`#${form_Selected}OemWS`).val());
+      if (OEM_VALUE) {
+        isFormFilled &= Boolean(OEM_WORKSHEET_VALUE);
       }
     }
 
     // Successful Save
     if (isFormFilled) {
-      sessionStorage.setItem("hasChanges", true);
-      // save data
-      $("#popupForm").hide();
-      $(`#${form_Selected}Form`).hide();
-      $(".alert").hide();
-      $("#darkLayer").hide();
-      $("#darkLayer").css("position", "absolute");
+      editHasChanges(true);
 
       // reset values
-      $(`#${form_Selected}Form input`).val("");
-      $(`#${form_Selected}Form select`).val("");
-      $(`#${form_Selected}DiffWS`).prop("checked", false);
+      // $(`#${formSelected}Form input`).val("");
+      // $(`#${formSelected}Form select`).val("");
+      // $(`#${formSelected}DiffWS`).prop("checked", false);
+      exitPopUpForm(formSelected);
       $(`.ws-name`).hide();
     }
     // Unsuccessful Save
     else {
-      if (!$(".alert").length) {
-        $("body").append(`
-          <div class="alert">
-            <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span> 
-            <strong>Error!</strong> Please complete necessary fields.
-          </div>`);
-      } else if ($(".alert").is(":hidden")) {
-        $(".alert").show();
-      }
+      showAlert("<strong>Error!</strong> Please complete necessary fields.");
+      return;
     }
   });
 
   // Cancel Form - NOTE: keep last thing written
   $('button[name="cancelForm"]').on("click", function () {
-    $("#popupForm").hide();
-    $(`#${form_Selected}Form`).hide();
-    $(".alert").hide();
-    $("#darkLayer").hide();
-    $("#darkLayer").css("position", "absolute");
+    hidePopUpForm(formSelected);
   });
 
   //#endregion

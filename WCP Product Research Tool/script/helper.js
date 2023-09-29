@@ -59,6 +59,14 @@ function findMissingColumnHeader(rowObject, arrayHeader) {
   return "";
 }
 
+function showPopUpForm(type, title) {
+    $('h2[name="formTitle"]').text(title);
+    $("#popupForm").show();
+    $(`#${type}Form`).show();
+    $("#darkLayer").css("position", "fixed");
+    $("#darkLayer").show();
+}
+
 function hidePopUpForm(type) {
   // Finally hide Form from user
   $("#popupForm").hide();
@@ -66,10 +74,15 @@ function hidePopUpForm(type) {
   $(".alert").hide();
   $("#darkLayer").hide();
   $("#darkLayer").css("position", "absolute");
+}
+
+function exitPopUpForm(type) {
+  hidePopUpForm(type);
 
   // Reset textboxes' and selectboxes' values
   $(`#${type}Form input`).val("");
   $(`#${type}Form select`).val("");
+  $(`#${type}Form input`).prop("checked", false);
 }
 
 class Product {

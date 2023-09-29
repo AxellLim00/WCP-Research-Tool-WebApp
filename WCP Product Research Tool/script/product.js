@@ -1,4 +1,4 @@
-$(document).ready(function () {
+$(function () {
   const COLUMN_AMOUNT = 9;
   const ROW_AMOUNT = 10;
   const TABLE_NAME = "#productTable";
@@ -80,34 +80,30 @@ $(document).ready(function () {
 
   // New product Button
   $('button[name="newBtn"]').on("click", function () {
-    $('h2[name="formTitle"]').text("New Product");
     formSelected = "new";
-    $("#popupForm").show();
-    $(`#${formSelected}Form`).show();
-    $("#darkLayer").show();
-    $("#darkLayer").css("position", "fixed");
+    showPopUpForm(formSelected, "New Product");
   });
 
   // Import product Button
   $('button[name="importBtn"]').on("click", function () {
-    $('h2[name="formTitle"]').text("Import Product(s)");
     formSelected = "import";
-    $("#popupForm").show();
-    $(`#${formSelected}Form`).show();
-    $("#darkLayer").css("position", "fixed");
-    $("#darkLayer").show();
+    showPopUpForm(formSelected, "Import Product(s)");
   });
 
   // Export table Button
   $('button[name="exportBtn"]').on("click", function () {
-    $(TABLE_NAME).tableExport({
-      type: "excel",
-      fileName: "Research Product Table",
-      mso: {
-        fileFormat: "xlsx",
-      },
-      ignoreRow: ["#searchRow"],
-    });
+    if (isEmptyData) {
+      showAlert("<strong>Error!</strong> No data found in table.");
+    } else {
+      $(TABLE_NAME).tableExport({
+        type: "excel",
+        fileName: "Research Product Table",
+        mso: {
+          fileFormat: "xlsx",
+        },
+        ignoreRow: ["#searchRow"],
+      });
+    }
   });
 
   //#endregion
@@ -232,7 +228,7 @@ $(document).ready(function () {
           editHasChanges(true);
           // Add data to table
           TABLE.rows.add(importProducts).draw();
-          hidePopUpForm(formSelected);
+          exitPopUpForm(formSelected);
         };
         // For New Product
       } else if (formSelected == "new") {
@@ -256,7 +252,7 @@ $(document).ready(function () {
         editHasChanges(true);
         // Add data to table
         TABLE.row.add(newProduct).draw();
-        hidePopUpForm(formSelected);
+        exitPopUpForm(formSelected);
       }
       return;
     }
@@ -272,12 +268,7 @@ $(document).ready(function () {
   // Cancel Form - NOTE: keep last thing written
   $('button[name="cancelForm"]').on("click", function () {
     // hide the form
-    $("#popupForm").hide();
-    $(`#${formSelected}Form`).hide();
-    $(".alert").hide();
-    $("#darkLayer").hide();
-    // turn darkLayer into previous size
-    $("#darkLayer").css("position", "absolute");
+    hidePopUpForm(formSelected);
   });
 
   // Event handler for when ID is ready to be created

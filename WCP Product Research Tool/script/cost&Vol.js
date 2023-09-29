@@ -1,18 +1,18 @@
-$(document).ready(function () {
-  const costVolTable_Col = 7;
+$(function () {
+  const COST_VOLUME_TABLE_NAME = "#costVolTable";
   var researchID = "Default ID";
-  var form_Selected = "";
+  var formSelected = "";
+  var isEmptyData = true;
 
   //Load table from SQL
 
   // if loading from SQL empty
-  var isEmptyData = true;
 
   if (isEmptyData) {
     $('tr[name="values"]').children().text("-");
   } else {
-    let costVolTable_Data;
-    //fill in table with the data
+    let costVolTableData;
+    // TO DO: fill in table with the data
 
     // $("#productTable > tbody:last-child").append(
     // html here
@@ -38,23 +38,15 @@ $(document).ready(function () {
     // save changes to SQL
 
     // if successful save
-    sessionStorage.setItem("hasChanges", false);
+    editHasChanges(false);
   });
 
   // Export table Button
   $('button[name="exportBtn"]').on("click", function () {
     if (isEmptyData) {
-      if (!$(".alert").length) {
-        $("body").append(`
-          <div class="alert">
-            <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span> 
-            <strong>Error!</strong> No data found in table.
-          </div>`);
-      } else if ($(".alert").is(":hidden")) {
-        $(".alert").show();
-      }
+      showAlert("<strong>Error!</strong> No data found in table.");
     } else {
-      $("#costVolTable").tableExport({
+      $(COST_VOLUME_TABLE_NAME).tableExport({
         type: "excel",
         fileName: `${researchID} - Cost & Volume Table`,
         mso: {
@@ -66,12 +58,8 @@ $(document).ready(function () {
 
   // Import product Button
   $('button[name="importBtn"]').on("click", function () {
-    $('h2[name="formTitle"]').text("Import Cost & Volume");
-    form_Selected = "import";
-    $("#popupForm").show();
-    $(`#${form_Selected}Form`).show();
-    $("#darkLayer").css("position", "fixed");
-    $("#darkLayer").show();
+    formSelected = "import";
+    showPopUpForm(formSelected, "Import Cost & Volume");
   });
 
   //#endregion
@@ -80,47 +68,31 @@ $(document).ready(function () {
   $('button[name="saveForm"]').on("click", function () {
     //check if mandatory field
     var isFormFilled = Boolean(
-      $(`#${form_Selected}Id`).val() &&
-        $(`#${form_Selected}CostUsd`).val() &&
-        $(`#${form_Selected}file`).val()
+      $(`#${formSelected}Id`).val() &&
+        $(`#${formSelected}CostUsd`).val() &&
+        $(`#${formSelected}file`).val()
     );
 
     // Successful Save
     if (isFormFilled) {
-      sessionStorage.setItem("hasChanges", true);
+      editHasChanges(true);
 
-      // save data
-      $("#popupForm").hide();
-      $(`#${form_Selected}Form`).hide();
-      $(".alert").hide();
-      $("#darkLayer").hide();
-      $("#darkLayer").css("position", "absolute");
-
-      // reset values
-      $(`#${form_Selected}Form input`).val("");
-      $(`#${form_Selected}Form select`).val("");
+      // TO DO: save data
+      exitPopUpForm(formSelected);
+      return;
     }
     // Unsuccessful Save
     else {
-      if (!$(".alert").length) {
-        $("body").append(`
-          <div class="alert">
-            <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span> 
-            <strong>Error!</strong> Please complete all non-optional fields.
-          </div>`);
-      } else if ($(".alert").is(":hidden")) {
-        $(".alert").show();
-      }
+      showAlert(
+        "<strong>Error!</strong> Please complete all non-optional fields."
+      );
+      return;
     }
   });
 
   // Cancel Form - NOTE: keep last thing written
   $('button[name="cancelForm"]').on("click", function () {
-    $("#popupForm").hide();
-    $(`#${form_Selected}Form`).hide();
-    $(".alert").hide();
-    $("#darkLayer").hide();
-    $("#darkLayer").css("position", "absolute");
+    hidePopUpForm(formSelected);
   });
 
   //#endregion

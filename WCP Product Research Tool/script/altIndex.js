@@ -1,4 +1,4 @@
-$(document).ready(function () {
+$(function () {
   const COLUMN_AMOUNT = 10;
   const ROW_AMOUNT = 10;
   const TABLE_NAME = "#altIndexTable";
@@ -73,16 +73,8 @@ $(document).ready(function () {
 
   // Export table Button
   $('button[name="exportBtn"]').on("click", function () {
-    if (!isEmptyData) {
-      if (!$(".alert").length) {
-        $("body").append(`
-          <div class="alert">
-            <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span> 
-            <strong>Error!</strong> No data found in table.
-          </div>`);
-      } else if ($(".alert").is(":hidden")) {
-        $(".alert").show();
-      }
+    if (isEmptyData) {
+      showAlert("<strong>Error!</strong> No data found in table.");
     } else {
       $(TABLE_NAME).tableExport({
         type: "excel",
@@ -97,12 +89,8 @@ $(document).ready(function () {
 
   // Import product Button
   $('button[name="importBtn"]').on("click", function () {
-    $('h2[name="formTitle"]').text("Import Alternate Index");
     formSelected = "import";
-    $("#popupForm").show();
-    $(`#${formSelected}Form`).show();
-    $("#darkLayer").css("position", "fixed");
-    $("#darkLayer").show();
+    showPopUpForm(formSelected, "Import Alternate Index");
   });
 
   //#endregion
@@ -220,7 +208,7 @@ $(document).ready(function () {
         editHasChanges(true);
         // Add data to table
         TABLE.rows.add(importAltIndexes).draw();
-        hidePopUpForm(formSelected);
+        exitPopUpForm(formSelected);
       };
       return;
     }
@@ -235,11 +223,7 @@ $(document).ready(function () {
 
   // Cancel Form - NOTE: keep last thing written
   $('button[name="cancelForm"]').on("click", function () {
-    $("#popupForm").hide();
-    $(`#${formSelected}Form`).hide();
-    $(".alert").hide();
-    $("#darkLayer").hide();
-    $("#darkLayer").css("position", "absolute");
+    hidePopUpForm(formSelected);
   });
 
   //#endregion
