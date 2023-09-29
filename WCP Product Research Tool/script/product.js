@@ -50,12 +50,6 @@ $(function () {
 
   //#endregion
 
-  // table.on("click", "tbody tr", function () {
-  //   let data = table.row(this).data();
-  //   Logic to select row's data after clicking here
-  //   productChosen = data.text ? Get product Research ID clicked
-  // });
-
   //#region Searchbar Logic
   const rows = $(`${TABLE_NAME} tr`);
 
@@ -105,6 +99,11 @@ $(function () {
       });
     }
   });
+
+  // Edit button
+  // TO DO: edit product that user has higlighted in the table
+  // Make pop up form for all the fields that are editable
+  // $('#editBtn').on("click", function () {});
 
   //#endregion
 
@@ -306,6 +305,13 @@ $(function () {
   });
 
   //#endregion
+
+  // TO DO: Select product when user click on product row, get product researchID from selected product, set productChosen and go to tab2
+  // table.on("click", "tbody tr", function () {
+  //   let data = table.row(this).data();
+  //   Logic to select row's data after clicking here
+  //   productChosen = data.text ? Get product Research ID clicked
+  // });
 });
 
 // Function to generate the product ID
