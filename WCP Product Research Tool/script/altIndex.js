@@ -5,9 +5,12 @@ $(document).ready(function () {
   var isEmptyData = true;
   var formSelected = "";
 
-  //Load table from SQL
+  //TO DO: Load table from SQL
 
-  // if loading from SQL empty
+  // TO DO: if loading from SQL empty
+
+  // TO DO: Create sessionStorage (or localStrorage) to store currency conversion rates
+  // TO DO: Check conversion rates are in sessionStorage, if not get the conversion rates
 
   if (isEmptyData) {
     $(TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
@@ -246,6 +249,8 @@ $(document).ready(function () {
 });
 
 function calculateAUD(costCurrency) {
+  // TO DO: get currency rates from the sessionStorage
+  // Use switch function OR dictionary to get the rates
   let costInAud = 0;
 
   if (false)
