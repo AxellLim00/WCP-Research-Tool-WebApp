@@ -77,6 +77,9 @@ function selectTab(tabIdSelected, tabIdCurrently) {
   $("#" + tabIdSelected + "-name").addClass("tab-name-selected");
   $("#" + tabIdSelected + "-icon").addClass("tab-icon-selected");
 
+  // remove any saved changes on sessionStorage
+  sessionStorage.removeItem("tableChanges");
+
   const content = $("#content");
   switch (tabIdSelected) {
     case "tab0":

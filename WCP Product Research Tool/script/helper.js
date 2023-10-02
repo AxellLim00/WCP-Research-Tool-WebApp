@@ -60,11 +60,11 @@ function findMissingColumnHeader(rowObject, arrayHeader) {
 }
 
 function showPopUpForm(type, title) {
-    $('h2[name="formTitle"]').text(title);
-    $("#popupForm").show();
-    $(`#${type}Form`).show();
-    $("#darkLayer").css("position", "fixed");
-    $("#darkLayer").show();
+  $('h2[name="formTitle"]').text(title);
+  $("#popupForm").show();
+  $(`#${type}Form`).show();
+  $("#darkLayer").css("position", "fixed");
+  $("#darkLayer").show();
 }
 
 function hidePopUpForm(type) {
@@ -83,6 +83,39 @@ function exitPopUpForm(type) {
   $(`#${type}Form input`).val("");
   $(`#${type}Form select`).val("");
   $(`#${type}Form input`).prop("checked", false);
+}
+
+function storeChangesInSessionStoage(change) {
+  storedChanges = sessionStorage.getItem("savedChanges");
+  if (storedChanges === null) {
+    sessionStorage.setItem("savedChanges", change);
+    return;
+  }
+  storedChanges.push(...change);
+  sessionStorage.setItem("savedChanges", storedChanges);
+}
+
+function saveChangesToSQL() {
+  // TO DO: translate dictionary changes to SQL
+  savedChanges = sessionStorage.getItem("savedChanges");
+  // translate
+  savedChanges.forEach(function (changes) {
+    let type = changes.get("type");
+    let id = changes.get("id");
+    let table = changes.get("table");
+    let changes = changes.get("changes");
+  });
+  errorMessage = "";
+  // IF there is error message
+  if (errorMessage.length > 0) {
+    showAlert(
+      `<strong>FATAL Error!</strong> Fail to save to database, please contact administrator --> ${errorMessage}`
+    );
+    return false;
+  }
+
+  sessionStorage.clearItem("savedChanges");
+  return true;
 }
 
 class Product {

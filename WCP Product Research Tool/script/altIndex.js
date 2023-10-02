@@ -4,23 +4,27 @@ $(function () {
   const TABLE_NAME = "#altIndexTable";
   var isEmptyData = true;
   var formSelected = "";
+  var currencyRate = new Map();
+  var currencyList = {};
 
   //TO DO: Load table from SQL
 
-  // TO DO: if loading from SQL empty
+  // TO DO: Get all currency from SQL into currencyList
+  // currencyList.add()
+  // Check if all currency is in currencyRates
+  currencyRate = updateCurrencyRates(currencyList);
 
-  // TO DO: Create sessionStorage (or localStrorage) to store currency conversion rates
-  // TO DO: Check conversion rates are in sessionStorage, if not get the conversion rates
-
+  // Scenario of when data loaded is empty
   if (isEmptyData) {
     $(TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
   } else {
     let altIndexData;
+    let altIndexList = [];
 
     // TO DO: fill in table with the data
-    // $("#altIndexTable > tbody:last-child").append(
-    // html here
-    // );
+    // TO DO: create for loop to loop to every data in altIndexData and translate SQL to altIndex object
+    // altIndexList.push() --> To push every altIndex Object to list
+    // TABLE.rows.add(altIndexList).draw();
   }
 
   const TABLE = new DataTable(TABLE_NAME, {
@@ -40,12 +44,6 @@ $(function () {
       { data: "WcpPartType" },
       { data: "IsMain" },
     ],
-    // columnDefs: [
-    //   {
-    //     targets: 5,
-    //     render: DataTable.render.datetime("d MMM yyyy"),
-    //   },
-    // ],
     stateSave: true,
   });
 
@@ -67,11 +65,10 @@ $(function () {
 
   // Save changes Button
   $('button[name="saveBtn"]').on("click", function () {
-    // find changes
-    // save changes to SQL
-
-    // if save successful
-    editHasChanges(false);
+    //on successful save
+    if (saveChangesToSQL()) {
+      editHasChanges(false);
+    }
   });
 
   // Export table Button
@@ -161,14 +158,24 @@ $(function () {
         }
 
         // TO DO: Get supplier list from SQL to json format
-        // Will look like dictionary
-        let supplierListJson = {};
+        // Will create a map
+        let supplierListJson = new Map([]);
 
         let problemEncountered = [];
+        let changesMade = [];
+
+        // clear the list
+        currencyList.length = 0;
+        // TO DO: get all of currency in SHEET_JSON, once there is an example
+        let currencyList = SHEET_JSON.map((row) => {
+          return row[COST_CURRENCY_VALUE].split(" ", 2)[1];
+        });
+        currencyRate = updateCurrencyRates(currencyList);
+
         let importAltIndexes = SHEET_JSON.map((row) => {
           // Temporary Code TO DO: DELETE THIS
-          supplierListJson[row[SUPPLIER_NUMBER_VALUE]] =
-            "Temporary Supplier Name";
+          // supplierListJson[row[SUPPLIER_NUMBER_VALUE]] =
+          //   "Temporary Supplier Name";
           // DELETE UNTIL HERE
 
           // TO DO: Find supplier from Json list
@@ -178,12 +185,20 @@ $(function () {
             );
             return null;
           }
-          costAud = calculateAUD(row[COST_CURRENCY_VALUE]);
+
+          let costForeignCurrency = row[COST_CURRENCY_VALUE].split(" ", 2);
+          let costAud = calculateAUD(
+            costForeignCurrency[1],
+            costForeignCurrency[0]
+          );
+
+          // If converting currency occured an error
           if (typeof costAud === "string" || costAud instanceof String) {
             problemEncountered.push(costAud);
             return null;
           }
-          return new AlternateIndex(
+
+          let newObject = new AlternateIndex(
             supplierListJson[row[SUPPLIER_NUMBER_VALUE]],
             row[SUPPLIER_NUMBER_VALUE],
             row[MOQ_VALUE],
@@ -195,6 +210,17 @@ $(function () {
             row[WCP_PART_TYPE_VALUE],
             false
           );
+
+          // Store each new row locally
+          changesMade.push(
+            new Map([
+              ["type", "new"],
+              ["id", productChosen],
+              ["table", "AlternateIndex"],
+              ["changes", newObject],
+            ])
+          );
+          return newObject;
         });
 
         if (problemEncountered.length > 0) {
@@ -207,6 +233,8 @@ $(function () {
           isEmptyData = false;
           TABLE.clear().draw();
         }
+        // save new rows into sessionStorage
+        storeChangesInSessionStoage(changesMade);
         // Toggle hasChanges On
         editHasChanges(true);
         // Add data to table
@@ -232,14 +260,33 @@ $(function () {
   //#endregion
 });
 
-function calculateAUD(costCurrency) {
+function calculateAUD(costCurrency, amount) {
   // TO DO: get currency rates from the sessionStorage
-  // Use switch function OR dictionary to get the rates
-  let costInAud = 0;
+  rates = sessionStorage.getItem("currencyRate");
 
-  if (false)
+  if (!rates.has(costCurrency))
     // when currency not Found
     return `<i>Cost Currency ${costCurrency}</i> not found and cannot be converted.`;
 
-  return costInAud;
+  return amount * rates[costCurrency];
+}
+
+function updateCurrencyRates(currencyList) {
+  let currencyRate = new Map();
+  if (sessionStorage["currencyRate"]) {
+    currencyRate = sessionStorage.getItem("currencyRate");
+  }
+  // If not all currency is in the sessionStorage
+  if (!currencyList.every((currency) => currencyRate.has(currency))) {
+    // Get currency not in sessionStorage
+    let notInCurrencyRate = currencyList.filter(
+      (currency) => !currencyRate.hasOwnProperty(currency)
+    );
+    // TO DO: Get all currency in notInCurrencyRate from API
+    // for loop for all notInCurrencyRate with the rates
+    // currencyRate.set()
+    // if not find, pass by it
+  }
+  sessionStorage.setItem("currencyRate", currencyRate);
+  return currencyRate;
 }

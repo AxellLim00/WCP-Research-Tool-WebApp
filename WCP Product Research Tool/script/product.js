@@ -19,11 +19,12 @@ $(function () {
     $(TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
   } else {
     let productData;
-    // fill in table with the data
-    // table.row.add[{}]
-    // $("#productTable > tbody:last-child").append(
-    // html here
-    // );
+    let productList = [];
+
+    // TO DO: fill in table with the data
+    // TO DO: create for loop to loop to every data in productData and translate SQL to product object
+    // productList.push() --> To push every product Object to list
+    // TABLE.rows.add(productList).draw();
   }
 
   const TABLE = new DataTable(TABLE_NAME, {
@@ -52,7 +53,7 @@ $(function () {
 
   //#region Searchbar Logic
   const rows = $(`${TABLE_NAME} tr`);
-
+  // TO DO: Search logic (find how to filter DataTable)
   $("#idSearch").on("keyup", function () {
     var value = $(this).val().toLowerCase();
     // filter data
@@ -65,11 +66,10 @@ $(function () {
 
   // Save changes Button
   $('button[name="saveBtn"]').on("click", function () {
-    // find changes
-    // save changes to SQL
-
     //on successful save
-    editHasChanges(false);
+    if (saveChangesToSQL()) {
+      editHasChanges(false);
+    }
   });
 
   // New product Button
@@ -187,6 +187,8 @@ $(function () {
             return;
           }
 
+          let changesMade = [];
+
           // Put data into table
           let importProducts = SHEET_JSON.map((row) => {
             if (
@@ -196,7 +198,8 @@ $(function () {
             ) {
               return false;
             }
-            return new Product(
+
+            let newObject = new Product(
               generateProductID(
                 row[MAKE_VALUE],
                 row[MODEL_VALUE],
@@ -211,6 +214,18 @@ $(function () {
               isStatusEmtpy ? "" : row[STATUS_VALUE],
               isOemCategoryEmtpy ? "" : row[OEM_CATEGORY_VALUE]
             );
+
+            // Store each new row locally
+            changesMade.push(
+              new Map([
+                ["type", "new"],
+                ["id", newObject.Id],
+                ["table", "Product"],
+                ["changes", newObject],
+              ])
+            );
+
+            return newObject;
           });
           if (importProducts.includes(false)) {
             showAlert(
@@ -218,11 +233,13 @@ $(function () {
             );
             return;
           }
+          // Empty Table if DataTable previosly was empty
           if (isEmptyData) {
-            // Empty Data if data before is is empty
             isEmptyData = false;
             TABLE.clear().draw();
           }
+          // save new rows into sessionStorage
+          storeChangesInSessionStoage(changesMade);
           // Toggle hasChanges On
           editHasChanges(true);
           // Add data to table
@@ -242,12 +259,21 @@ $(function () {
           STATUS_VALUE,
           OEM_CATEGORY_VALUE
         );
-        // Empty Data if data before is is empty
+        // Empty Table if DataTable previosly was empty
         if (isEmptyData) {
           isEmptyData = false;
           TABLE.clear().draw();
         }
-        // Toggle hasChanges On
+        // save new rows into sessionStorage
+        changesMade.push(
+          new Map([
+            ["type", "new"],
+            ["id", newProduct.Id],
+            ["table", "Product"],
+            ["changes", newProduct],
+          ])
+        );
+        // Toggle hasChanges ON
         editHasChanges(true);
         // Add data to table
         TABLE.row.add(newProduct).draw();

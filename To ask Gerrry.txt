@@ -1,0 +1,5 @@
+In Alternate Index Page
+1. is there an example of the cost currency? will it be standardized when employees import? right now i'm assuming it has this format everytime 24.00 USD ([amount] [currency])
+
+Regarding SQL
+Is there any update to the SQL access for me to start working and testing?
