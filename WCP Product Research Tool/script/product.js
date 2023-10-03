@@ -146,106 +146,98 @@ $(function () {
         let isStatusEmtpy = STATUS_VALUE.trim().length == 0;
         let isOemCategoryEmtpy = OEM_CATEGORY_VALUE.trim().length == 0;
 
-        // Read file
-        const FILE = $("#importFile").prop("files");
-        const READER = new FileReader();
-        READER.readAsArrayBuffer(FILE[0]);
-        READER.onload = function () {
-          const FILE_DATA = new Uint8Array(READER.result);
-          const WORKBOOK = XLSX.read(FILE_DATA, { type: "array" });
+        const SHEET_JSON = await readExcelFileToJson("#importFile");
+        let missingHeader = "";
+        // Check if file is empty or blank
+        if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {
+          showAlert(
+            `<strong>Error!</strong> <i>${$("input[type=file]")
+              .val()
+              .split("\\")
+              .pop()}</i> File is empty or blank.`
+          );
+          return;
+        }
 
-          // Assuming the first sheet of the workbook is the relevant one
-          const SHEET_NAME = WORKBOOK.SheetNames[0];
-          const SHEET = WORKBOOK.Sheets[SHEET_NAME];
-          const SHEET_JSON = XLSX.utils.sheet_to_json(SHEET);
-          let missingHeader = "";
+        missingHeader = findMissingColumnHeader(SHEET_JSON[0], [
+          isSkuEmpty ? null : SKU_VALUE,
+          MAKE_VALUE,
+          MODEL_VALUE,
+          PART_TYPE_VALUE,
+          IC_NUMBER_VALUE,
+          IC_DESCRIPTION_VALUE,
+          isStatusEmtpy ? null : STATUS_VALUE,
+          isOemCategoryEmtpy ? null : OEM_CATEGORY_VALUE,
+        ]);
 
-          // Check if file is empty or blank
-          if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {
-            showAlert(
-              `<strong>Error!</strong> <i>${FILE[0].name}</i> File is empty or blank.`
-            );
-            return;
+        // Check if all headers from input are inside the file
+        if (Boolean(missingHeader)) {
+          showAlert(
+            `<strong>Error!</strong> Column ${missingHeader} Header not found in file.`
+          );
+          return;
+        }
+
+        let changesMade = [];
+
+        // Put data into table
+        let importProducts = SHEET_JSON.map((row) => {
+          if (
+            row[MAKE_VALUE].length < 3 ||
+            row[MODEL_VALUE].length < 3 ||
+            row[PART_TYPE_VALUE].length < 3
+          ) {
+            return false;
           }
 
-          missingHeader = findMissingColumnHeader(SHEET_JSON[0], [
-            isSkuEmpty ? null : SKU_VALUE,
-            MAKE_VALUE,
-            MODEL_VALUE,
-            PART_TYPE_VALUE,
-            IC_NUMBER_VALUE,
-            IC_DESCRIPTION_VALUE,
-            isStatusEmtpy ? null : STATUS_VALUE,
-            isOemCategoryEmtpy ? null : OEM_CATEGORY_VALUE,
-          ]);
-
-          // Check if all headers from input are inside the file
-          if (Boolean(missingHeader)) {
-            showAlert(
-              `<strong>Error!</strong> Column ${missingHeader} Header not found in file.`
-            );
-            return;
-          }
-
-          let changesMade = [];
-
-          // Put data into table
-          let importProducts = SHEET_JSON.map((row) => {
-            if (
-              row[MAKE_VALUE].length < 3 ||
-              row[MODEL_VALUE].length < 3 ||
-              row[PART_TYPE_VALUE].length < 3
-            ) {
-              return false;
-            }
-
-            let newObject = new Product(
-              generateProductID(
-                row[MAKE_VALUE],
-                row[MODEL_VALUE],
-                row[PART_TYPE_VALUE]
-              ),
-              isSkuEmpty ? "" : row[SKU_VALUE],
+          let newObject = new Product(
+            generateProductID(
               row[MAKE_VALUE],
               row[MODEL_VALUE],
-              row[PART_TYPE_VALUE],
-              row[IC_NUMBER_VALUE],
-              row[IC_DESCRIPTION_VALUE],
-              isStatusEmtpy ? "" : row[STATUS_VALUE],
-              isOemCategoryEmtpy ? "" : row[OEM_CATEGORY_VALUE]
-            );
+              row[PART_TYPE_VALUE]
+            ),
+            isSkuEmpty ? "" : row[SKU_VALUE],
+            row[MAKE_VALUE],
+            row[MODEL_VALUE],
+            row[PART_TYPE_VALUE],
+            row[IC_NUMBER_VALUE],
+            row[IC_DESCRIPTION_VALUE],
+            isStatusEmtpy ? "" : row[STATUS_VALUE],
+            isOemCategoryEmtpy ? "" : row[OEM_CATEGORY_VALUE]
+          );
 
-            // Store each new row locally
-            changesMade.push(
-              new Map([
-                ["type", "new"],
-                ["id", newObject.Id],
-                ["table", "Product"],
-                ["changes", newObject],
-              ])
-            );
+          // Store each new row locally
+          changesMade.push(
+            new Map([
+              ["type", "new"],
+              ["id", newObject.Id],
+              ["table", "Product"],
+              ["changes", newObject],
+            ])
+          );
 
-            return newObject;
-          });
-          if (importProducts.includes(false)) {
-            showAlert(
-              `<strong>Error!</strong> Value in Make, Model and Part Type must be at least 3 characters long.`
-            );
-            return;
-          }
-          // Empty Table if DataTable previosly was empty
-          if (isEmptyData) {
-            isEmptyData = false;
-            TABLE.clear().draw();
-          }
-          // save new rows into sessionStorage
-          storeChangesInSessionStoage(changesMade);
-          // Toggle hasChanges On
-          editHasChanges(true);
-          // Add data to table
-          TABLE.rows.add(importProducts).draw();
-          exitPopUpForm(formSelected);
-        };
+          return newObject;
+        });
+        if (importProducts.includes(false)) {
+          showAlert(
+            `<strong>Error!</strong> Value in Make, Model and Part Type must be at least 3 characters long.`
+          );
+          return;
+        }
+        // Empty Table if DataTable previosly was empty
+        if (isEmptyData) {
+          isEmptyData = false;
+          TABLE.clear().draw();
+        }
+        debugger;
+        // save new rows into sessionStorage
+        storeChangesInSessionStorage(changesMade);
+        // Toggle hasChanges On
+        editHasChanges(true);
+        // Add data to table
+        debugger;
+        TABLE.rows.add(importProducts).draw();
+        exitPopUpForm(formSelected);
         // For New Product
       } else if (formSelected == "new") {
         let newProduct = new Product(

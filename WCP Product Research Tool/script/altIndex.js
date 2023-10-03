@@ -97,7 +97,7 @@ $(function () {
   //#endregion
 
   //#region Form Button
-  $('button[name="saveForm"]').on("click", function () {
+  $('button[name="saveForm"]').on("click", async function () {
     const FILE_VALUE = $(`#${formSelected}File`).val();
     const SUPPLIER_NUMBER_VALUE = $(`#${formSelected}Num`).val();
     const MOQ_VALUE = $(`#${formSelected}Moq`).val();
@@ -119,129 +119,120 @@ $(function () {
     // On Form being filled Completely
     if (isFormFilled) {
       let isQualityEmpty = QUALITY_VALUE.trim().length == 0;
-      // Read file
-      const FILE = $("#importFile").prop("files");
-      const READER = new FileReader();
-      READER.readAsArrayBuffer(FILE[0]);
-      READER.onload = function () {
-        const FILE_DATA = new Uint8Array(READER.result);
-        const WORKBOOK = XLSX.read(FILE_DATA, { type: "array" });
+      const SHEET_JSON = await readExcelFileToJson("#importFile");
+      let missingHeader = "";
 
-        // Assuming the first sheet of the workbook is the relevant one
-        const SHEET_NAME = WORKBOOK.SheetNames[0];
-        const SHEET = WORKBOOK.Sheets[SHEET_NAME];
-        const SHEET_JSON = XLSX.utils.sheet_to_json(SHEET);
-        let missingHeader = "";
+      // Check if file is empty or blank
+      if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {
+        showAlert(
+          `<strong>Error!</strong> <i>${$("input[type=file]")
+            .val()
+            .split("\\")
+            .pop()}</i> File is empty or blank.`
+        );
+        return;
+      }
 
-        // Check if file is empty or blank
-        if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {
-          showAlert(
-            `<strong>Error!</strong> <i>${FILE[0].name}</i> File is empty or blank.`
+      missingHeader = findMissingColumnHeader(SHEET_JSON[0], [
+        SUPPLIER_NUMBER_VALUE,
+        MOQ_VALUE,
+        COST_CURRENCY_VALUE,
+        SUPPLIER_PART_TYPE_VALUE,
+        WCP_PART_TYPE_VALUE,
+        isQualityEmpty ? null : QUALITY_VALUE,
+      ]);
+
+      // Check if all headers from input are inside the file
+      if (Boolean(missingHeader)) {
+        showAlert(
+          `<strong>Error!</strong> Column ${missingHeader} Header not found in file.`
+        );
+        return;
+      }
+
+      // TO DO: Get supplier list from SQL to json format
+      // Will create a map
+      let supplierListJson = new Map([]);
+
+      let problemEncountered = [];
+      let changesMade = [];
+
+      // clear the list
+      currencyList.clear();
+      // TO DO: get all of currency in SHEET_JSON, once there is an example
+      let currencyList = SHEET_JSON.map((row) => {
+        return row[COST_CURRENCY_VALUE].split(" ", 2)[1];
+      });
+      currencyRate = updateCurrencyRates(currencyList);
+
+      let importAltIndexes = SHEET_JSON.map((row) => {
+        // Temporary Code TO DO: DELETE THIS
+        // supplierListJson[row[SUPPLIER_NUMBER_VALUE]] =
+        //   "Temporary Supplier Name";
+        // DELETE UNTIL HERE
+
+        // TO DO: Find supplier from Json list
+        if (!supplierListJson.hasOwnProperty(row[SUPPLIER_NUMBER_VALUE])) {
+          problemEncountered.push(
+            `<i>Supplier Number ${row[SUPPLIER_NUMBER_VALUE]}</i> not found.`
           );
-          return;
+          return null;
         }
 
-        missingHeader = findMissingColumnHeader(SHEET_JSON[0], [
-          SUPPLIER_NUMBER_VALUE,
-          MOQ_VALUE,
-          COST_CURRENCY_VALUE,
-          SUPPLIER_PART_TYPE_VALUE,
-          WCP_PART_TYPE_VALUE,
-          isQualityEmpty ? null : QUALITY_VALUE,
-        ]);
+        let costForeignCurrency = row[COST_CURRENCY_VALUE].split(" ", 2);
+        let costAud = calculateAUD(
+          costForeignCurrency[1],
+          costForeignCurrency[0]
+        );
 
-        // Check if all headers from input are inside the file
-        if (Boolean(missingHeader)) {
-          showAlert(
-            `<strong>Error!</strong> Column ${missingHeader} Header not found in file.`
-          );
-          return;
+        // If converting currency occured an error
+        if (typeof costAud === "string" || costAud instanceof String) {
+          problemEncountered.push(costAud);
+          return null;
         }
 
-        // TO DO: Get supplier list from SQL to json format
-        // Will create a map
-        let supplierListJson = new Map([]);
+        let newObject = new AlternateIndex(
+          supplierListJson[row[SUPPLIER_NUMBER_VALUE]],
+          row[SUPPLIER_NUMBER_VALUE],
+          row[MOQ_VALUE],
+          row[COST_CURRENCY_VALUE],
+          costAud,
+          new Date(),
+          isQualityEmpty ? "" : row[QUALITY_VALUE],
+          row[SUPPLIER_PART_TYPE_VALUE],
+          row[WCP_PART_TYPE_VALUE],
+          false
+        );
 
-        let problemEncountered = [];
-        let changesMade = [];
+        // Store each new row locally
+        changesMade.push(
+          new Map([
+            ["type", "new"],
+            ["id", productChosen],
+            ["table", "AlternateIndex"],
+            ["changes", newObject],
+          ])
+        );
+        return newObject;
+      });
 
-        // clear the list
-        currencyList.clear();
-        // TO DO: get all of currency in SHEET_JSON, once there is an example
-        let currencyList = SHEET_JSON.map((row) => {
-          return row[COST_CURRENCY_VALUE].split(" ", 2)[1];
-        });
-        currencyRate = updateCurrencyRates(currencyList);
+      if (problemEncountered.length > 0) {
+        showAlert(`<strong>Error!</strong> ${problemEncountered.join("\n")}`);
+        return;
+      }
 
-        let importAltIndexes = SHEET_JSON.map((row) => {
-          // Temporary Code TO DO: DELETE THIS
-          // supplierListJson[row[SUPPLIER_NUMBER_VALUE]] =
-          //   "Temporary Supplier Name";
-          // DELETE UNTIL HERE
-
-          // TO DO: Find supplier from Json list
-          if (!supplierListJson.hasOwnProperty(row[SUPPLIER_NUMBER_VALUE])) {
-            problemEncountered.push(
-              `<i>Supplier Number ${row[SUPPLIER_NUMBER_VALUE]}</i> not found.`
-            );
-            return null;
-          }
-
-          let costForeignCurrency = row[COST_CURRENCY_VALUE].split(" ", 2);
-          let costAud = calculateAUD(
-            costForeignCurrency[1],
-            costForeignCurrency[0]
-          );
-
-          // If converting currency occured an error
-          if (typeof costAud === "string" || costAud instanceof String) {
-            problemEncountered.push(costAud);
-            return null;
-          }
-
-          let newObject = new AlternateIndex(
-            supplierListJson[row[SUPPLIER_NUMBER_VALUE]],
-            row[SUPPLIER_NUMBER_VALUE],
-            row[MOQ_VALUE],
-            row[COST_CURRENCY_VALUE],
-            costAud,
-            new Date(),
-            isQualityEmpty ? "" : row[QUALITY_VALUE],
-            row[SUPPLIER_PART_TYPE_VALUE],
-            row[WCP_PART_TYPE_VALUE],
-            false
-          );
-
-          // Store each new row locally
-          changesMade.push(
-            new Map([
-              ["type", "new"],
-              ["id", productChosen],
-              ["table", "AlternateIndex"],
-              ["changes", newObject],
-            ])
-          );
-          return newObject;
-        });
-
-        if (problemEncountered.length > 0) {
-          showAlert(`<strong>Error!</strong> ${problemEncountered.join("\n")}`);
-          return;
-        }
-
-        // Empty Data if data before is is empty
-        if (isEmptyData) {
-          isEmptyData = false;
-          TABLE.clear().draw();
-        }
-        // save new rows into sessionStorage
-        storeChangesInSessionStoage(changesMade);
-        // Toggle hasChanges On
-        editHasChanges(true);
-        // Add data to table
-        TABLE.rows.add(importAltIndexes).draw();
-        exitPopUpForm(formSelected);
-      };
+      // Empty Data if data before is is empty
+      if (isEmptyData) {
+        isEmptyData = false;
+        TABLE.clear().draw();
+      }
+      // save new rows into sessionStorage
+      storeChangesInSessionStorage(changesMade);
+      // Toggle hasChanges On
+      editHasChanges(true);
+      // Add data to table
+      TABLE.rows.add(importAltIndexes).draw();
+      exitPopUpForm(formSelected);
       return;
     }
     // On Form being filled Incompletely

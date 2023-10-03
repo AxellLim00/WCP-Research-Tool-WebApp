@@ -1,10 +1,11 @@
 $(function () {
   var tabChosen = "";
   var menuToggle = true;
-  var tempTab;
+
+  sessionStorage.clear();
 
   sessionStorage.setItem("currentTab", "tab0");
-  selectTab("tab0");
+  selectTab("tab1");
   sessionStorage.setItem("hasChanges", false);
 
   $("#menu").on("click", function () {

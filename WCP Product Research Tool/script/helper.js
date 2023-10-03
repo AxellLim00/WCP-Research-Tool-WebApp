@@ -1,3 +1,5 @@
+// TO DO: name all parameter and its types
+
 function selectTab(tabIdSelected) {
   currentTab = sessionStorage.getItem("currentTab");
   if (currentTab) {
@@ -127,18 +129,20 @@ function exitPopUpForm(type) {
   $(`#${type}Form input`).prop("checked", false);
 }
 
-function storeChangesInSessionStoage(change) {
+function storeChangesInSessionStorage(change) {
   storedChanges = sessionStorage.getItem("savedChanges");
+  debugger;
   if (storedChanges === null) {
-    sessionStorage.setItem("savedChanges", change);
+    sessionStorage.setItem("savedChanges", JSON.stringify(change));
     return;
   }
   storedChanges.push(...change);
-  sessionStorage.setItem("savedChanges", storedChanges);
+  sessionStorage.setItem("savedChanges", JSON.stringify(storedChanges));
 }
 
 function saveChangesToSQL() {
-  // TO DO: translate dictionary changes to SQL
+  // TO DO: translate Map changes to SQL
+  // TO DO: translate JSON from sessionstorage to Map
   savedChanges = sessionStorage.getItem("savedChanges");
   // translate
   savedChanges.forEach(function (changes) {
@@ -158,6 +162,31 @@ function saveChangesToSQL() {
 
   sessionStorage.clearItem("savedChanges");
   return true;
+}
+
+async function readExcelFileToJson(filenameInput) {
+  // Read file
+  const FILE = $(filenameInput).prop("files");
+  const READER = new FileReader();
+  return new Promise((resolve, reject) => {
+    READER.onloadend = function () {
+      console.log("here");
+      const FILE_DATA = new Uint8Array(READER.result);
+      const WORKBOOK = XLSX.read(FILE_DATA, { type: "array" });
+
+      // Assuming the first sheet of the workbook is the relevant one
+      const SHEET_NAME = WORKBOOK.SheetNames[0];
+      const SHEET = WORKBOOK.Sheets[SHEET_NAME];
+      resolve(XLSX.utils.sheet_to_json(SHEET));
+    };
+    READER.onerror = function () {
+      showAlert(
+        `<strong>Error!</strong> File fail to load: ${fileReader.error}`
+      );
+      reject(undefined);
+    };
+    READER.readAsArrayBuffer(FILE[0]);
+  });
 }
 
 class Product {
