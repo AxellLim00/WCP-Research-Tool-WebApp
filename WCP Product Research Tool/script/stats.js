@@ -6,6 +6,7 @@ $(function () {
   const OEM_TABLE_NAME = "#oemTable";
   var formSelected = "";
   var isEmptyData = true;
+  var productChosen = sessionStorage.getItem("productChosen");
 
   //Load table from SQL
 

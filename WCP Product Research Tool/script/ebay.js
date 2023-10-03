@@ -4,6 +4,7 @@ $(function () {
   const K_TYPE_TABLE_NAME = "#kTypeTable";
   const EPID_TABLE_NAME = "#epIDTable";
   var isEmptyData = true;
+  var productChosen = sessionStorage.getItem("productChosen");
   //Load table from SQL
 
   // if loading from SQL empty

@@ -3,6 +3,7 @@ $(function () {
   var researchID = "Default ID";
   var formSelected = "";
   var isEmptyData = true;
+  var productChosen = sessionStorage.getItem("productChosen");
 
   //Load table from SQL
 

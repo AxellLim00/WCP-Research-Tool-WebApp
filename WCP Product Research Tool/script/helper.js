@@ -1,3 +1,45 @@
+function selectTab(tabIdSelected) {
+  currentTab = sessionStorage.getItem("currentTab");
+  if (currentTab) {
+    $("#" + currentTab + "-name").removeClass("tab-name-selected");
+    $("#" + currentTab + "-icon").removeClass("tab-icon-selected");
+  }
+
+  $("#" + tabIdSelected + "-name").addClass("tab-name-selected");
+  $("#" + tabIdSelected + "-icon").addClass("tab-icon-selected");
+  // remove any saved changes on sessionStorage
+  sessionStorage.removeItem("tableChanges");
+  sessionStorage.setItem("currentTab", tabIdSelected);
+
+  const content = $("#content");
+  switch (tabIdSelected) {
+    case "tab0":
+      $("#content").load("../html/dashboard.html");
+      break;
+    case "tab1":
+      $("#content").load("../html/product.html");
+      break;
+    case "tab2":
+      $("#content").load("../html/stats.html");
+      break;
+    case "tab3":
+      $("#content").load("../html/cost&Vol.html");
+      break;
+    case "tab4":
+      $("#content").load("../html/altIndex.html");
+      break;
+    case "tab5":
+      $("#content").load("../html/ebay.html");
+      break;
+    default:
+      content.html(`
+            <h1>Welcome to Empty Tab</h1>
+            <p>This is the content of current Empty Tab with the wrong tab ID.</p>
+          `);
+      break;
+  }
+}
+
 /**
  *
  * @param {*} rowQuantity How many empty rows to create
@@ -103,7 +145,7 @@ function saveChangesToSQL() {
     let type = changes.get("type");
     let id = changes.get("id");
     let table = changes.get("table");
-    let changes = changes.get("changes");
+    let changedValues = changes.get("changes");
   });
   errorMessage = "";
   // IF there is error message

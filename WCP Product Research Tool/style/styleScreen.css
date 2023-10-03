@@ -247,6 +247,7 @@ form h2,
 .alert {
   padding: 20px;
   background-color: #f44336;
+  opacity: 0.95;
   color: white;
   position: fixed;
   width: 100%;

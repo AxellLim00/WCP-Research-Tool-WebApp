@@ -333,11 +333,16 @@ $(function () {
   //#endregion
 
   // TO DO: Select product when user click on product row, get product researchID from selected product, set productChosen and go to tab2
-  // table.on("click", "tbody tr", function () {
-  //   let data = table.row(this).data();
-  //   Logic to select row's data after clicking here
-  //   productChosen = data.text ? Get product Research ID clicked
-  // });
+  $(`${TABLE_NAME} tbody tr`).on("dblclick", function () {
+    // Find the first cell in the clicked row and extract its text
+    let rowId = $(this).find("td:first").text();
+    if (rowId.length > 0) {
+      sessionStorage.setItem("productChosen", rowId);
+      selectTab("tab2");
+    } else {
+      showAlert("<strong>Error!</strong> Product ID not found.");
+    }
+  });
 });
 
 // Function to generate the product ID

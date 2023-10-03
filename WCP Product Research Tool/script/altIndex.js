@@ -5,7 +5,8 @@ $(function () {
   var isEmptyData = true;
   var formSelected = "";
   var currencyRate = new Map();
-  var currencyList = {};
+  var currencyList = new Set();
+  var productChosen = sessionStorage.getItem("productChosen");
 
   //TO DO: Load table from SQL
 
@@ -165,7 +166,7 @@ $(function () {
         let changesMade = [];
 
         // clear the list
-        currencyList.length = 0;
+        currencyList.clear();
         // TO DO: get all of currency in SHEET_JSON, once there is an example
         let currencyList = SHEET_JSON.map((row) => {
           return row[COST_CURRENCY_VALUE].split(" ", 2)[1];
@@ -276,8 +277,10 @@ function updateCurrencyRates(currencyList) {
   if (sessionStorage["currencyRate"]) {
     currencyRate = sessionStorage.getItem("currencyRate");
   }
-  // If not all currency is in the sessionStorage
-  if (!currencyList.every((currency) => currencyRate.has(currency))) {
+  console.log(typeof currencyList);
+  console.log(currencyList);
+  // If not all currency in currencyList is in the sessionStorage's currencyRate
+  if (![...currencyList].every((currency) => currencyRate.has(currency))) {
     // Get currency not in sessionStorage
     let notInCurrencyRate = currencyList.filter(
       (currency) => !currencyRate.hasOwnProperty(currency)
