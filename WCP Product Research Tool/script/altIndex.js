@@ -271,10 +271,10 @@ function calculateAUD(costCurrency, amount) {
 /**
  * Update "currencyRate" in Session Storage to have currency rates to AUD and get converison rates from API
  * @param {List} currencyList List of currencies in string to convert to AUD
- * @returns {Map} Map of currencies to its currency rates
+ * @returns {Map} of currencies to its currency rates
  */
 function updateCurrencyRates(currencyList) {
-  let currencyRate = new Map();
+  let currencyRate = {};
   if (sessionStorage["currencyRate"]) {
     currencyRate = new Map(JSON.parse(sessionStorage.getItem("currencyRate")));
   }
@@ -282,13 +282,16 @@ function updateCurrencyRates(currencyList) {
   if (![...currencyList].every((currency) => currencyRate.has(currency))) {
     // Get currency not in Session Storage
     let notInCurrencyRate = currencyList.filter(
-      (currency) => !currencyRate.hasOwnProperty(currency)
+      (currency) => !currencyRate.has(currency)
     );
     // TO DO: Get all currency in notInCurrencyRate from API
     // for loop for all notInCurrencyRate with the rates
     // currencyRate.set()
     // if not find, pass by it
   }
-  sessionStorage.setItem("currencyRate", JSON.stringify(currencyRate));
+  sessionStorage.setItem(
+    "currencyRate",
+    JSON.stringify(Array.from(currencyRate.entries()))
+  );
   return currencyRate;
 }

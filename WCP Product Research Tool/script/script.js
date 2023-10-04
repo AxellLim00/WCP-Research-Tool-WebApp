@@ -54,6 +54,7 @@ $(function () {
 function contentEnable() {
   $("#darkLayer").hide();
 }
+
 /**
  * Enable the dark layer, disabling content UI elements
  */

@@ -13,7 +13,7 @@ function selectTab(tabIdSelected) {
   $("#" + tabIdSelected + "-name").addClass("tab-name-selected");
   $("#" + tabIdSelected + "-icon").addClass("tab-icon-selected");
   // remove any saved changes on Session Storage
-  sessionStorage.removeItem("tableChanges");
+  sessionStorage.removeItem("savedChanges");
   sessionStorage.setItem("currentTab", tabIdSelected);
 
   const content = $("#content");
@@ -87,21 +87,11 @@ function showAlert(message) {
 function updateHasChanges(hasChange) {
   // change hasChanges value in session storage
   sessionStorage.setItem("hasChanges", hasChange);
-  // Change save button to warning color (yellow) when true
   if (hasChange) {
-    $("button[name=saveBtn]").css("background-color", "#ffc205");
-    // Apply hover effect
-    $("button[name=saveBtn]")
-      .on("mouseenter", function () {
-        $(this).css("background-color", "#ffda69");
-      })
-      .on("mouseleave", function () {
-        $(this).css("background-color", "#ffc205");
-      });
+    $("button[name=saveBtn]").prop("disabled", false);
     // Change save button back to normal when false
   } else {
-    $("button[name=saveBtn]").removeAttr("style");
-    $("button[name=saveBtn]").off("mouseenter mouseleave");
+    $("button[name=saveBtn]").prop("disabled", true);
   }
 }
 
@@ -166,30 +156,42 @@ function exitPopUpForm(type) {
 }
 
 /**
- * Save changes made to sessionStorage's "savedChanges" in JSON Format
- * @param {Map} change Map of changes to be saved
- * @returns 
+ * Save changes made to Session Storage's "savedChanges" in JSON Format
+ * @param {Map[]} change Map of changes to be saved
+ * @returns
  */
 function updateChanges(change) {
   storedChanges = sessionStorage.getItem("savedChanges");
-  if (storedChanges === null) {
-    sessionStorage.setItem("savedChanges", JSON.stringify(change));
+  if (storedChanges) {
+    sessionStorage.setItem(
+      "savedChanges",
+      JSON.stringify(change.map((map) => Array.from(map.entries())))
+    );
     return;
   }
+  storedChanges = JSON.parse(storedChanges).map((array) => new Map(array));
   storedChanges.push(...change);
-  sessionStorage.setItem("savedChanges", JSON.stringify(storedChanges));
+  sessionStorage.setItem(
+    "savedChanges",
+    JSON.stringify(storedChanges.map((map) => Array.from(map.entries())))
+  );
 }
 
 /**
  * Save changes made to SQL
- * SessionStorage "savedChanges" will be cleared
+ * Session Storage's "savedChanges" will be cleared
  * @returns {boolean} true if successful, false otherwise
  */
 function saveChangesToSQL() {
   // TO DO: translate Map changes to SQL
-  // TO DO: translate JSON from sessionstorage to Map
-  changesInJSON = sessionStorage.getItem("savedChanges");
-  savedChanges = new Map(JSON.parse(changesInJSON));
+  let storedChanges = sessionStorage.getItem("savedChanges");
+  let savedChanges = JSON.parse(storedChanges).map((array) => new Map(array));
+  if (storedChanges || savedChanges.size == 0) {
+    showAlert(
+      "<strong>FATAL Error!</strong> No changes was found, please contact administrator"
+    );
+    return false;
+  }
   // translate
   savedChanges.forEach(function (changes) {
     let type = changes.get("type");
@@ -221,7 +223,6 @@ async function readExcelFileToJson(filenameInput) {
   const READER = new FileReader();
   return new Promise((resolve, reject) => {
     READER.onloadend = function () {
-      console.log("here");
       const FILE_DATA = new Uint8Array(READER.result);
       const WORKBOOK = XLSX.read(FILE_DATA, { type: "array" });
 

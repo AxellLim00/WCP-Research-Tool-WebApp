@@ -7,6 +7,7 @@
   --selected-color-icon: invert(17%) sepia(99%) saturate(3872%)
     hue-rotate(356deg) brightness(109%) contrast(107%);
   --icon-padding: 1.5em;
+  --save-color: #2ea44f;
 }
 
 *,
@@ -156,6 +157,7 @@ button {
 
 button:hover {
   background-color: var(--tertiary-color);
+  box-shadow: rgba(39, 93, 174, 0.2) 0 6px 12px;
   cursor: pointer;
 }
 
@@ -170,6 +172,24 @@ button:hover {
 
 .cancel:hover {
   background-color: #db6c5b;
+}
+
+.save {
+  background-color: var(--save-color);
+}
+
+.save:hover {
+  box-shadow: rgba(39, 174, 96, 0.2) 0 6px 12px;
+  background-color: var(--save-color);
+}
+.save:disabled {
+  pointer-events: none;
+}
+
+button:disabled,
+button[disabled] {
+  background-color: #cccccc;
+  color: #666666;
 }
 
 /* New Form */

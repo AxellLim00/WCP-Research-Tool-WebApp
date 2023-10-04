@@ -215,29 +215,30 @@ $(function () {
               ["changes", newObject],
             ])
           );
-
           return newObject;
         });
+        debugger;
         if (importProducts.includes(false)) {
           showAlert(
             `<strong>Error!</strong> Value in Make, Model and Part Type must be at least 3 characters long.`
           );
           return;
         }
+
         // Empty Table if DataTable previosly was empty
         if (isEmptyData) {
           isEmptyData = false;
           TABLE.clear().draw();
         }
-        debugger;
+
         // save new rows into sessionStorage
         updateChanges(changesMade);
         // Toggle hasChanges On
         updateHasChanges(true);
         // Add data to table
-        debugger;
         TABLE.rows.add(importProducts).draw();
         exitPopUpForm(formSelected);
+
         // For New Product
       } else if (formSelected == "new") {
         let newProduct = new Product(
