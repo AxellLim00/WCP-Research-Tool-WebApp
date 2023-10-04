@@ -1,5 +1,8 @@
-// TO DO: name all parameter and its types
-
+/**
+ * Swithces tab on the layout.html level by loading HTML into #content
+ * @param {String} tabIdSelected Tab's ID to switch to
+ * @returns {void}
+ */
 function selectTab(tabIdSelected) {
   currentTab = sessionStorage.getItem("currentTab");
   if (currentTab) {
@@ -43,10 +46,10 @@ function selectTab(tabIdSelected) {
 }
 
 /**
- *
- * @param {*} rowQuantity How many empty rows to create
- * @param {*} columnQuantity How many column are there in the table, default is 1
- * @returns
+ * Gets empty rows for a html table based on rows and columns
+ * @param {Number} rowQuantity How many empty rows to create
+ * @param {Number} [columnQuantity=1] How many column are there in the table, default is 1
+ * @returns {String} html \<tr\> rows
  */
 function getEmptyRow(rowQuantity, columnQuantity = 1) {
   return ("<tr>" + "<td></td>".repeat(columnQuantity) + "</tr>").repeat(
@@ -54,6 +57,11 @@ function getEmptyRow(rowQuantity, columnQuantity = 1) {
   );
 }
 
+/**
+ * Shows Alert message by appending or unhiding div with alert class
+ * @param {String} message Alert message shown (can have html inside)
+ * @returns {void}
+ */
 function showAlert(message) {
   // Check if alert has been made before
   if (!$(".alert").length) {
@@ -70,6 +78,12 @@ function showAlert(message) {
   }
 }
 
+//TO DO: check whether hasChange is grabbed from sessionStorage correctly
+/**
+ * Set sessionStorage's "hasChanges" to hasChange parameter
+ * @param {Boolean} hasChange Tab's ID to switch
+ * @returns {}
+ */
 function editHasChanges(hasChange) {
   // change hasChanges value in session storage
   sessionStorage.setItem("hasChanges", hasChange);
@@ -91,6 +105,12 @@ function editHasChanges(hasChange) {
   }
 }
 
+/**
+ * Find first missing header inside JSON Sheet
+ * @param {Dictionary} rowObject First instance/element of JSON sheet (needs to contain headers)
+ * @param {String[]} arrayHeader Array of header names to check
+ * @returns {String} missing header name when found, otherwise empty string
+ */
 function findMissingColumnHeader(rowObject, arrayHeader) {
   for (let header of arrayHeader) {
     if (header == null) {
@@ -103,6 +123,12 @@ function findMissingColumnHeader(rowObject, arrayHeader) {
   return "";
 }
 
+/**
+ * Shows or unhides Pop-up form, disable screen besides form
+ * @param {String} type Type of form to show
+ * @param {String} title Title of the form
+ * @returns {void}
+ */
 function showPopUpForm(type, title) {
   $('h2[name="formTitle"]').text(title);
   $("#popupForm").show();
@@ -111,6 +137,11 @@ function showPopUpForm(type, title) {
   $("#darkLayer").show();
 }
 
+/**
+ * Hides Pop-up form, enable screen besides form
+ * @param {String} type Type of form to show
+ * @returns {void}
+ */
 function hidePopUpForm(type) {
   // Finally hide Form from user
   $("#popupForm").hide();
@@ -120,6 +151,11 @@ function hidePopUpForm(type) {
   $("#darkLayer").css("position", "absolute");
 }
 
+/**
+ * Exits pop-up form and resets all input in form
+ * @param {String} type Type of form to exit
+ * @returns {void}
+ */
 function exitPopUpForm(type) {
   hidePopUpForm(type);
 
@@ -129,9 +165,13 @@ function exitPopUpForm(type) {
   $(`#${type}Form input`).prop("checked", false);
 }
 
+/**
+ * Save changes made to sessionStorage's "savedChanges" in JSON Format
+ * @param {Map} change Map of changes to be saved
+ * @returns {void}
+ */
 function storeChangesInSessionStorage(change) {
   storedChanges = sessionStorage.getItem("savedChanges");
-  debugger;
   if (storedChanges === null) {
     sessionStorage.setItem("savedChanges", JSON.stringify(change));
     return;
@@ -140,6 +180,11 @@ function storeChangesInSessionStorage(change) {
   sessionStorage.setItem("savedChanges", JSON.stringify(storedChanges));
 }
 
+/**
+ * Save changes made to SQL
+ * SessionStorage "savedChanges" will be cleared
+ * @returns {boolean} true if successful, false otherwise
+ */
 function saveChangesToSQL() {
   // TO DO: translate Map changes to SQL
   // TO DO: translate JSON from sessionstorage to Map
@@ -163,7 +208,7 @@ function saveChangesToSQL() {
   sessionStorage.clearItem("savedChanges");
   return true;
 }
-
+// TO DO: continue with this function param
 async function readExcelFileToJson(filenameInput) {
   // Read file
   const FILE = $(filenameInput).prop("files");
