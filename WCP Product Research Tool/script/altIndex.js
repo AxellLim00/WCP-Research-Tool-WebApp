@@ -68,7 +68,7 @@ $(function () {
   $('button[name="saveBtn"]').on("click", function () {
     //on successful save
     if (saveChangesToSQL()) {
-      editHasChanges(false);
+      updateHasChanges(false);
     }
   });
 
@@ -226,10 +226,10 @@ $(function () {
         isEmptyData = false;
         TABLE.clear().draw();
       }
-      // save new rows into sessionStorage
-      storeChangesInSessionStorage(changesMade);
+      // save new rows into Session Storage
+      updateChanges(changesMade);
       // Toggle hasChanges On
-      editHasChanges(true);
+      updateHasChanges(true);
       // Add data to table
       TABLE.rows.add(importAltIndexes).draw();
       exitPopUpForm(formSelected);
@@ -252,9 +252,14 @@ $(function () {
   //#endregion
 });
 
+/**
+ * Convert local currency to AUD currency
+ * @param {String} costCurrency currency name
+ * @param {Number} amount Amount in local currency
+ * @returns {number} Amount converted to AUD
+ */
 function calculateAUD(costCurrency, amount) {
-  // TO DO: get currency rates from the sessionStorage
-  rates = sessionStorage.getItem("currencyRate");
+  let rates = new Map(JSON.parse(sessionStorage.getItem("currencyRate")));
 
   if (!rates.has(costCurrency))
     // when currency not Found
@@ -263,16 +268,19 @@ function calculateAUD(costCurrency, amount) {
   return amount * rates[costCurrency];
 }
 
+/**
+ * Update "currencyRate" in Session Storage to have currency rates to AUD and get converison rates from API
+ * @param {List} currencyList List of currencies in string to convert to AUD
+ * @returns {Map} Map of currencies to its currency rates
+ */
 function updateCurrencyRates(currencyList) {
   let currencyRate = new Map();
   if (sessionStorage["currencyRate"]) {
-    currencyRate = sessionStorage.getItem("currencyRate");
+    currencyRate = new Map(JSON.parse(sessionStorage.getItem("currencyRate")));
   }
-  console.log(typeof currencyList);
-  console.log(currencyList);
-  // If not all currency in currencyList is in the sessionStorage's currencyRate
+  // If not all currency in currencyList is in the Session Storage's currencyRate
   if (![...currencyList].every((currency) => currencyRate.has(currency))) {
-    // Get currency not in sessionStorage
+    // Get currency not in Session Storage
     let notInCurrencyRate = currencyList.filter(
       (currency) => !currencyRate.hasOwnProperty(currency)
     );
@@ -281,6 +289,6 @@ function updateCurrencyRates(currencyList) {
     // currencyRate.set()
     // if not find, pass by it
   }
-  sessionStorage.setItem("currencyRate", currencyRate);
+  sessionStorage.setItem("currencyRate", JSON.stringify(currencyRate));
   return currencyRate;
 }

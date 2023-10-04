@@ -56,7 +56,7 @@ $(function () {
     // save changes to SQL
 
     // if save successful
-    editHasChanges(false);
+    updateHasChanges(false);
   });
 
   // Import product Button
@@ -113,7 +113,7 @@ $(function () {
 
     // Successful Save
     if (isFormFilled) {
-      editHasChanges(true);
+      updateHasChanges(true);
 
       // reset values
       // $(`#${formSelected}Form input`).val("");

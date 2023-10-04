@@ -12,7 +12,7 @@ function selectTab(tabIdSelected) {
 
   $("#" + tabIdSelected + "-name").addClass("tab-name-selected");
   $("#" + tabIdSelected + "-icon").addClass("tab-icon-selected");
-  // remove any saved changes on sessionStorage
+  // remove any saved changes on Session Storage
   sessionStorage.removeItem("tableChanges");
   sessionStorage.setItem("currentTab", tabIdSelected);
 
@@ -78,13 +78,13 @@ function showAlert(message) {
   }
 }
 
-//TO DO: check whether hasChange is grabbed from sessionStorage correctly
+//TO DO: check whether hasChange is grabbed from Session Storage correctly
 /**
- * Set sessionStorage's "hasChanges" to hasChange parameter
+ * Set Session Storage's "hasChanges" to hasChange parameter
  * @param {Boolean} hasChange Tab's ID to switch
  * @returns {}
  */
-function editHasChanges(hasChange) {
+function updateHasChanges(hasChange) {
   // change hasChanges value in session storage
   sessionStorage.setItem("hasChanges", hasChange);
   // Change save button to warning color (yellow) when true
@@ -140,7 +140,7 @@ function showPopUpForm(type, title) {
 /**
  * Hides Pop-up form, enable screen besides form
  * @param {String} type Type of form to show
- * @returns {void}
+ * @returns
  */
 function hidePopUpForm(type) {
   // Finally hide Form from user
@@ -154,7 +154,7 @@ function hidePopUpForm(type) {
 /**
  * Exits pop-up form and resets all input in form
  * @param {String} type Type of form to exit
- * @returns {void}
+ * @returns
  */
 function exitPopUpForm(type) {
   hidePopUpForm(type);
@@ -168,9 +168,9 @@ function exitPopUpForm(type) {
 /**
  * Save changes made to sessionStorage's "savedChanges" in JSON Format
  * @param {Map} change Map of changes to be saved
- * @returns {void}
+ * @returns 
  */
-function storeChangesInSessionStorage(change) {
+function updateChanges(change) {
   storedChanges = sessionStorage.getItem("savedChanges");
   if (storedChanges === null) {
     sessionStorage.setItem("savedChanges", JSON.stringify(change));
@@ -188,7 +188,8 @@ function storeChangesInSessionStorage(change) {
 function saveChangesToSQL() {
   // TO DO: translate Map changes to SQL
   // TO DO: translate JSON from sessionstorage to Map
-  savedChanges = sessionStorage.getItem("savedChanges");
+  changesInJSON = sessionStorage.getItem("savedChanges");
+  savedChanges = new Map(JSON.parse(changesInJSON));
   // translate
   savedChanges.forEach(function (changes) {
     let type = changes.get("type");
@@ -208,7 +209,12 @@ function saveChangesToSQL() {
   sessionStorage.clearItem("savedChanges");
   return true;
 }
-// TO DO: continue with this function param
+
+/**
+ * Read XLSX and XLS file to JSON representation format
+ * @param {String} filenameInput
+ * @returns {Promise<Map> | undefined} Excel Worksheet data in JSON format when resolved, if fail to read or rejects returns undefined
+ */
 async function readExcelFileToJson(filenameInput) {
   // Read file
   const FILE = $(filenameInput).prop("files");

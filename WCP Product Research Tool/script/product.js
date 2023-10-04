@@ -68,7 +68,7 @@ $(function () {
   $('button[name="saveBtn"]').on("click", function () {
     //on successful save
     if (saveChangesToSQL()) {
-      editHasChanges(false);
+      updateHasChanges(false);
     }
   });
 
@@ -231,9 +231,9 @@ $(function () {
         }
         debugger;
         // save new rows into sessionStorage
-        storeChangesInSessionStorage(changesMade);
+        updateChanges(changesMade);
         // Toggle hasChanges On
-        editHasChanges(true);
+        updateHasChanges(true);
         // Add data to table
         debugger;
         TABLE.rows.add(importProducts).draw();
@@ -266,7 +266,7 @@ $(function () {
           ])
         );
         // Toggle hasChanges ON
-        editHasChanges(true);
+        updateHasChanges(true);
         // Add data to table
         TABLE.row.add(newProduct).draw();
         exitPopUpForm(formSelected);
@@ -337,7 +337,13 @@ $(function () {
   });
 });
 
-// Function to generate the product ID
+/**
+ * Generate the product ID
+ * @param {String} make Product's Make value
+ * @param {String} model Product's Model value
+ * @param {String} partType Product's Part Type value
+ * @returns {String} Product ID
+ */
 function generateProductID(make, model, partType) {
   // Extract the first 3 letters from make, model, and partType
   let makePrefix = make.substring(0, 3).toUpperCase();
@@ -348,7 +354,10 @@ function generateProductID(make, model, partType) {
   return makePrefix + modelPrefix + partTypePrefix + "-" + generateShortUUID();
 }
 
-// Function to generate a short UUID
+/**
+ * Generate a short 8 character UUID
+ * @returns {String} Short UUID
+ */
 function generateShortUUID() {
   // A shorter UUID consisting of 8 hexadecimal digits
   let uuid = "xxxxxxxx".replace(/[x]/g, function () {
@@ -357,7 +366,10 @@ function generateShortUUID() {
   return uuid;
 }
 
-// Function to check if all input fields are filled with at least 3 characters
+/**
+ * Check if all input fields are filled with at least 3 characters
+ * @returns {Boolean} True if all input fields are filled with at least 3 characters, False otherwise
+ */
 function areAllFieldsFilled() {
   let make = $("#newMake").val();
   let model = $("#newModel").val();

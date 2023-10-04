@@ -48,19 +48,31 @@ $(function () {
   });
 });
 
+/**
+ * Disable the dark layer, enabling content UI elements
+ */
 function contentEnable() {
   $("#darkLayer").hide();
 }
+/**
+ * Enable the dark layer, disabling content UI elements
+ */
 function contentDisable() {
   $("#darkLayer").show();
 }
 
+/**
+ * Extends the Tab Panel
+ */
 function menuExtend() {
   $("#sidebar").addClass("side-extended");
   $(".tab-layout").addClass("tab-layout-extended");
   $(".tab-name").addClass("tab-name-extended");
 }
 
+/**
+ * Collapse the Tab Panel
+ */
 function menuCollapse() {
   $(".tab-layout").removeClass("tab-layout-extended");
   $(".tab-name").removeClass("tab-name-extended");

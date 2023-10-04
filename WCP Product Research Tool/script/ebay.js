@@ -51,10 +51,11 @@ $(function () {
   $('button[name="saveBtn"]').on("click", function () {
     // find changes
     // save changes to SQL
-    editHasChanges(false);
+    updateHasChanges(false);
   });
 
   // Export table Button
+
   $('button[name="exportBtn"]').on("click", function () {
     if (isEmptyData) {
       showAlert("<strong>Error!</strong> No data found in table.");

@@ -39,7 +39,7 @@ $(function () {
     // save changes to SQL
 
     // if successful save
-    editHasChanges(false);
+    updateHasChanges(false);
   });
 
   // Export table Button
@@ -76,7 +76,7 @@ $(function () {
 
     // Successful Save
     if (isFormFilled) {
-      editHasChanges(true);
+      updateHasChanges(true);
 
       // TO DO: save data
       exitPopUpForm(formSelected);
