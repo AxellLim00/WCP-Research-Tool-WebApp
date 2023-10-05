@@ -117,8 +117,9 @@ $(function () {
     const IC_DESCRIPTION_VALUE = $(`#${formSelected}Desc`).val();
     const STATUS_VALUE = $(`#${formSelected}Status`).val();
     const OEM_CATEGORY_VALUE = $(`#${formSelected}Oem`).val();
+    const ID_VALUE = $("#ID").text();
     let fileValue = "";
-
+    let changesMade = [];
     //check if mandatory field
     let isFormFilled = Boolean(
       MAKE_VALUE &&
@@ -129,7 +130,10 @@ $(function () {
     );
     //extra validation on new product
     if (formSelected == "new") {
-      isFormFilled &= Boolean(STATUS_VALUE && OEM_CATEGORY_VALUE);
+      isFormFilled &= Boolean(
+        // 18 is length of ID generated
+        STATUS_VALUE && OEM_CATEGORY_VALUE && ID_VALUE.length == 18
+      );
     }
     // extra validation on import product
     else if (formSelected == "import") {
@@ -178,8 +182,6 @@ $(function () {
           return;
         }
 
-        let changesMade = [];
-
         // Put data into table
         let importProducts = SHEET_JSON.map((row) => {
           if (
@@ -217,7 +219,7 @@ $(function () {
           );
           return newObject;
         });
-        debugger;
+
         if (importProducts.includes(false)) {
           showAlert(
             `<strong>Error!</strong> Value in Make, Model and Part Type must be at least 3 characters long.`
@@ -266,6 +268,8 @@ $(function () {
             ["changes", newProduct],
           ])
         );
+        // save new rows into sessionStorage
+        updateChanges(changesMade);
         // Toggle hasChanges ON
         updateHasChanges(true);
         // Add data to table
@@ -339,7 +343,8 @@ $(function () {
 });
 
 /**
- * Generate the product ID
+ * Generate the product ID using first 3 letters of Make, Model and Part Type,
+ * followed by an 8 character UUID
  * @param {String} make Product's Make value
  * @param {String} model Product's Model value
  * @param {String} partType Product's Part Type value

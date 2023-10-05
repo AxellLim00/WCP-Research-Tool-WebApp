@@ -4,7 +4,7 @@ $(function () {
   const TABLE_NAME = "#altIndexTable";
   var isEmptyData = true;
   var formSelected = "";
-  var currencyRate = new Map();
+  var currencyRate = new Object();
   var currencyList = new Set();
   var productChosen = sessionStorage.getItem("productChosen");
 
@@ -13,7 +13,7 @@ $(function () {
   // TO DO: Get all currency from SQL into currencyList
   // currencyList.add()
   // Check if all currency is in currencyRates
-  currencyRate = updateCurrencyRates(currencyList);
+  currencyRate = getCurrencyRates();
 
   // Scenario of when data loaded is empty
   if (isEmptyData) {
@@ -158,17 +158,17 @@ $(function () {
       let changesMade = [];
 
       // clear the list
-      currencyList.clear();
+      currencyList = new Set();
       // TO DO: get all of currency in SHEET_JSON, once there is an example
-      let currencyList = SHEET_JSON.map((row) => {
+      currencyList = SHEET_JSON.map((row) => {
         return row[COST_CURRENCY_VALUE].split(" ", 2)[1];
       });
-      currencyRate = updateCurrencyRates(currencyList);
+      currencyRate = getCurrencyRates(currencyList);
 
       let importAltIndexes = SHEET_JSON.map((row) => {
         // Temporary Code TO DO: DELETE THIS
-        // supplierListJson[row[SUPPLIER_NUMBER_VALUE]] =
-        //   "Temporary Supplier Name";
+        supplierListJson[row[SUPPLIER_NUMBER_VALUE]] =
+          "Temporary Supplier Name";
         // DELETE UNTIL HERE
 
         // TO DO: Find supplier from Json list
@@ -259,39 +259,42 @@ $(function () {
  * @returns {number} Amount converted to AUD
  */
 function calculateAUD(costCurrency, amount) {
-  let rates = new Map(JSON.parse(sessionStorage.getItem("currencyRate")));
+  const RATES = JSON.parse(localStorage.getItem("currencyRate"))["data"];
 
-  if (!rates.has(costCurrency))
+  if (!RATES.hasOwnProperty(costCurrency))
     // when currency not Found
-    return `<i>Cost Currency ${costCurrency}</i> not found and cannot be converted.`;
+    return `<i>Cost Currency ${costCurrency}</i> not found and cannot be converted.\n`;
 
-  return amount * rates[costCurrency];
+  return (amount * 1) / RATES[costCurrency];
 }
 
 /**
- * Update "currencyRate" in Session Storage to have currency rates to AUD and get converison rates from API
- * @param {List} currencyList List of currencies in string to convert to AUD
+ * Update "currencyRate" in Session Storage to have currency rates to AUD
+ * and get converison rates from API
  * @returns {Map} of currencies to its currency rates
  */
-function updateCurrencyRates(currencyList) {
-  let currencyRate = {};
-  if (sessionStorage["currencyRate"]) {
-    currencyRate = new Map(JSON.parse(sessionStorage.getItem("currencyRate")));
+function getCurrencyRates() {
+  let currencyRate;
+  if (localStorage["currencyRate"]) {
+    currencyRate = JSON.parse(localStorage.getItem("currencyRate"));
+    lastUpdate = new Date(currencyRate["last_updated_at"]);
+    // Check if currency Rate was updated within this week
+    if (lastUpdate.getWeekNumber() == new Date().getWeekNumber()) {
+      return currencyRate;
+    }
   }
-  // If not all currency in currencyList is in the Session Storage's currencyRate
-  if (![...currencyList].every((currency) => currencyRate.has(currency))) {
-    // Get currency not in Session Storage
-    let notInCurrencyRate = currencyList.filter(
-      (currency) => !currencyRate.has(currency)
-    );
-    // TO DO: Get all currency in notInCurrencyRate from API
-    // for loop for all notInCurrencyRate with the rates
-    // currencyRate.set()
-    // if not find, pass by it
-  }
-  sessionStorage.setItem(
-    "currencyRate",
-    JSON.stringify(Array.from(currencyRate.entries()))
-  );
+  let responseJSON;
+  // Get the currency rates from API
+  const FREE_CURRENCY_API = new Freecurrencyapi();
+  FREE_CURRENCY_API.latest({
+    base_currency: "AUD",
+  }).then((response) => {
+    responseJSON = response;
+  });
+  currencyRate = responseJSON;
+  currentDate = new Date();
+  currencyRate["last_updated_at"] = currentDate.toString();
+  localStorage.setItem("currencyRate", JSON.stringify(currencyRate));
+
   return currencyRate;
 }

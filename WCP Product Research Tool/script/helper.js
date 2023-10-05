@@ -162,7 +162,8 @@ function exitPopUpForm(type) {
  */
 function updateChanges(change) {
   storedChanges = sessionStorage.getItem("savedChanges");
-  if (storedChanges) {
+  // If savedChanges is empty
+  if (!storedChanges) {
     sessionStorage.setItem(
       "savedChanges",
       JSON.stringify(change.map((map) => Array.from(map.entries())))
@@ -186,7 +187,8 @@ function saveChangesToSQL() {
   // TO DO: translate Map changes to SQL
   let storedChanges = sessionStorage.getItem("savedChanges");
   let savedChanges = JSON.parse(storedChanges).map((array) => new Map(array));
-  if (storedChanges || savedChanges.size == 0) {
+  // If savedChanges is empty or Array is empty
+  if (!storedChanges || savedChanges.size == 0) {
     showAlert(
       "<strong>FATAL Error!</strong> No changes was found, please contact administrator"
     );
@@ -208,7 +210,7 @@ function saveChangesToSQL() {
     return false;
   }
 
-  sessionStorage.clearItem("savedChanges");
+  sessionStorage.removeItem("savedChanges");
   return true;
 }
 
@@ -240,6 +242,21 @@ async function readExcelFileToJson(filenameInput) {
     READER.readAsArrayBuffer(FILE[0]);
   });
 }
+
+/**
+ * For a given date, get the ISO week number
+ * @returns the ISO week number
+ */
+Date.prototype.getWeekNumber = function () {
+  var d = new Date(
+    Date.UTC(this.getFullYear(), this.getMonth(), this.getDate())
+  );
+  d.setMilliseconds(0);
+  var dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+};
 
 class Product {
   constructor(id, sku, make, model, type, num, desc, status, oem) {
@@ -333,5 +350,46 @@ class AlternateIndex {
     this.SupplierPartType = supplierPartType;
     this.WcpPartType = wcpPartType;
     this.IsMain = isMain ? "MAIN" : "";
+  }
+}
+
+class Freecurrencyapi {
+  baseUrl = "https://api.freecurrencyapi.com/v1/";
+
+  // temporary API_KEY using Axell's account from https://freecurrencyapi.com
+  constructor(apiKey = "fca_live_9rGbrfYBHZF87MKp6NT4CdrsTChb2rPy2bdD9lfw") {
+    this.headers = {
+      apikey: apiKey,
+    };
+  }
+
+  call(endpoint, params = {}) {
+    const paramString = new URLSearchParams({
+      ...params,
+    }).toString();
+
+    return fetch(`${this.baseUrl}${endpoint}?${paramString}`, {
+      headers: this.headers,
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        return data;
+      });
+  }
+
+  status() {
+    return this.call("status");
+  }
+
+  currencies(params) {
+    return this.call("currencies", params);
+  }
+
+  latest(params) {
+    return this.call("latest", params);
+  }
+
+  historical(params) {
+    return this.call("historical", params);
   }
 }
