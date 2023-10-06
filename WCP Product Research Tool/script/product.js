@@ -150,7 +150,7 @@ $(function () {
         let isStatusEmtpy = STATUS_VALUE.trim().length == 0;
         let isOemCategoryEmtpy = OEM_CATEGORY_VALUE.trim().length == 0;
 
-        const SHEET_JSON = await readExcelFileToJson("#importFile");
+        const SHEET_JSON = await readFileToJson("#importFile");
         let missingHeader = "";
         // Check if file is empty or blank
         if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {
@@ -233,7 +233,7 @@ $(function () {
           TABLE.clear().draw();
         }
 
-        // save new rows into sessionStorage
+        // save new rows into Session torage
         updateChanges(changesMade);
         // Toggle hasChanges On
         updateHasChanges(true);

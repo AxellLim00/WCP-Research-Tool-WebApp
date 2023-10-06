@@ -75,10 +75,11 @@ function showAlert(message) {
   else if ($(".alert").is(":hidden")) {
     $("#AlertMessage").html(message);
     $(".alert").show();
+  } else {
+    $("#AlertMessage").html(message);
   }
 }
 
-//TO DO: check whether hasChange is grabbed from Session Storage correctly
 /**
  * Set Session Storage's "hasChanges" to hasChange parameter
  * @param {Boolean} hasChange Tab's ID to switch
@@ -215,23 +216,48 @@ function saveChangesToSQL() {
 }
 
 /**
- * Read XLSX and XLS file to JSON representation format
- * @param {String} filenameInput
+ *  * Read XLSX and XLS file to JSON representation format
+ * @param {String} filenameInput HTML file input Id
+ * @param {Boolean} worksheetSeperated
+ * @param {String[]} worksheetName
  * @returns {Promise<Map> | undefined} Excel Worksheet data in JSON format when resolved, if fail to read or rejects returns undefined
  */
-async function readExcelFileToJson(filenameInput) {
+async function readFileToJson(
+  filenameInput,
+  worksheetSeperated = false,
+  worksheetName = []
+) {
   // Read file
   const FILE = $(filenameInput).prop("files");
   const READER = new FileReader();
   return new Promise((resolve, reject) => {
     READER.onloadend = function () {
       const FILE_DATA = new Uint8Array(READER.result);
+
       const WORKBOOK = XLSX.read(FILE_DATA, { type: "array" });
 
       // Assuming the first sheet of the workbook is the relevant one
-      const SHEET_NAME = WORKBOOK.SheetNames[0];
-      const SHEET = WORKBOOK.Sheets[SHEET_NAME];
-      resolve(XLSX.utils.sheet_to_json(SHEET));
+      if (!worksheetSeperated) {
+        const SHEET_NAME = WORKBOOK.SheetNames[0];
+        const SHEET = WORKBOOK.Sheets[SHEET_NAME];
+        resolve(XLSX.utils.sheet_to_json(SHEET));
+      } else {
+        let jsonData = {};
+        worksheetName.forEach((sheetName) => {
+          if (!WORKBOOK.SheetNames.includes(sheetName)) {
+            showAlert(
+              `<strong>ERROR!</strong> Worksheet "${sheetName}" not found.`
+            );
+            resolve(undefined); // or handle the situation accordingly
+          }
+          const worksheet = WORKBOOK.Sheets[sheetName];
+          const worksheetData = XLSX.utils.sheet_to_json(worksheet);
+          // Use the worksheet name as the key in the JSON object
+          jsonData[sheetName] = worksheetData;
+        });
+        // Combine all worksheet data into one JSON object
+        resolve(Object.assign({}, ...Object.values(jsonData)));
+      }
     };
     READER.onerror = function () {
       showAlert(

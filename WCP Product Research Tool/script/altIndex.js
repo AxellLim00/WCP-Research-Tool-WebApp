@@ -119,7 +119,7 @@ $(function () {
     // On Form being filled Completely
     if (isFormFilled) {
       let isQualityEmpty = QUALITY_VALUE.trim().length == 0;
-      const SHEET_JSON = await readExcelFileToJson("#importFile");
+      const SHEET_JSON = await readFileToJson("#importFile");
       let missingHeader = "";
 
       // Check if file is empty or blank

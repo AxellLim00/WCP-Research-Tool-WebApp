@@ -4,8 +4,8 @@ $(function () {
 
   sessionStorage.clear();
 
-  sessionStorage.setItem("currentTab", "tab0");
-  selectTab("tab1");
+  sessionStorage.setItem("currentTab", "tab2");
+  selectTab("tab2");
   sessionStorage.setItem("hasChanges", false);
 
   $("#menu").on("click", function () {
