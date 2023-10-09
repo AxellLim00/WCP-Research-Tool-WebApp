@@ -123,21 +123,24 @@ $(function () {
       if (IS_DIFFERENT_WORKSHEET) {
         vinSectionKey = VIN_WORKSHEET_VALUE;
         oemSectionKey = OEM_WORKSHEET_VALUE;
-        sheetJson = await readFileToJson("#importFile", true, [
-          VIN_WORKSHEET_VALUE,
-          OEM_WORKSHEET_VALUE,
-        ]);
+        sheetJson = await readFileToJson(
+          "#importFile",
+          true,
+          [VIN_WORKSHEET_VALUE, OEM_WORKSHEET_VALUE],
+          [VIN_VALUE, OEM_VALUE]
+        );
       } else {
-        vinSectionKey = "vin";
-        oemSectionKey = "oem";
+        vinSectionKey = VIN_VALUE;
+        oemSectionKey = OEM_VALUE;
         sheetJson = await readFileToJson("#importFile");
-        //TO DO: split JSON into 2 like when different worksheet on up where
-        // { "vin" : [], "oem": [] }
+        debugger;
       }
       debugger;
       let missingHeader = "";
-      // Check if file is empty or blank
-      if (sheetJson === undefined || sheetJson.length == 0) {
+      // If has erros from reading
+      if (sheetJson === undefined) return;
+      // If file is empty or blank
+      if (sheetJson.length == 0) {
         showAlert(
           `<strong>Error!</strong> <i>${$("input[type=file]")
             .val()

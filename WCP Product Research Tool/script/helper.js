@@ -225,7 +225,8 @@ function saveChangesToSQL() {
 async function readFileToJson(
   filenameInput,
   worksheetSeperated = false,
-  worksheetName = []
+  worksheetName = [],
+  header = []
 ) {
   // Read file
   const FILE = $(filenameInput).prop("files");
@@ -233,30 +234,58 @@ async function readFileToJson(
   return new Promise((resolve, reject) => {
     READER.onloadend = function () {
       const FILE_DATA = new Uint8Array(READER.result);
-
       const WORKBOOK = XLSX.read(FILE_DATA, { type: "array" });
-
       // Assuming the first sheet of the workbook is the relevant one
       if (!worksheetSeperated) {
         const SHEET_NAME = WORKBOOK.SheetNames[0];
         const SHEET = WORKBOOK.Sheets[SHEET_NAME];
         resolve(XLSX.utils.sheet_to_json(SHEET));
       } else {
-        let jsonData = {};
-        worksheetName.forEach((sheetName) => {
+        let jsonData = [];
+        let errorMessage = [];
+        worksheetName.forEach((sheetName, index) => {
           if (!WORKBOOK.SheetNames.includes(sheetName)) {
-            showAlert(
-              `<strong>ERROR!</strong> Worksheet "${sheetName}" not found.`
-            );
-            resolve(undefined); // or handle the situation accordingly
+            errorMessage.push(`Worksheet "${sheetName}" not found.`);
+            return;
           }
-          const worksheet = WORKBOOK.Sheets[sheetName];
-          const worksheetData = XLSX.utils.sheet_to_json(worksheet);
-          // Use the worksheet name as the key in the JSON object
+          let worksheet = WORKBOOK.Sheets[sheetName];
+          let worksheetData = XLSX.utils.sheet_to_json(worksheet);
+          // Check if header is in worksheet
+          if (!worksheetData[0].hasOwnProperty(header[index])) {
+            errorMessage.push(
+              `Worksheet "${sheetName}" has no header "${header[index]}".`
+            );
+          }
           jsonData[sheetName] = worksheetData;
         });
+        // If there is one or more error messages
+        if (errorMessage.length) {
+          showAlert(`<strong>ERROR!</strong> ${errorMessage.join(" ")}`);
+          resolve(undefined);
+          return;
+        }
         // Combine all worksheet data into one JSON object
-        resolve(Object.assign({}, ...Object.values(jsonData)));
+        // Initialize an empty array to store the combined rows
+        combinedData = [];
+
+        // Iterate through the properties of the object, and find max row in object's property
+        let properties = Object.keys(data);
+        let maxRows = Math.max(...properties.map((prop) => data[prop].length));
+        // TO DO: Check if this works 
+        for (let i = 0; i < maxRows; i++) {
+          let combinedRow = {};
+
+          for (const prop of properties) {
+            let propArray = jsonData[prop];
+            // Use an empty object if the property array is shorter
+            let propObj = propArray[i] || {};
+            combinedRow[prop] = propObj[prop];
+          }
+
+          combinedData.push(combinedRow);
+        }
+        debugger;
+        resolve(combinedData);
       }
     };
     READER.onerror = function () {
