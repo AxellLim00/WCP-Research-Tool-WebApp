@@ -273,7 +273,7 @@ function calculateAUD(costCurrency, amount) {
  * and get converison rates from API
  * @returns {Map} of currencies to its currency rates
  */
-function getCurrencyRates() {
+async function getCurrencyRates() {
   let currencyRate;
   if (localStorage["currencyRate"]) {
     currencyRate = JSON.parse(localStorage.getItem("currencyRate"));
@@ -286,7 +286,7 @@ function getCurrencyRates() {
   let responseJSON;
   // Get the currency rates from API
   const FREE_CURRENCY_API = new Freecurrencyapi();
-  FREE_CURRENCY_API.latest({
+  await FREE_CURRENCY_API.latest({
     base_currency: "AUD",
   }).then((response) => {
     responseJSON = response;

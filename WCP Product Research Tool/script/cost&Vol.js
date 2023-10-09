@@ -76,19 +76,24 @@ $(function () {
 
     // Successful Save
     if (isFormFilled) {
+      // TO DO: continue saving method, note that table does not use datatable
+      // Note that lots of optional header with default to 0
+      // save new rows into Session torage
+      updateChanges(changesMade);
+      // Toggle hasChanges On
       updateHasChanges(true);
-
-      // TO DO: save data
+      // Add data to table
+      TABLE.rows.add(importProducts).draw();
       exitPopUpForm(formSelected);
-      return;
     }
     // Unsuccessful Save
     else {
       showAlert(
         "<strong>Error!</strong> Please complete all non-optional fields."
       );
-      return;
     }
+
+    return;
   });
 
   // Cancel Form - NOTE: keep last thing written

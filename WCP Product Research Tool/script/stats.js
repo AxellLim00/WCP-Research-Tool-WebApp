@@ -28,10 +28,12 @@ $(function () {
   }
 
   const VIN_TABLE = new DataTable(VIN_TABLE_NAME, {
+    columns: [{ data: "vin" }],
     orderCellsTop: true,
     stateSave: true,
   });
   const OEM_TABLE = new DataTable(OEM_TABLE_NAME, {
+    columns: [{ data: "oem" }],
     orderCellsTop: true,
     stateSave: true,
   });
@@ -160,20 +162,38 @@ $(function () {
         );
         return;
       }
-      // TO DO : test this
+
       let importVins = sheetJson
         .filter(function (row) {
-          row.hasOwnProperty(VIN_VALUE);
+          return row.hasOwnProperty(VIN_VALUE);
         })
         .map(function (row) {
-          return row[VIN_VALUE];
+          let newObject = { vin: row[VIN_VALUE] };
+          changesMade.push(
+            new Map([
+              ["type", "new"],
+              ["id", productChosen],
+              ["table", "vin"],
+              ["changes", newObject],
+            ])
+          );
+          return newObject;
         });
       let importOems = sheetJson
         .filter(function (row) {
-          row.hasOwnProperty(OEM_VALUE);
+          return row.hasOwnProperty(OEM_VALUE);
         })
         .map(function (row) {
-          return row[OEM_VALUE];
+          let newObject = { oem: row[OEM_VALUE] };
+          changesMade.push(
+            new Map([
+              ["type", "new"],
+              ["id", productChosen],
+              ["table", "oem"],
+              ["changes", newObject],
+            ])
+          );
+          return { oem: row[OEM_VALUE] };
         });
 
       // save new rows into Session Storage
@@ -181,6 +201,11 @@ $(function () {
       // Toggle hasChanges On
       updateHasChanges(true);
       // Add data to table
+      if (isEmptyData) {
+        isEmptyData = false;
+        VIN_TABLE.clear().draw();
+        OEM_TABLE.clear().draw();
+      }
       VIN_TABLE.rows.add(importVins).draw();
       OEM_TABLE.rows.add(importOems).draw();
       exitPopUpForm(formSelected);
