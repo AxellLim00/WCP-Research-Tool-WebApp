@@ -250,12 +250,6 @@ async function readFileToJson(
           }
           let worksheet = WORKBOOK.Sheets[sheetName];
           let worksheetData = XLSX.utils.sheet_to_json(worksheet);
-          // Check if header is in worksheet
-          if (!worksheetData[0].hasOwnProperty(header[index])) {
-            errorMessage.push(
-              `Worksheet "${sheetName}" has no header "${header[index]}".`
-            );
-          }
           jsonData[sheetName] = worksheetData;
         });
         // If there is one or more error messages
@@ -269,9 +263,11 @@ async function readFileToJson(
         combinedData = [];
 
         // Iterate through the properties of the object, and find max row in object's property
-        let properties = Object.keys(data);
-        let maxRows = Math.max(...properties.map((prop) => data[prop].length));
-        // TO DO: Check if this works 
+        let properties = Object.keys(jsonData);
+        let maxRows = Math.max(
+          ...properties.map((prop) => jsonData[prop].length)
+        );
+        // Combine all properties into one JSON object
         for (let i = 0; i < maxRows; i++) {
           let combinedRow = {};
 
@@ -284,7 +280,13 @@ async function readFileToJson(
 
           combinedData.push(combinedRow);
         }
-        debugger;
+        // Clean up combinedData
+        combinedData.forEach((obj) => {
+          // Delete properties that are undefined
+          Object.keys(obj).forEach(
+            (key) => obj[key] === undefined && delete obj[key]
+          );
+        });
         resolve(combinedData);
       }
     };

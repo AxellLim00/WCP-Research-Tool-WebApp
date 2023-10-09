@@ -133,9 +133,7 @@ $(function () {
         vinSectionKey = VIN_VALUE;
         oemSectionKey = OEM_VALUE;
         sheetJson = await readFileToJson("#importFile");
-        debugger;
       }
-      debugger;
       let missingHeader = "";
       // If has erros from reading
       if (sheetJson === undefined) return;
@@ -162,9 +160,21 @@ $(function () {
         );
         return;
       }
-
-      let importVins;
-      let importOems;
+      // TO DO : test this
+      let importVins = sheetJson
+        .filter(function (row) {
+          row.hasOwnProperty(VIN_VALUE);
+        })
+        .map(function (row) {
+          return row[VIN_VALUE];
+        });
+      let importOems = sheetJson
+        .filter(function (row) {
+          row.hasOwnProperty(OEM_VALUE);
+        })
+        .map(function (row) {
+          return row[OEM_VALUE];
+        });
 
       // save new rows into Session Storage
       updateChanges(changesMade);
