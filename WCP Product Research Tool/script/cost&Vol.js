@@ -1,16 +1,18 @@
 $(function () {
   const COST_VOLUME_TABLE_NAME = "#costVolTable";
+  const TABLE = $("#costVolTable");
   var researchID = "Default ID";
   var formSelected = "";
   var isEmptyData = true;
   var productChosen = sessionStorage.getItem("productChosen");
-
+  var productObject = new CostVolume();
   //Load table from SQL
 
   // if loading from SQL empty
 
   if (isEmptyData) {
     $('tr[name="values"]').children().text("-");
+    $('button[name="editBtn"]').prop("disabled", true);
   } else {
     let costVolTableData;
     // TO DO: fill in table with the data
@@ -63,27 +65,139 @@ $(function () {
     showPopUpForm(formSelected, "Import Cost & Volume");
   });
 
+  $('button[name="editBtn"]').on("click", function () {
+    formSelected = "edit";
+    $(`#${formSelected}Id`).text(productObject.Id);
+    $(`#${formSelected}CostUsd`).text(productObject.CostUSD);
+    $(`#${formSelected}CostAud`).text(productObject.CostAUD);
+    $(`#${formSelected}EstCostAud`).val(productObject.EstimateCostAUD);
+    $(`#${formSelected}EstSell`).val(productObject.EstimateSell);
+    $(`#${formSelected}Postage`).val(productObject.Postage);
+    $(`#${formSelected}Ext`).val(productObject.ExtGP);
+    showPopUpForm(formSelected, "Edit Cost & Volume");
+  });
+
   //#endregion
 
   //#region Form Button
-  $('button[name="saveForm"]').on("click", function () {
+  $('button[name="saveForm"]').on("click", async function () {
+    const FILE_VALUE = $(`#${formSelected}File`).val();
+    const ID_VALUE = $(`#${formSelected}Id`).val();
+    const COST_USD_VALUE = $(`#${formSelected}CostUsd`).val();
+    const EST_COST_AUD_VALUE = $(`#${formSelected}EstCostAud`).val();
+    const EST_SELL_VALUE = $(`#${formSelected}EstSell`).val();
+    const POSTAGE_VALUE = $(`#${formSelected}Postage`).val();
+    const EXT_GP_VALUE = $(`#${formSelected}Ext`).val();
+    let isFormFilled = false;
+
     //check if mandatory field
-    var isFormFilled = Boolean(
-      $(`#${formSelected}Id`).val() &&
-        $(`#${formSelected}CostUsd`).val() &&
-        $(`#${formSelected}file`).val()
-    );
+    if (formSelected == "import")
+      isFormFilled = Boolean(ID_VALUE && COST_USD_VALUE && FILE_VALUE);
+
+    if (formSelected == "edit")
+      isFormFilled = Boolean(
+        EST_COST_AUD_VALUE && EST_SELL_VALUE && POSTAGE_VALUE && EXT_GP_VALUE
+      );
 
     // Successful Save
     if (isFormFilled) {
-      // TO DO: continue saving method, note that table does not use datatable
-      // Note that lots of optional header with default to 0
-      // save new rows into Session torage
+      if (formSelected == "import") {
+        let isEstCostAudEmpty = EST_COST_AUD_VALUE.trim().length == 0;
+        let isEstSellEmtpy = EST_SELL_VALUE.trim().length == 0;
+        let isPostageEmtpy = POSTAGE_VALUE.trim().length == 0;
+        let isExtGpEmtpy = EXT_GP_VALUE.trim().length == 0;
+        let missingHeader = "";
+        let changesMade = [];
+
+        const SHEET_JSON = await readFileToJson("#importFile");
+
+        // Check if file is empty or blank
+        if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {
+          showAlert(
+            `<strong>Error!</strong> <i>${$("input[type=file]")
+              .val()
+              .split("\\")
+              .pop()}</i> File is empty or blank.`
+          );
+          return;
+        }
+
+        missingHeader = findMissingColumnHeader(SHEET_JSON[0], [
+          ID_VALUE,
+          COST_USD_VALUE,
+          isEstCostAudEmpty ? null : EST_COST_AUD_VALUE,
+          isEstSellEmtpy ? null : EST_SELL_VALUE,
+          isPostageEmtpy ? null : POSTAGE_VALUE,
+          isExtGpEmtpy ? null : EXT_GP_VALUE,
+        ]);
+
+        // Check if all headers from input are inside the file
+        if (Boolean(missingHeader)) {
+          showAlert(
+            `<strong>Error!</strong> Column ${missingHeader} Header not found in file.`
+          );
+          return;
+        }
+
+        let importCosVol = SHEET_JSON.map((row) => {
+          newObject = new CostVolume(
+            row[ID_VALUE],
+            row[COST_USD_VALUE],
+            calculateAUD("USD", row[COST_USD_VALUE]),
+            isEstCostAudEmpty ? 0 : row[EST_COST_AUD_VALUE],
+            isEstSellEmtpy ? 0 : row[EST_SELL_VALUE],
+            isPostageEmtpy ? 0 : row[POSTAGE_VALUE],
+            isExtGpEmtpy ? 0 : row[EXT_GP_VALUE]
+          );
+
+          // Store each new row locally
+          changesMade.push(
+            new Map([
+              ["type", "new"],
+              ["id", newObject.Id],
+              ["table", "CostVolume"],
+              ["changes", newObject],
+            ])
+          );
+          return newObject;
+        });
+
+        // for testing purpose TO DO: DELETE
+        productChosen = "test";
+        // Find current product in import cost and volume list
+        let foundCostVol = importCosVol.find((obj) => obj.Id === productChosen);
+        if (foundCostVol) {
+          // Add data to table
+          $.each(Object.keys(foundCostVol), function (i, val) {
+            TABLE.find("tr").find("td").eq(i).text(foundCostVol[val]);
+          });
+          isEmptyData = false;
+          productObject = foundCostVol;
+          $('button[name="editBtn"]').prop("disabled", false);
+        }
+      } else if (formSelected == "edit") {
+        // if any of these values are empty
+        if (
+          Boolean(
+            EST_COST_AUD_VALUE ||
+              EST_SELL_VALUE ||
+              POSTAGE_VALUE ||
+              EXT_GP_VALUE
+          )
+        ) {
+          showAlert(
+            "<strong>Error!</strong> Please have all fields filled before saving."
+          );
+          return;
+        }
+        // TO DO: save to update Changes
+        // TO DO: check if there are any changes compared to old value (can be found in productObject)
+        // TO DO: Check if all inputs are numbers or according to the type needed.
+      }
+
       updateChanges(changesMade);
       // Toggle hasChanges On
       updateHasChanges(true);
-      // Add data to table
-      TABLE.rows.add(importProducts).draw();
       exitPopUpForm(formSelected);
     }
     // Unsuccessful Save

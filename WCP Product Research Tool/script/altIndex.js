@@ -253,22 +253,6 @@ $(function () {
 });
 
 /**
- * Convert local currency to AUD currency
- * @param {String} costCurrency currency name
- * @param {Number} amount Amount in local currency
- * @returns {number} Amount converted to AUD
- */
-function calculateAUD(costCurrency, amount) {
-  const RATES = JSON.parse(localStorage.getItem("currencyRate"))["data"];
-
-  if (!RATES.hasOwnProperty(costCurrency))
-    // when currency not Found
-    return `<i>Cost Currency ${costCurrency}</i> not found and cannot be converted.\n`;
-
-  return (amount * 1) / RATES[costCurrency];
-}
-
-/**
  * Update "currencyRate" in Session Storage to have currency rates to AUD
  * and get converison rates from API
  * @returns {Map} of currencies to its currency rates

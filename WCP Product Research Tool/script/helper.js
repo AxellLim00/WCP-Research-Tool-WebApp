@@ -301,6 +301,22 @@ async function readFileToJson(
 }
 
 /**
+ * Convert local currency to AUD currency
+ * @param {String} costCurrency currency name
+ * @param {Number} amount Amount in local currency
+ * @returns {number} Amount converted to AUD
+ */
+function calculateAUD(costCurrency, amount) {
+  let rates = JSON.parse(localStorage.getItem("currencyRate"))["data"];
+
+  if (!rates.hasOwnProperty(costCurrency))
+    // when currency not Found
+    return `<i>Cost Currency ${costCurrency}</i> not found and cannot be converted.\n`;
+
+  return ((amount * 1) / rates[costCurrency]).toFixed(2);
+}
+
+/**
  * For a given date, get the ISO week number
  * @returns the ISO week number
  */
@@ -448,5 +464,33 @@ class Freecurrencyapi {
 
   historical(params) {
     return this.call("historical", params);
+  }
+}
+
+class CostVolume {
+  constructor(id, costUsd, costAud, estCostAud, estSell, postage, extGP) {
+    this.Id = id;
+    this.CostUSD = costUsd;
+    this.CostAUD = costAud;
+    if (estCostAud === null) {
+      this.EstimateCostAUD = 0;
+    } else {
+      this.EstimateCostAUD = estCostAud;
+    }
+    if (estSell === null) {
+      this.EstimateSell = 0;
+    } else {
+      this.EstimateSell = estSell;
+    }
+    if (postage === null) {
+      this.Postage = 0;
+    } else {
+      this.Postage = postage;
+    }
+    if (extGP === null) {
+      this.ExtGP = 0;
+    } else {
+      this.ExtGP = extGP;
+    }
   }
 }

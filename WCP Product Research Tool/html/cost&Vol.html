@@ -29,7 +29,7 @@
               <th>Estimate on cost AUD</th>
               <th>Estimate Sell</th>
               <th>Postage</th>
-              <th>Ext GP%</th>
+              <th>External Gross Profit (%)</th>
             </tr>
             <tr name="values">
               <td></td>
@@ -45,6 +45,7 @@
       </div>
       <div class="flex-buttons">
         <button name="saveBtn" class="save" disabled>Save</button>
+        <button name="editBtn">Edit</button>
         <button name="importBtn">Import</button>
         <button name="exportBtn">Export</button>
       </div>
@@ -106,7 +107,7 @@
             <input id="importPostage" type="text" />
           </label>
           <label>
-            Ext GP% Header
+            External Gross Profit in % Header
             <img
               src="../icon/info.png"
               alt="Info Icon"
@@ -115,6 +116,47 @@
             />
             <br />
             <input id="importExt" type="text" />
+          </label>
+        </section>
+        <section
+          id="editForm"
+          class="flex-form form-information"
+          style="display: none"
+        >
+          <label>
+            Research ID:
+            <br />
+            <p id="editId">ID Example</p>
+          </label>
+          <label>
+            Cost Price USD
+            <br />
+            <p id="editCostUsd">0.00</p>
+          </label>
+          <label>
+            Cost Price AUD
+            <br />
+            <p id="editCostAud">0.00</p>
+          </label>
+          <label>
+            Estimate on cost AUD
+            <br />
+            <input id="editEstCostAud" type="text" />
+          </label>
+          <label>
+            Estimate Sell
+            <br />
+            <input id="editEstSell" type="text" />
+          </label>
+          <label>
+            Postage
+            <br />
+            <input id="editPostage" type="text" />
+          </label>
+          <label>
+            External Gross Profit in %
+            <br />
+            <input id="editExt" type="text" />
           </label>
         </section>
         <section class="flex-buttons form-button">

@@ -118,7 +118,7 @@ $(function () {
     const STATUS_VALUE = $(`#${formSelected}Status`).val();
     const OEM_CATEGORY_VALUE = $(`#${formSelected}Oem`).val();
     const ID_VALUE = $("#ID").text();
-    let fileValue = "";
+    const FILE_VALUE = $(`#${formSelected}File`).val();
     let changesMade = [];
     //check if mandatory field
     let isFormFilled = Boolean(
@@ -137,21 +137,21 @@ $(function () {
     }
     // extra validation on import product
     else if (formSelected == "import") {
-      fileValue = $(`#${formSelected}File`).val();
-      isFormFilled &= Boolean(fileValue);
+      isFormFilled &= Boolean(FILE_VALUE);
     }
 
     // On Form being filled Completely
     if (isFormFilled) {
       // For Import Products
       if (formSelected == "import") {
-        // Keeping Column header name
+        // Optional Column header name
         let isSkuEmpty = SKU_VALUE.trim().length == 0;
         let isStatusEmtpy = STATUS_VALUE.trim().length == 0;
         let isOemCategoryEmtpy = OEM_CATEGORY_VALUE.trim().length == 0;
+        let missingHeader = "";
 
         const SHEET_JSON = await readFileToJson("#importFile");
-        let missingHeader = "";
+
         // Check if file is empty or blank
         if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {
           showAlert(
@@ -226,17 +226,11 @@ $(function () {
           );
           return;
         }
-
         // Empty Table if DataTable previosly was empty
         if (isEmptyData) {
           isEmptyData = false;
           TABLE.clear().draw();
         }
-
-        // save new rows into Session torage
-        updateChanges(changesMade);
-        // Toggle hasChanges On
-        updateHasChanges(true);
         // Add data to table
         TABLE.rows.add(importProducts).draw();
         exitPopUpForm(formSelected);
@@ -268,14 +262,14 @@ $(function () {
             ["changes", newProduct],
           ])
         );
-        // save new rows into sessionStorage
-        updateChanges(changesMade);
-        // Toggle hasChanges ON
-        updateHasChanges(true);
         // Add data to table
         TABLE.row.add(newProduct).draw();
         exitPopUpForm(formSelected);
       }
+      // save new rows into sessionStorage
+      updateChanges(changesMade);
+      // Toggle hasChanges ON
+      updateHasChanges(true);
       return;
     }
     // On Form being filled Incompletely
