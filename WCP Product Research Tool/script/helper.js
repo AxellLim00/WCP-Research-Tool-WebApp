@@ -182,7 +182,7 @@ function updateChanges(change) {
 /**
  * Save changes made to SQL
  * Session Storage's "savedChanges" will be cleared
- * @returns {boolean} true if successful, false otherwise
+ * @returns {Boolean} true if successful, false otherwise
  */
 function saveChangesToSQL() {
   // TO DO: translate Map changes to SQL
@@ -216,7 +216,7 @@ function saveChangesToSQL() {
 }
 
 /**
- *  * Read XLSX and XLS file to JSON representation format
+ * Read XLSX and XLS file to JSON representation format/
  * @param {String} filenameInput HTML file input Id
  * @param {Boolean} worksheetSeperated
  * @param {String[]} worksheetName
@@ -314,6 +314,28 @@ function calculateAUD(costCurrency, amount) {
     return `<i>Cost Currency ${costCurrency}</i> not found and cannot be converted.\n`;
 
   return ((amount * 1) / rates[costCurrency]).toFixed(2);
+}
+
+/**
+ * To check if a string value is a valid float.
+ * @param {String} str value to check
+ * @returns {Boolean} True if the string is only a float, false otherwise
+ */
+function isFloat(str) {
+  return /^\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\s*$/.test(str);
+}
+
+/**
+ * Update object's values with the given updates's key value pair
+ * @param {Object} object object to be updated
+ * @param {Object} updates key value pair to update with
+ * @returns {Object} new object with updated values
+ */
+function updateObject(object, updates) {
+  Object.entries(updates).forEach(([key, value]) => {
+    object[key] = value;
+  });
+  return object;
 }
 
 /**
