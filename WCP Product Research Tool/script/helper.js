@@ -318,6 +318,7 @@ function calculateAUD(costCurrency, amount) {
 
 /**
  * To check if string value(s) is a valid float.
+ * @param {String} args string values to be validated
  * @returns {Boolean} True if the string is only a float, false otherwise
  */
 function isFloat() {

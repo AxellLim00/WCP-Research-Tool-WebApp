@@ -4,6 +4,7 @@ $(function () {
   const TABLE_NAME = "#productTable";
   var formSelected = "";
   var isEmptyData = true;
+  var productSelected;
   // Temporary variables for the new product form
   var prevMake = "";
   var prevModel = "";
@@ -101,11 +102,43 @@ $(function () {
   });
 
   // Edit button
+  $('button[name="editBtn"]').on("click", function () {
+    formSelected = "edit";
+    $(`#${formSelected}Id`).text(productSelected.Id);
+    $(`#${formSelected}Sku`).text(productSelected.Sku);
+    $(`#${formSelected}Make`).text(productSelected.Make);
+    $(`#${formSelected}Model`).text(productSelected.Model);
+    $(`#${formSelected}Type`).text(productSelected.Type);
+    $(`#${formSelected}Num`).text(productSelected.Num);
+    $(`#${formSelected}Desc`).text(productSelected.Desc);
+    $(`#${formSelected}Status`).val(productSelected.Status);
+    $(`#${formSelected}Oem`).val(productSelected.Oem);
+    showPopUpForm(formSelected, "Edit Product");
+  });
   // TO DO: edit product that user has higlighted in the table
   // Make pop up form for all the fields that are editable
-  // $('#editBtn').on("click", function () {});
 
   //#endregion
+
+  // TO DO: make highlight class to highlight row
+  $(`${TABLE_NAME} tbody tr`).on("click", function () {
+    // Find the ID cell in the clicked row and highlight it
+    if (isEmptyData) return;
+    $(this).addClass("highlight");
+    let rowId = $(this).find("td:first").text();
+    console.log("TEST");
+  });
+
+  $(`${TABLE_NAME} tbody tr`).on("dblclick", function () {
+    // Find the ID cell in the clicked row and extract its text
+    let rowId = $(this).find("td:first").text();
+    if (rowId.length > 0) {
+      sessionStorage.setItem("productIDSelected", rowId);
+      selectTab("tab2");
+    } else {
+      showAlert("<strong>Error!</strong> Product ID not found.");
+    }
+  });
 
   //#region Form Button
   $('button[name="saveForm"]').on("click", async function () {
@@ -141,144 +174,148 @@ $(function () {
     }
 
     // On Form being filled Completely
-    if (isFormFilled) {
-      // For Import Products
-      if (formSelected == "import") {
-        // Optional Column header name
-        let isSkuEmpty = SKU_VALUE.trim().length == 0;
-        let isStatusEmtpy = STATUS_VALUE.trim().length == 0;
-        let isOemCategoryEmtpy = OEM_CATEGORY_VALUE.trim().length == 0;
-        let missingHeader = "";
-
-        const SHEET_JSON = await readFileToJson("#importFile");
-
-        // Check if file is empty or blank
-        if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {
-          showAlert(
-            `<strong>Error!</strong> <i>${$("input[type=file]")
-              .val()
-              .split("\\")
-              .pop()}</i> File is empty or blank.`
-          );
-          return;
-        }
-
-        missingHeader = findMissingColumnHeader(SHEET_JSON[0], [
-          isSkuEmpty ? null : SKU_VALUE,
-          MAKE_VALUE,
-          MODEL_VALUE,
-          PART_TYPE_VALUE,
-          IC_NUMBER_VALUE,
-          IC_DESCRIPTION_VALUE,
-          isStatusEmtpy ? null : STATUS_VALUE,
-          isOemCategoryEmtpy ? null : OEM_CATEGORY_VALUE,
-        ]);
-
-        // Check if all headers from input are inside the file
-        if (Boolean(missingHeader)) {
-          showAlert(
-            `<strong>Error!</strong> Column ${missingHeader} Header not found in file.`
-          );
-          return;
-        }
-
-        // Put data into table
-        let importProducts = SHEET_JSON.map((row) => {
-          if (
-            row[MAKE_VALUE].length < 3 ||
-            row[MODEL_VALUE].length < 3 ||
-            row[PART_TYPE_VALUE].length < 3
-          ) {
-            return false;
-          }
-
-          let newObject = new Product(
-            generateProductID(
-              row[MAKE_VALUE],
-              row[MODEL_VALUE],
-              row[PART_TYPE_VALUE]
-            ),
-            isSkuEmpty ? "" : row[SKU_VALUE],
-            row[MAKE_VALUE],
-            row[MODEL_VALUE],
-            row[PART_TYPE_VALUE],
-            row[IC_NUMBER_VALUE],
-            row[IC_DESCRIPTION_VALUE],
-            isStatusEmtpy ? "" : row[STATUS_VALUE],
-            isOemCategoryEmtpy ? "" : row[OEM_CATEGORY_VALUE]
-          );
-
-          // Store each new row locally
-          changesMade.push(
-            new Map([
-              ["type", "new"],
-              ["id", newObject.Id],
-              ["table", "Product"],
-              ["changes", newObject],
-            ])
-          );
-          return newObject;
-        });
-
-        if (importProducts.includes(false)) {
-          showAlert(
-            `<strong>Error!</strong> Value in Make, Model and Part Type must be at least 3 characters long.`
-          );
-          return;
-        }
-        // Empty Table if DataTable previosly was empty
-        if (isEmptyData) {
-          isEmptyData = false;
-          TABLE.clear().draw();
-        }
-        // Add data to table
-        TABLE.rows.add(importProducts).draw();
-        exitPopUpForm(formSelected);
-
-        // For New Product
-      } else if (formSelected == "new") {
-        let newProduct = new Product(
-          $("#ID").text(),
-          SKU_VALUE,
-          MAKE_VALUE,
-          MODEL_VALUE,
-          PART_TYPE_VALUE,
-          IC_NUMBER_VALUE,
-          IC_DESCRIPTION_VALUE,
-          STATUS_VALUE,
-          OEM_CATEGORY_VALUE
-        );
-        // Empty Table if DataTable previosly was empty
-        if (isEmptyData) {
-          isEmptyData = false;
-          TABLE.clear().draw();
-        }
-        // save new rows into sessionStorage
-        changesMade.push(
-          new Map([
-            ["type", "new"],
-            ["id", newProduct.Id],
-            ["table", "Product"],
-            ["changes", newProduct],
-          ])
-        );
-        // Add data to table
-        TABLE.row.add(newProduct).draw();
-        exitPopUpForm(formSelected);
-      }
-      // save new rows into sessionStorage
-      updateChanges(changesMade);
-      // Toggle hasChanges ON
-      updateHasChanges(true);
-      return;
-    }
-    // On Form being filled Incompletely
-    else {
+    if (!isFormFilled) {
       showAlert(
         "<strong>Error!</strong> Please complete all non-optional fields."
       );
       return;
     }
+    // Import Form Save
+    if (formSelected == "import") {
+      // Optional Column header name
+      let isSkuEmpty = SKU_VALUE.trim().length == 0;
+      let isStatusEmtpy = STATUS_VALUE.trim().length == 0;
+      let isOemCategoryEmtpy = OEM_CATEGORY_VALUE.trim().length == 0;
+      let missingHeader = "";
+
+      const SHEET_JSON = await readFileToJson("#importFile");
+
+      // Check if file is empty or blank
+      if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {
+        showAlert(
+          `<strong>Error!</strong> <i>${$("input[type=file]")
+            .val()
+            .split("\\")
+            .pop()}</i> File is empty or blank.`
+        );
+        return;
+      }
+
+      missingHeader = findMissingColumnHeader(SHEET_JSON[0], [
+        isSkuEmpty ? null : SKU_VALUE,
+        MAKE_VALUE,
+        MODEL_VALUE,
+        PART_TYPE_VALUE,
+        IC_NUMBER_VALUE,
+        IC_DESCRIPTION_VALUE,
+        isStatusEmtpy ? null : STATUS_VALUE,
+        isOemCategoryEmtpy ? null : OEM_CATEGORY_VALUE,
+      ]);
+
+      // Check if all headers from input are inside the file
+      if (Boolean(missingHeader)) {
+        showAlert(
+          `<strong>Error!</strong> Column ${missingHeader} Header not found in file.`
+        );
+        return;
+      }
+
+      // Put data into table
+      let importProducts = SHEET_JSON.map((row) => {
+        if (
+          row[MAKE_VALUE].length < 3 ||
+          row[MODEL_VALUE].length < 3 ||
+          row[PART_TYPE_VALUE].length < 3
+        ) {
+          return false;
+        }
+
+        let newObject = new Product(
+          generateProductID(
+            row[MAKE_VALUE],
+            row[MODEL_VALUE],
+            row[PART_TYPE_VALUE]
+          ),
+          isSkuEmpty ? "" : row[SKU_VALUE],
+          row[MAKE_VALUE],
+          row[MODEL_VALUE],
+          row[PART_TYPE_VALUE],
+          row[IC_NUMBER_VALUE],
+          row[IC_DESCRIPTION_VALUE],
+          isStatusEmtpy ? "" : row[STATUS_VALUE],
+          isOemCategoryEmtpy ? "" : row[OEM_CATEGORY_VALUE]
+        );
+
+        // Store each new row locally
+        changesMade.push(
+          new Map([
+            ["type", "new"],
+            ["id", newObject.Id],
+            ["table", "Product"],
+            ["changes", newObject],
+          ])
+        );
+        return newObject;
+      });
+
+      if (importProducts.includes(false)) {
+        showAlert(
+          `<strong>Error!</strong> Value in Make, Model and Part Type must be at least 3 characters long.`
+        );
+        return;
+      }
+      // Empty Table if DataTable previosly was empty
+      if (isEmptyData) {
+        isEmptyData = false;
+        TABLE.clear().draw();
+      }
+      // Add data to table
+      TABLE.rows.add(importProducts).draw();
+      exitPopUpForm(formSelected);
+
+      // For New Product
+    }
+    // New Form Save
+    else if (formSelected == "new") {
+      let newProduct = new Product(
+        $("#ID").text(),
+        SKU_VALUE,
+        MAKE_VALUE,
+        MODEL_VALUE,
+        PART_TYPE_VALUE,
+        IC_NUMBER_VALUE,
+        IC_DESCRIPTION_VALUE,
+        STATUS_VALUE,
+        OEM_CATEGORY_VALUE
+      );
+      // Empty Table if DataTable previosly was empty
+      if (isEmptyData) {
+        isEmptyData = false;
+        TABLE.clear().draw();
+      }
+      // save new rows into sessionStorage
+      changesMade.push(
+        new Map([
+          ["type", "new"],
+          ["id", newProduct.Id],
+          ["table", "Product"],
+          ["changes", newProduct],
+        ])
+      );
+      // Add data to table
+      TABLE.row.add(newProduct).draw();
+      exitPopUpForm(formSelected);
+    }
+    // Edit Form Save
+    else if (formSelected == "edit") {
+    }
+    // save new rows into sessionStorage
+    updateChanges(changesMade);
+    // Toggle hasChanges ON
+    updateHasChanges(true);
+    return;
+
+    // On Form being filled Incompletely
   });
 
   // Cancel Form - NOTE: keep last thing written
@@ -288,7 +325,7 @@ $(function () {
   });
 
   // Event handler for when ID is ready to be created
-  $("#popupForm").on("input", function () {
+  $("#newForm").on("input", function () {
     var make = $("#newMake").val();
     var model = $("#newModel").val();
     var partType = $("#newType").val();
@@ -322,18 +359,6 @@ $(function () {
   });
 
   //#endregion
-
-  // TO DO: Select product when user click on product row, get product researchID from selected product, set productChosen and go to tab2
-  $(`${TABLE_NAME} tbody tr`).on("dblclick", function () {
-    // Find the first cell in the clicked row and extract its text
-    let rowId = $(this).find("td:first").text();
-    if (rowId.length > 0) {
-      sessionStorage.setItem("productChosen", rowId);
-      selectTab("tab2");
-    } else {
-      showAlert("<strong>Error!</strong> Product ID not found.");
-    }
-  });
 });
 
 /**

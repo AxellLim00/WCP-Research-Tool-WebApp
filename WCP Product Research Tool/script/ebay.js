@@ -4,7 +4,7 @@ $(function () {
   const K_TYPE_TABLE_NAME = "#kTypeTable";
   const EPID_TABLE_NAME = "#epIDTable";
   var isEmptyData = true;
-  var productChosen = sessionStorage.getItem("productChosen");
+  var productIdSelected = sessionStorage.getItem("productIDSelected");
   //Load table from SQL
 
   // if loading from SQL empty
@@ -43,7 +43,7 @@ $(function () {
   // $.each(productList, function (i, item) {
   //   $("#productList").append($("<option>").attr("value", i).text(item));
   // });
-  $("#productSelected").val(productChosen);
+  $("#productSelected").val(productIdSelected);
 
   //#region Screen Button
 
@@ -62,7 +62,7 @@ $(function () {
     } else {
       $("table").tableExport({
         type: "excel",
-        fileName: `${productChosen} - eBay Compatibility Table`,
+        fileName: `${productIdSelected} - eBay Compatibility Table`,
         mso: {
           fileFormat: "xlsx",
           worksheetName: ["K Types", "EPIDs"],

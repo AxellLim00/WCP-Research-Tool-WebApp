@@ -6,7 +6,7 @@ $(function () {
   const OEM_TABLE_NAME = "#oemTable";
   var formSelected = "";
   var isEmptyData = true;
-  var productChosen = sessionStorage.getItem("productChosen");
+  var productIdSelected = sessionStorage.getItem("productIDSelected");
 
   //Load table from SQL
 
@@ -48,7 +48,7 @@ $(function () {
   // $.each(productList, function (i, item) {
   //   $("#productList").append($("<option>").attr("value", i).text(item));
   // });
-  $("#productSelected").val(productChosen);
+  $("#productSelected").val(productIdSelected);
 
   //#region Screen Button
 
@@ -74,7 +74,7 @@ $(function () {
     } else {
       $("table").tableExport({
         type: "excel",
-        fileName: `${productChosen} - Stats Table`,
+        fileName: `${productIdSelected} - Stats Table`,
         mso: {
           fileFormat: "xlsx",
           worksheetName: ["Vin Numbers", "OEMs"],
@@ -172,7 +172,7 @@ $(function () {
           changesMade.push(
             new Map([
               ["type", "new"],
-              ["id", productChosen],
+              ["id", productIdSelected],
               ["table", "vin"],
               ["changes", newObject],
             ])
@@ -188,7 +188,7 @@ $(function () {
           changesMade.push(
             new Map([
               ["type", "new"],
-              ["id", productChosen],
+              ["id", productIdSelected],
               ["table", "oem"],
               ["changes", newObject],
             ])

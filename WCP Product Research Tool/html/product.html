@@ -100,6 +100,7 @@
     </section>
     <section class="product-sections flex-buttons">
       <button type="button" name="saveBtn" class="save" disabled>Save</button>
+      <button type="button" name="editBtn" disabled>Edit</button>
       <button type="button" name="newBtn">New</button>
       <button type="button" name="importBtn">Import</button>
       <button type="button" name="exportBtn">Export</button>
@@ -256,6 +257,74 @@
             />
             <br />
             <input id="importOem" type="text" />
+          </label>
+        </section>
+        <section
+          id="editForm"
+          class="flex-form form-information"
+          style="display: none"
+        >
+          <label>
+            Research ID:
+            <br />
+            <p id="editId">ID Example</p>
+          </label>
+          <label>
+            WCP SKU
+            <br />
+            <p id="editSku">-</p>
+          </label>
+          <label>
+            Make
+            <br />
+            <p id="editMake">-</p>
+          </label>
+          <label>
+            Model
+            <br />
+            <p id="editModel">-</p>
+          </label>
+          <label>
+            Make
+            <br />
+            <p id="editMake">-</p>
+          </label>
+          <label>
+            Part Type
+            <br />
+            <p id="editType">-</p>
+          </label>
+          <label>
+            IC Number
+            <br />
+            <p id="editNum">-</p>
+          </label>
+          <label>
+            IC Description
+            <br />
+            <p id="editDesc">-</p>
+          </label>
+          <label>
+            Status
+            <br />
+            <select id="editStatus">
+              <option value="">--Please choose a status--</option>
+              <option value="research">Research OEM</option>
+              <option value="waiting">Waiting on Vendor Quote</option>
+              <option value="costDone">Costing Completed</option>
+              <option value="approval">Waiting Approval</option>
+              <option value="pinnacle">Added to Pinnacle</option>
+              <option value="peach">Added to Peach</option>
+            </select>
+          </label>
+          <label>
+            Aftermarket/Genuine OEM
+            <br />
+            <select id="editOem">
+              <option value="">--Please choose a status--</option>
+              <option value="aftermarket">Aftermarket</option>
+              <option value="genuine">Genuine</option>
+            </select>
           </label>
         </section>
         <section class="flex-buttons form-button">

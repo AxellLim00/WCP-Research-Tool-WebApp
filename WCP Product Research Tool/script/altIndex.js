@@ -6,7 +6,7 @@ $(function () {
   var formSelected = "";
   var currencyRate = new Object();
   var currencyList = new Set();
-  var productChosen = sessionStorage.getItem("productChosen");
+  var productIDSelected = sessionStorage.getItem("productIDSelected");
 
   //TO DO: Load table from SQL
 
@@ -60,7 +60,7 @@ $(function () {
   // $.each(productList, function (i, item) {
   //   $("#productList").append($("<option>").attr("value", i).text(item));
   // });
-  $("#productSelected").val(productChosen);
+  $("#productSelected").val(productIDSelected);
 
   //#region Screen Button
 
@@ -79,7 +79,7 @@ $(function () {
     } else {
       $(TABLE_NAME).tableExport({
         type: "excel",
-        fileName: `${productChosen} - Alternate Index Table`,
+        fileName: `${productIDSelected} - Alternate Index Table`,
         mso: {
           fileFormat: "xlsx",
         },
@@ -208,7 +208,7 @@ $(function () {
         changesMade.push(
           new Map([
             ["type", "new"],
-            ["id", productChosen],
+            ["id", productIDSelected],
             ["table", "AlternateIndex"],
             ["changes", newObject],
           ])
