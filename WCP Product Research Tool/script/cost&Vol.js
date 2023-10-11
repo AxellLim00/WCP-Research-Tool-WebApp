@@ -141,35 +141,22 @@ $(function () {
         let errorMessage = [];
         let importCosVol = SHEET_JSON.map((row) => {
           // Check if all value that in the row has the correct format
-          if (!isFloat(row[COST_USD_VALUE]))
-            errorMessage.push(
-              `Cost Price USD ${row[COST_USD_VALUE]} has a wrong format`
-            );
 
-          if (!isFloat(row[EST_COST_AUD_VALUE]))
-            errorMessage.push(
-              `Estimated Cost AUD ${row[EST_COST_AUD_VALUE]} has a wrong format`
-            );
+          checkAndPushFloatError(row, COST_USD_VALUE, errorMessage);
+          checkAndPushFloatError(row, EST_COST_AUD_VALUE, errorMessage);
+          checkAndPushFloatError(row, EST_SELL_VALUE, errorMessage);
+          checkAndPushFloatError(row, POSTAGE_VALUE, errorMessage);
+          checkAndPushFloatError(row, EXT_GP_VALUE, errorMessage);
 
-          if (!isFloat(row[EST_SELL_VALUE]))
-            errorMessage.push(
-              `Estimated Sell ${row[EST_SELL_VALUE]} has a wrong format`
-            );
-
-          if (!isFloat(row[POSTAGE_VALUE]))
-            errorMessage.push(
-              `Postage ${row[POSTAGE_VALUE]} has a wrong format`
-            );
-
-          if (!isFloat(row[EXT_GP_VALUE]))
-            errorMessage.push(
-              `External Gross Profit ${row[EXT_GP_VALUE]} has a wrong format`
-            );
+          // convert USD to AUD
+          let convertedAud = parseFloat(
+            calculateAUD("USD", parseFloat(row[COST_USD_VALUE]))
+          );
 
           newObject = new CostVolume(
             row[ID_VALUE],
             parseFloat(row[COST_USD_VALUE]).toFixed(2),
-            calculateAUD("USD", parseFloat(row[COST_USD_VALUE])).toFixed(2),
+            convertedAud.toFixed(2),
             isEstCostAudEmpty
               ? 0
               : parseFloat(row[EST_COST_AUD_VALUE]).toFixed(2),
@@ -194,6 +181,7 @@ $(function () {
         productChosen = "test";
         if (errorMessage.length > 0) {
           showAlert(`<strong>ERROR!</strong> ${errorMessage.join(", ")}`);
+          return;
         }
 
         // Find current product in import cost and volume list

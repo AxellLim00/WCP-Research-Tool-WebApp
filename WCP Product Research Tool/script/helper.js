@@ -317,12 +317,28 @@ function calculateAUD(costCurrency, amount) {
 }
 
 /**
- * To check if a string value is a valid float.
- * @param {String} str value to check
+ * To check if string value(s) is a valid float.
  * @returns {Boolean} True if the string is only a float, false otherwise
  */
-function isFloat(str) {
-  return /^\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\s*$/.test(str);
+function isFloat() {
+  let isAllFloat = true;
+  let args = Array.prototype.slice.call(arguments);
+  args.forEach((str) => {
+    isAllFloat &&= /^\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\s*$/.test(str);
+  });
+  return isAllFloat;
+}
+
+/**
+ * Check if value in row is float and adds error to the error list
+ * @param {Dictionary} row each dictionary object from json
+ * @param {String} key name of the key to check
+ * @param {String[]} errorMessageList erroe message list to add if there is error
+ */
+function checkAndPushFloatError(row, key, errorMessageList) {
+  if (!isFloat(row[key])) {
+    errorMessageList.push(`Header ${key} - value ${row[key]} has a wrong format`);
+  }
 }
 
 /**
