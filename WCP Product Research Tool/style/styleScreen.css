@@ -95,6 +95,10 @@ th {
   width: 100%;
 }
 
+tr.highlight {
+  background-color: lig;
+}
+
 /* Filters */
 
 #period-picker,

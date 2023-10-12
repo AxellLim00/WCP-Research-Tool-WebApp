@@ -120,22 +120,15 @@ $(function () {
     // Successful Save
     if (isFormFilled) {
       let sheetJson;
-      let vinSectionKey;
-      let oemSectionKey;
-      if (IS_DIFFERENT_WORKSHEET) {
-        vinSectionKey = VIN_WORKSHEET_VALUE;
-        oemSectionKey = OEM_WORKSHEET_VALUE;
+      if (IS_DIFFERENT_WORKSHEET)
         sheetJson = await readFileToJson(
           "#importFile",
           true,
           [VIN_WORKSHEET_VALUE, OEM_WORKSHEET_VALUE],
           [VIN_VALUE, OEM_VALUE]
         );
-      } else {
-        vinSectionKey = VIN_VALUE;
-        oemSectionKey = OEM_VALUE;
-        sheetJson = await readFileToJson("#importFile");
-      }
+      else sheetJson = await readFileToJson("#importFile");
+
       let missingHeader = "";
       // If has erros from reading
       if (sheetJson === undefined) return;

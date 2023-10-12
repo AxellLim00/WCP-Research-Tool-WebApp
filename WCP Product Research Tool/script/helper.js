@@ -338,7 +338,9 @@ function isFloat() {
  */
 function checkAndPushFloatError(row, key, errorMessageList) {
   if (!isFloat(row[key])) {
-    errorMessageList.push(`Header ${key} - value ${row[key]} has a wrong format`);
+    errorMessageList.push(
+      `Header ${key} - value ${row[key]} has a wrong format`
+    );
   }
 }
 
@@ -383,45 +385,47 @@ class Product {
     this.Type = type;
     this.Num = num;
     this.Desc = desc;
-    if (status.trim().length <= 0) {
-      this.Status = "Research OEM";
-    } else {
-      switch (status.toLowerCase().replace(" ", "")) {
-        case "research" || "researchoem":
-          this.Status = "Research OEM";
-          break;
-        case "waiting" || "waitingonvendorquote":
-          this.Status = "Waiting on Vendor Quote";
-          break;
-        case "costdone" || "costingcompleted":
-          this.Status = "Costing Completed";
-          break;
-        case "approval" || "waitingapproval":
-          this.Status = "Waiting Approval";
-          break;
-        case "pinnacle" || "addedtopinnacle":
-          this.Status = "Added to Pinnacle";
-          break;
-        case "peach" || "addedtopeach":
-          this.Status = "Added to Peach";
-          break;
-        default:
-          this.Status = status;
-      }
+    switch (status.toLowerCase().replace(/[_.-\s]/g, "")) {
+      case "research":
+      case "researchoem":
+      case "":
+        this.Status = "research";
+        break;
+      case "waiting":
+      case "waitingonvendorquote":
+        this.Status = "waiting";
+        break;
+      case "costdone":
+      case "costingcompleted":
+        this.Status = "costDone";
+        break;
+      case "approval":
+      case "waitingapproval":
+        this.Status = "approval";
+        break;
+      case "pinnacle":
+      case "addedtopinnacle":
+        this.Status = "pinnacle";
+        break;
+      case "peach":
+      case "addedtopeach":
+        this.Status = "peach";
+        break;
+      default:
+        this.Status = null;
     }
-    if (oem.trim().length <= 0) {
-      this.Oem = "Aftermarket OEM";
-    } else {
-      switch (oem.toLowerCase().replace(" ", "")) {
-        case "aftermarket" || "aftermarketoem":
-          this.Oem = "Aftermarket OEM";
-          break;
-        case "genuine" || "genuineoem":
-          this.Oem = "Genuine OEM";
-          break;
-        default:
-          this.Oem = oem;
-      }
+    switch (oem.toLowerCase().replace(/[_.-\s]/g, "")) {
+      case "aftermarket":
+      case "aftermarketoem":
+      case "":
+        this.Oem = "aftermarket";
+        break;
+      case "genuine":
+      case "genuineoem":
+        this.Oem = "genuine";
+        break;
+      default:
+        this.Oem = null;
     }
   }
 }

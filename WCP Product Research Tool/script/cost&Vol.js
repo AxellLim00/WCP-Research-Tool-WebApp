@@ -191,7 +191,9 @@ $(function () {
       }
 
       // Find current product in import cost and volume list
-      let foundCostVol = importCosVol.find((obj) => obj.Id === productIdSelected);
+      let foundCostVol = importCosVol.find(
+        (obj) => obj.Id === productIdSelected
+      );
       if (foundCostVol) {
         // Add data to table
         $.each(Object.keys(foundCostVol), function (i, val) {
@@ -207,10 +209,7 @@ $(function () {
       // if any of these values are empty
       if (
         !Boolean(
-          EST_COST_AUD_VALUE &&
-            EST_SELL_VALUE &&
-            POSTAGE_VALUE &&
-            EXT_GP_VALUE
+          EST_COST_AUD_VALUE && EST_SELL_VALUE && POSTAGE_VALUE && EXT_GP_VALUE
         )
       ) {
         showAlert(
@@ -260,10 +259,8 @@ $(function () {
           ["changes", newUpdate],
         ])
       );
-      debugger;
       costVolSelected = updateObject(costVolSelected, newUpdate);
       $.each(Object.keys(costVolSelected), function (i, val) {
-        debugger;
         TABLE.find("tr").find("td").eq(i).text(costVolSelected[val]);
       });
     }
@@ -272,7 +269,6 @@ $(function () {
     // Toggle hasChanges On
     updateHasChanges(true);
     exitPopUpForm(formSelected);
-    }
   });
 
   // Cancel Form - NOTE: keep last thing written

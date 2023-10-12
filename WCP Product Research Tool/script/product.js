@@ -45,6 +45,44 @@ $(function () {
       { data: "Oem" },
     ],
     stateSave: true,
+    columnDefs: [
+      {
+        targets: 7, // Assuming "Status" is the 8th column
+        render: function (data) {
+          switch (data) {
+            case "research":
+              return "Research OEM";
+            case "waiting":
+              return "Waiting on Vendor Quote";
+            case "costDone":
+              return "Costing Completed";
+            case "approval":
+              return "Waiting Approval";
+            case "pinnacle":
+              return "Added to Pinnacle";
+            case "peach":
+              return "Added to Peach";
+            default:
+              return "";
+          }
+        },
+        orderable: true,
+      },
+      {
+        targets: 8, // Assuming "OEM" is the 9th column
+        render: function (data) {
+          switch (data) {
+            case "aftermarket":
+              return "Aftermarket";
+            case "genuine":
+              return "Genuine";
+            default:
+              return "";
+          }
+        },
+        orderable: true,
+      },
+    ],
   });
 
   $(`${TABLE_NAME}_filter`).remove();
@@ -120,16 +158,21 @@ $(function () {
 
   //#endregion
 
-  // TO DO: make highlight class to highlight row
-  $(`${TABLE_NAME} tbody tr`).on("click", function () {
-    // Find the ID cell in the clicked row and highlight it
+  //#region Row Click event
+
+  $(`${TABLE_NAME} tbody`).on("click", "tr", function () {
     if (isEmptyData) return;
-    $(this).addClass("highlight");
-    let rowId = $(this).find("td:first").text();
-    console.log("TEST");
+    // Clear highlight of all row in Datatable
+    TABLE.rows().nodes().to$().css("background-color", "");
+    // highlight clicked row
+    $(this).css("background-color", "#D5F3FE");
+    // Assign row to productSelected
+    productSelected = new Product(...Object.values(TABLE.row(this).data()));
+    // Enable Edit button
+    $('button[name="editBtn"]').prop("disabled", false);
   });
 
-  $(`${TABLE_NAME} tbody tr`).on("dblclick", function () {
+  $(`${TABLE_NAME} tbody`).on("dblclick", "tr", function () {
     // Find the ID cell in the clicked row and extract its text
     let rowId = $(this).find("td:first").text();
     if (rowId.length > 0) {
@@ -139,6 +182,8 @@ $(function () {
       showAlert("<strong>Error!</strong> Product ID not found.");
     }
   });
+
+  //#endregion
 
   //#region Form Button
   $('button[name="saveForm"]').on("click", async function () {
@@ -229,6 +274,7 @@ $(function () {
         ) {
           return false;
         }
+        // TO DO: Check if the status and oem is valid, by checkling if it is null
 
         let newObject = new Product(
           generateProductID(
@@ -271,6 +317,12 @@ $(function () {
       }
       // Add data to table
       TABLE.rows.add(importProducts).draw();
+      // newRows.foreach((newRow) => {
+      //   // Add back event to new row
+      //   insertRowClickEvent(newRow, isEmptyData);
+      //   insertRowDoubleClickEvent(newRow);
+      // });
+      // Exit Row
       exitPopUpForm(formSelected);
 
       // For New Product
@@ -304,10 +356,17 @@ $(function () {
       );
       // Add data to table
       TABLE.row.add(newProduct).draw();
+
+      // Add back event to new row
+      // insertRowClickEvent(newRow, isEmptyData);
+      // insertRowDoubleClickEvent(newRow);
+
+      // Exit form
       exitPopUpForm(formSelected);
     }
     // Edit Form Save
     else if (formSelected == "edit") {
+      // TO DO: save edit changes
     }
     // save new rows into sessionStorage
     updateChanges(changesMade);
@@ -400,4 +459,37 @@ function areAllFieldsFilled() {
   let model = $("#newModel").val();
   let partType = $("#newType").val();
   return make.length >= 3 && model.length >= 3 && partType.length >= 3;
+}
+
+/**
+ * Insert row click event into row to highlight
+ * @param {String} row datatable's row to insert event
+ * @param {Boolean} isEmptyData flag to check if datatable is empty
+ */
+function insertRowClickEvent(row, isEmptyData) {
+  $(row).on("click", function (event) {
+    var clickedRow = event.target;
+    if (isEmptyData) return;
+    $(clickedRow).addClass("highlight");
+    let rowId = $(clickedRow).find("td:first").text();
+    console.log("TEST");
+  });
+}
+
+/**
+ * Insert row double click event into row to pick product
+ * @param {String} row datatable's row to insert event
+ */
+function insertRowDoubleClickEvent(row) {
+  $(row).on("dblclick", function (event) {
+    var clickedRow = event.target;
+    // Find the ID cell in the clicked row and extract its text
+    let rowId = $(clickedRow).find("td:first").text();
+    if (rowId.length > 0) {
+      sessionStorage.setItem("productIDSelected", rowId);
+      selectTab("tab2");
+    } else {
+      showAlert("<strong>Error!</strong> Product ID not found.");
+    }
+  });
 }
