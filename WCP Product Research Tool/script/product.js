@@ -153,8 +153,6 @@ $(function () {
     $(`#${formSelected}Oem`).val(productSelected.Oem);
     showPopUpForm(formSelected, "Edit Product");
   });
-  // TO DO: edit product that user has higlighted in the table
-  // Make pop up form for all the fields that are editable
 
   //#endregion
 
@@ -206,25 +204,26 @@ $(function () {
         IC_NUMBER_VALUE &&
         IC_DESCRIPTION_VALUE
     );
+    let incompleteMessage = "Please complete all non-optional fields";
     //extra validation on new product
-    if (formSelected == "new") {
+    if (formSelected == "new")
       isFormFilled &= Boolean(
         // 18 is length of ID generated
         STATUS_VALUE && OEM_CATEGORY_VALUE && ID_VALUE.length == 18
       );
-    }
     // extra validation on import product
-    else if (formSelected == "import") {
-      isFormFilled &= Boolean(FILE_VALUE);
+    else if (formSelected == "import") isFormFilled &= Boolean(FILE_VALUE);
+    // validation on edit product
+    else if (formSelected == "edit") {
+      isFormFilled = Boolean(STATUS_VALUE && OEM_CATEGORY_VALUE);
+      incompleteMessage = "Please have all fields filled before saving";
     }
-
     // On Form being filled Completely
     if (!isFormFilled) {
-      showAlert(
-        "<strong>Error!</strong> Please complete all non-optional fields."
-      );
+      showAlert(`<strong>Error!</strong> ${incompleteMessage}.`);
       return;
     }
+
     // Import Form Save
     if (formSelected == "import") {
       // Optional Column header name
@@ -366,7 +365,38 @@ $(function () {
     }
     // Edit Form Save
     else if (formSelected == "edit") {
-      // TO DO: save edit changes
+      // Find the row in the DataTable with the matching ID.
+      let rowIndex = TABLE.fnFindCellRowIndexes(productSelected.Id, 0);
+      debugger;
+      // Save if there are any changes compared to old value (can be found in productSelected)
+      newUpdate = {};
+      if (productSelected.Status != STATUS_VALUE) {
+        newUpdate.Status = STATUS_VALUE;
+        row[0].Status = STATUS_VALUE; // Assuming Status is the 8th Column
+      }
+      if (productSelected.Oem != OEM_CATEGORY_VALUE) {
+        newUpdate.Oem = OEM_CATEGORY_VALUE;
+        row[0].Oem = OEM_CATEGORY_VALUE; // Assuming OEM is the 9th Column
+      }
+      // exit if no changes were made
+      if (Object.keys(newUpdate).length === 0) {
+        exitPopUpForm(formSelected);
+        return;
+      }
+      changesMade.push(
+        new Map([
+          ["type", "edit"],
+          ["id", productSelected.Id],
+          ["table", "CostVolume"],
+          ["changes", newUpdate],
+        ])
+      );
+      productSelected = updateObject(productSelected, newUpdate);
+      // TO DO: Fix this, has error when drawing
+      // Update the row in the DataTable. - pass false to prevent reordering
+      // TABLE.row(rowIndex[0]).data(rowData).draw(false);
+      // Redraw the table to reflect the changes
+      row.invalidate().draw();
     }
     // save new rows into sessionStorage
     updateChanges(changesMade);

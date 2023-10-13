@@ -87,26 +87,26 @@ $(function () {
     const EST_SELL_VALUE = $(`#${formSelected}EstSell`).val();
     const POSTAGE_VALUE = $(`#${formSelected}Postage`).val();
     const EXT_GP_VALUE = $(`#${formSelected}Ext`).val();
-    let isFormFilled = false;
     let changesMade = [];
     let missingHeader = "";
-
-    //check if mandatory field
+    let isFormFilled = false;
+    let incompleteMessage = "Please complete all non-optional fields";
+    // validation on import
     if (formSelected == "import")
       isFormFilled = Boolean(ID_VALUE && COST_USD_VALUE && FILE_VALUE);
-
-    if (formSelected == "edit")
+    // validation on edit
+    else if (formSelected == "edit") {
       isFormFilled = Boolean(
         EST_COST_AUD_VALUE && EST_SELL_VALUE && POSTAGE_VALUE && EXT_GP_VALUE
       );
-
+      incompleteMessage = "Please have all fields filled before saving";
+    }
     // Successful Save
     if (!isFormFilled) {
-      showAlert(
-        "<strong>Error!</strong> Please complete all non-optional fields."
-      );
+      showAlert(`<strong>Error!</strong> ${incompleteMessage}.`);
       return;
     }
+
     // Import Form Save
     if (formSelected == "import") {
       let isEstCostAudEmpty = EST_COST_AUD_VALUE.trim().length == 0;
@@ -206,17 +206,6 @@ $(function () {
     }
     // Edit Form Save
     else if (formSelected == "edit") {
-      // if any of these values are empty
-      if (
-        !Boolean(
-          EST_COST_AUD_VALUE && EST_SELL_VALUE && POSTAGE_VALUE && EXT_GP_VALUE
-        )
-      ) {
-        showAlert(
-          "<strong>Error!</strong> Please have all fields filled before saving."
-        );
-        return;
-      }
       // Check if all inputs are numbers or in float format.
       if (
         !(
@@ -231,7 +220,7 @@ $(function () {
         );
         return;
       }
-      // Save if there are any changes compared to old value (can be found in productObject)
+      // Save if there are any changes compared to old value (can be found in costVolSelected)
       newUpdate = {};
       let costAud = parseFloat(EST_COST_AUD_VALUE).toFixed(2);
       if (costVolSelected.EstimateCostAUD != costAud)
