@@ -355,28 +355,21 @@ $(function () {
       );
       // Add data to table
       TABLE.row.add(newProduct).draw();
-
-      // Add back event to new row
-      // insertRowClickEvent(newRow, isEmptyData);
-      // insertRowDoubleClickEvent(newRow);
-
-      // Exit form
-      exitPopUpForm(formSelected);
     }
     // Edit Form Save
     else if (formSelected == "edit") {
       // Find the row in the DataTable with the matching ID.
-      let rowIndex = TABLE.fnFindCellRowIndexes(productSelected.Id, 0);
-      debugger;
+      let row = TABLE.column(0).data().indexOf(productSelected.Id); // column index 0 for ID
+      let rowData = TABLE.row(row).data();
       // Save if there are any changes compared to old value (can be found in productSelected)
       newUpdate = {};
       if (productSelected.Status != STATUS_VALUE) {
         newUpdate.Status = STATUS_VALUE;
-        row[0].Status = STATUS_VALUE; // Assuming Status is the 8th Column
+        rowData.Status = STATUS_VALUE; // Assuming Status is the 8th Column
       }
       if (productSelected.Oem != OEM_CATEGORY_VALUE) {
         newUpdate.Oem = OEM_CATEGORY_VALUE;
-        row[0].Oem = OEM_CATEGORY_VALUE; // Assuming OEM is the 9th Column
+        rowData.Oem = OEM_CATEGORY_VALUE; // Assuming OEM is the 9th Column
       }
       // exit if no changes were made
       if (Object.keys(newUpdate).length === 0) {
@@ -392,19 +385,15 @@ $(function () {
         ])
       );
       productSelected = updateObject(productSelected, newUpdate);
-      // TO DO: Fix this, has error when drawing
-      // Update the row in the DataTable. - pass false to prevent reordering
-      // TABLE.row(rowIndex[0]).data(rowData).draw(false);
       // Redraw the table to reflect the changes
-      row.invalidate().draw();
+      TABLE.row(row).data(rowData).invalidate();
     }
     // save new rows into sessionStorage
     updateChanges(changesMade);
     // Toggle hasChanges ON
     updateHasChanges(true);
-    return;
-
-    // On Form being filled Incompletely
+    // Exit form
+    exitPopUpForm(formSelected);
   });
 
   // Cancel Form - NOTE: keep last thing written
