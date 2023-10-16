@@ -184,8 +184,8 @@ $(function () {
 
       // for testing purpose TO DO: DELETE
       productIdSelected = "test";
-      if (errorMessage.length > 0) {
-        showAlert(`<strong>ERROR!</strong> ${errorMessage.join(", ")}`);
+      if (errorMessage.length) {
+        showAlert(`<strong>ERROR!</strong> ${errorMessage.join(".\n")}`);
         return;
       }
 

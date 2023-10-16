@@ -254,7 +254,7 @@ async function readFileToJson(
         });
         // If there is one or more error messages
         if (errorMessage.length) {
-          showAlert(`<strong>ERROR!</strong> ${errorMessage.join(" ")}`);
+          showAlert(`<strong>ERROR!</strong> ${errorMessage.join(".\n")}`);
           resolve(undefined);
           return;
         }
@@ -308,12 +308,11 @@ async function readFileToJson(
  */
 function calculateAUD(costCurrency, amount) {
   let rates = JSON.parse(localStorage.getItem("currencyRate"))["data"];
-
   if (!rates.hasOwnProperty(costCurrency))
     // when currency not Found
     return `<i>Cost Currency ${costCurrency}</i> not found and cannot be converted.\n`;
 
-  return ((amount * 1) / rates[costCurrency]).toFixed(2);
+  return parseFloat(((amount * 1) / rates[costCurrency]).toFixed(2));
 }
 
 /**
@@ -470,15 +469,18 @@ class AlternateIndex {
         case "goodquality":
         case "g":
           this.Quality = "good";
+          break;
         case "normal":
         case "normalquality":
         case "n":
         case "":
           this.Quality = "normal";
+          break;
         case "bad":
         case "badquality":
         case "b":
           this.Quality = "bad";
+          break;
         default:
           this.Quality = null;
       }
@@ -535,25 +537,9 @@ class CostVolume {
     this.Id = id;
     this.CostUSD = costUsd;
     this.CostAUD = costAud;
-    if (estCostAud === null) {
-      this.EstimateCostAUD = 0;
-    } else {
-      this.EstimateCostAUD = estCostAud;
-    }
-    if (estSell === null) {
-      this.EstimateSell = 0;
-    } else {
-      this.EstimateSell = estSell;
-    }
-    if (postage === null) {
-      this.Postage = 0;
-    } else {
-      this.Postage = postage;
-    }
-    if (extGP === null) {
-      this.ExtGP = 0;
-    } else {
-      this.ExtGP = extGP;
-    }
+    this.EstimateCostAUD = estCostAud ?? 0;
+    this.EstimateSell = estSell ?? 0;
+    this.Postage = postage ?? 0;
+    this.ExtGP = extGP ?? 0;
   }
 }

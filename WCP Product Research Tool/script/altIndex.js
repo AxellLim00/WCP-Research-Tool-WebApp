@@ -7,6 +7,7 @@ $(function () {
   var currencyRate = new Object();
   var currencyList = new Set();
   var productIDSelected = sessionStorage.getItem("productIDSelected");
+  var altIndexSelected = new AlternateIndex();
 
   //TO DO: Load table from SQL
 
@@ -106,18 +107,35 @@ $(function () {
   // Edit button
   $('button[name="editBtn"]').on("click", function () {
     formSelected = "edit";
-    $(`#${formSelected}Id`).text(productSelected.Id);
-    $(`#${formSelected}Sku`).text(productSelected.Sku);
-    $(`#${formSelected}Make`).text(productSelected.Make);
-    $(`#${formSelected}Model`).text(productSelected.Model);
-    $(`#${formSelected}Type`).text(productSelected.Type);
-    $(`#${formSelected}Num`).text(productSelected.Num);
-    $(`#${formSelected}Desc`).text(productSelected.Desc);
-    $(`#${formSelected}Status`).val(productSelected.Status);
-    $(`#${formSelected}Oem`).val(productSelected.Oem);
+    $(`#${formSelected}Name`).text(altIndexSelected.Name);
+    $(`#${formSelected}Num`).val(altIndexSelected.Number);
+    $(`#${formSelected}Moq`).text(altIndexSelected.Moq);
+    $(`#${formSelected}Currency`).text(altIndexSelected.CostCurrency);
+    $(`#${formSelected}Aud`).val(altIndexSelected.CostAud);
+    $(`#${formSelected}Date`).text(altIndexSelected.LastUpdated);
+    $(`#${formSelected}Quality`).val(altIndexSelected.Quality);
+    $(`#${formSelected}SupType`).text(altIndexSelected.SupplierPartType);
+    $(`#${formSelected}WcpType`).text(altIndexSelected.WcpPartType);
+    $(`#${formSelected}Main`).prop("checked", altIndexSelected.IsMain);
     showPopUpForm(formSelected, "Edit Product");
   });
 
+  //#endregion
+
+  //#region Row Click event
+  $(`${TABLE_NAME} tbody`).on("click", "tr", function () {
+    if (isEmptyData) return;
+    // Clear highlight of all row in Datatable
+    TABLE.rows().nodes().to$().css("background-color", "");
+    // highlight clicked row
+    $(this).css("background-color", "#D5F3FE");
+    // Assign row to productSelected
+    altIndexSelected = new AlternateIndex(
+      ...Object.values(TABLE.row(this).data())
+    );
+    // Enable Edit button
+    $('button[name="editBtn"]').prop("disabled", false);
+  });
   //#endregion
 
   //#region Form Button
@@ -129,19 +147,37 @@ $(function () {
     const SUPPLIER_PART_TYPE_VALUE = $(`#${formSelected}SupPartType`).val();
     const WCP_PART_TYPE_VALUE = $(`#${formSelected}WcpPartType`).val();
     const QUALITY_VALUE = $(`#${formSelected}Quality`).val();
+    const COST_AUD_VALUE = $(`#${formSelected}Aud`).val();
+    const IS_MAIN_VALUE = $(`#${formSelected}Main`).is(":checked");
+    let isFormFilled = false;
+    let changesMade = [];
+    let errorMessage = [];
 
-    //check if mandatory field
-    let isFormFilled = Boolean(
-      FILE_VALUE &&
-        SUPPLIER_NUMBER_VALUE &&
-        MOQ_VALUE &&
-        COST_CURRENCY_VALUE &&
-        SUPPLIER_PART_TYPE_VALUE &&
-        WCP_PART_TYPE_VALUE
-    );
+    //check mandatory fields
+    if (formSelected == "import") {
+      isFormFilled = Boolean(
+        FILE_VALUE &&
+          SUPPLIER_NUMBER_VALUE &&
+          MOQ_VALUE &&
+          COST_CURRENCY_VALUE &&
+          SUPPLIER_PART_TYPE_VALUE &&
+          WCP_PART_TYPE_VALUE
+      );
+    } else if (formSelected == "edit") {
+      isFormFilled = Boolean(
+        SUPPLIER_NUMBER_VALUE && COST_AUD_VALUE && QUALITY_VALUE
+      );
+    }
+    // On Form being filled Incompletely
+    if (!isFormFilled) {
+      showAlert(
+        "<strong>Error!</strong> Please complete all non-optional fields."
+      );
+      return;
+    }
 
-    // On Form being filled Completely
-    if (isFormFilled) {
+    // Import Form Save
+    if (formSelected == "import") {
       let isQualityEmpty = QUALITY_VALUE.trim().length == 0;
       const SHEET_JSON = await readFileToJson("#importFile");
       let missingHeader = "";
@@ -178,9 +214,6 @@ $(function () {
       // Will create a map
       let supplierListJson = new Map([]);
 
-      let problemEncountered = [];
-      let changesMade = [];
-
       // clear the list
       currencyList = new Set();
       // TO DO: get all of currency in SHEET_JSON, once there is an example
@@ -197,7 +230,7 @@ $(function () {
 
         // TO DO: Find supplier from Json list
         if (!supplierListJson.hasOwnProperty(row[SUPPLIER_NUMBER_VALUE])) {
-          problemEncountered.push(
+          errorMessage.push(
             `<i>Supplier Number ${row[SUPPLIER_NUMBER_VALUE]}</i> not found.`
           );
           return null;
@@ -211,7 +244,7 @@ $(function () {
 
         // If converting currency occured an error
         if (typeof costAud === "string" || costAud instanceof String) {
-          problemEncountered.push(costAud);
+          errorMessage.push(costAud);
           return null;
         }
 
@@ -240,8 +273,8 @@ $(function () {
         return newObject;
       });
 
-      if (problemEncountered.length > 0) {
-        showAlert(`<strong>Error!</strong> ${problemEncountered.join("\n")}`);
+      if (errorMessage.length) {
+        showAlert(`<strong>Error!</strong> ${errorMessage.join(".\n")}`);
         return;
       }
 
@@ -250,22 +283,73 @@ $(function () {
         isEmptyData = false;
         TABLE.clear().draw();
       }
-      // save new rows into Session Storage
-      updateChanges(changesMade);
-      // Toggle hasChanges On
-      updateHasChanges(true);
       // Add data to table
       TABLE.rows.add(importAltIndexes).draw();
-      exitPopUpForm(formSelected);
-      return;
     }
-    // On Form being filled Incompletely
-    else {
-      showAlert(
-        "<strong>Error!</strong> Please complete all non-optional fields."
+    // Edit Form Save
+    else if (formSelected == "edit") {
+      if (!isFloat(COST_AUD_VALUE))
+        errorMessage.push(
+          `Cost AUD <i>${COST_AUD_VALUE}</i> is not a number value`
+        );
+
+      // TO DO: IF NEEDED, check if Supplier Number is correct format
+
+      // TO DO: Check if this works
+      if (
+        SUPPLIER_NUMBER_VALUE != altIndexSelected.Number &&
+        SUPPLIER_NUMBER_VALUE in TABLE.columns(1).nodes()
+      )
+        errorMessage.push(
+          `Supplier Number <i>${SUPPLIER_NUMBER_VALUE}</i> already exist`
+        );
+
+      if (errorMessage.length) {
+        // Assuming the 2nd Column is Supplier Number
+
+        showAlert(`<strong>ERROR!</strong> ${errorMessage.join(".\n")}`);
+        return;
+      }
+      // Find the row in the DataTable with the matching ID.
+      let row = TABLE.column(1).data().indexOf(altIndexSelected.Number); // column index 1 for Supplier Number
+      let rowData = TABLE.row(row).data();
+      // Save if there are any changes compared to old value (can be found in productSelected)
+      newUpdate = {};
+      if (altIndexSelected.Number != SUPPLIER_NUMBER_VALUE)
+        newUpdate.Number = rowData.Number = SUPPLIER_NUMBER_VALUE;
+
+      if (altIndexSelected.CostAud != COST_AUD_VALUE)
+        newUpdate.CostAud = rowData.CostAud = COST_AUD_VALUE;
+
+      if (altIndexSelected.Quality != QUALITY_VALUE)
+        newUpdate.Quality = rowData.Quality = QUALITY_VALUE;
+
+      if (altIndexSelected.IsMain != IS_MAIN_VALUE)
+        newUpdate.IsMain = rowData.IsMain = IS_MAIN_VALUE;
+
+      // exit if no changes were made
+      if (Object.keys(newUpdate).length === 0) {
+        exitPopUpForm(formSelected);
+        return;
+      }
+      changesMade.push(
+        new Map([
+          ["type", "edit"],
+          ["id", productIDSelected],
+          ["table", "AlternateIndex"],
+          ["changes", newUpdate],
+        ])
       );
-      return;
+      altIndexSelected = updateObject(altIndexSelected, newUpdate);
+      // Redraw the table to reflect the changes
+      TABLE.row(row).data(rowData).invalidate();
     }
+    // save new rows into sessionStorage
+    updateChanges(changesMade);
+    // Toggle hasChanges ON
+    updateHasChanges(true);
+    // Exit form
+    exitPopUpForm(formSelected);
   });
 
   // Cancel Form - NOTE: keep last thing written
@@ -302,6 +386,7 @@ async function getCurrencyRates() {
   currencyRate = responseJSON;
   currentDate = new Date();
   currencyRate["last_updated_at"] = currentDate.toString();
+
   localStorage.setItem("currencyRate", JSON.stringify(currencyRate));
 
   return currencyRate;

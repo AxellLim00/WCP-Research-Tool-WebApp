@@ -275,7 +275,7 @@ $(function () {
             `Make <i>${row[MAKE_VALUE]}</i>, Model <i>${row[MODEL_VALUE]}</i> and ` +
               `Part Type <i>${row[PART_TYPE_VALUE]}</i> must be at least 3 characters long`
           );
-          return;
+          return null;
         }
 
         // TO DO: Check if the status and oem is valid, by checkling if it is null
@@ -318,9 +318,9 @@ $(function () {
         return newObject;
       });
 
-      if (errorMessage.length > 0) {
+      if (errorMessage.length) {
         showAlert(
-          `<strong>Error!</strong> ${errorMessage.join("<br>")}</strong>`
+          `<strong>Error!</strong> ${errorMessage.join(".\n")}</strong>`
         );
         return;
       }
@@ -331,15 +331,8 @@ $(function () {
       }
       // Add data to table
       TABLE.rows.add(importProducts).draw();
-      // newRows.foreach((newRow) => {
-      //   // Add back event to new row
-      //   insertRowClickEvent(newRow, isEmptyData);
-      //   insertRowDoubleClickEvent(newRow);
-      // });
       // Exit Row
       exitPopUpForm(formSelected);
-
-      // For New Product
     }
     // New Form Save
     else if (formSelected == "new") {
@@ -378,14 +371,12 @@ $(function () {
       let rowData = TABLE.row(row).data();
       // Save if there are any changes compared to old value (can be found in productSelected)
       newUpdate = {};
-      if (productSelected.Status != STATUS_VALUE) {
-        newUpdate.Status = STATUS_VALUE;
-        rowData.Status = STATUS_VALUE; // Assuming Status is the 8th Column
-      }
-      if (productSelected.Oem != OEM_CATEGORY_VALUE) {
-        newUpdate.Oem = OEM_CATEGORY_VALUE;
-        rowData.Oem = OEM_CATEGORY_VALUE; // Assuming OEM is the 9th Column
-      }
+      if (productSelected.Status != STATUS_VALUE)
+        newUpdate.Status = rowData.Status = STATUS_VALUE;
+
+      if (productSelected.Oem != OEM_CATEGORY_VALUE)
+        newUpdate.Oem = rowData.Oem = OEM_CATEGORY_VALUE;
+
       // exit if no changes were made
       if (Object.keys(newUpdate).length === 0) {
         exitPopUpForm(formSelected);
@@ -395,7 +386,7 @@ $(function () {
         new Map([
           ["type", "edit"],
           ["id", productSelected.Id],
-          ["table", "CostVolume"],
+          ["table", "Product"],
           ["changes", newUpdate],
         ])
       );
