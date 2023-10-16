@@ -4,7 +4,7 @@ $(function () {
   const TABLE_NAME = "#productTable";
   var formSelected = "";
   var isEmptyData = true;
-  var productSelected;
+  var productSelected = new Product();
   // Temporary variables for the new product form
   var prevMake = "";
   var prevModel = "";

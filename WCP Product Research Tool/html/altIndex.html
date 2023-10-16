@@ -95,6 +95,7 @@
       </div>
       <div class="flex-buttons">
         <button name="saveBtn" class="save" disabled>Save</button>
+        <button name="editBtn" disabled>Edit</button>
         <button name="importBtn">Import</button>
         <button name="exportBtn">Export</button>
       </div>
@@ -147,6 +148,66 @@
             WCP's Part Type Header<b style="color: red">*</b>
             <br />
             <input id="importWcpPartType" type="text" />
+          </label>
+        </section>
+        <section
+          id="editForm"
+          class="flex-form form-information"
+          style="display: none"
+        >
+          <label>
+            Supplier Number:
+            <br />
+            <p id="editName">-</p>
+          </label>
+          <label>
+            Supplier Number:
+            <br />
+            <input id="editNum" type="text" />
+          </label>
+          <label>
+            MOQ:
+            <br />
+            <p id="editMoq">-</p>
+          </label>
+          <label>
+            Cost Currency:
+            <br />
+            <p id="editCurrency">-</p>
+          </label>
+          <label>
+            Cost AUD
+            <br />
+            <input id="editAud" type="text" />
+          </label>
+          <label>
+            Date Last Updated:
+            <br />
+            <p id="editDate">-</p>
+          </label>
+          <label>
+            Quality:
+            <br />
+            <select id="editStatus">
+              <option value="good">Good</option>
+              <option value="normal">Normal</option>
+              <option value="bad">Bad</option>
+            </select>
+          </label>
+          <label>
+            Supplier's Part Type:
+            <br />
+            <p id="editSupType">-</p>
+          </label>
+          <label>
+            WCP's Part Type:
+            <br />
+            <p id="editWcpType">-</p>
+          </label>
+          <label>
+            Main Supplier:
+            <br />
+            <input id="editMain" type="checkbox" />
           </label>
         </section>
         <section class="flex-buttons form-button">

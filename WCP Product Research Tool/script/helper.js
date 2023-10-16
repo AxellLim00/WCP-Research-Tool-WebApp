@@ -371,6 +371,16 @@ Date.prototype.getWeekNumber = function () {
   var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
 };
+/**
+ *
+ * @param {str} str string to capitalize in title format
+ * @returns
+ */
+function toTitleCase(str) {
+  return str.replace(/\w\S*/g, function (txt) {
+    return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+  });
+}
 
 class Product {
   constructor(id, sku, make, model, type, num, desc, status, oem) {
@@ -385,49 +395,53 @@ class Product {
     this.Type = type;
     this.Num = num;
     this.Desc = desc;
-    switch (status.toLowerCase().replace(/[_.-\s]/g, "")) {
-      case "research":
-      case "researchoem":
-      case "":
-        this.Status = "research";
-        break;
-      case "waiting":
-      case "waitingonvendor":
-      case "waitingonvendorquote":
-        this.Status = "waiting";
-        break;
-      case "costdone":
-      case "costingcompleted":
-        this.Status = "costDone";
-        break;
-      case "approval":
-      case "waitingapproval":
-        this.Status = "approval";
-        break;
-      case "pinnacle":
-      case "addedtopinnacle":
-        this.Status = "pinnacle";
-        break;
-      case "peach":
-      case "addedtopeach":
-        this.Status = "peach";
-        break;
-      default:
-        this.Status = null;
-    }
-    switch (oem.toLowerCase().replace(/[_.-\s]/g, "")) {
-      case "aftermarket":
-      case "aftermarketoem":
-      case "":
-        this.Oem = "aftermarket";
-        break;
-      case "genuine":
-      case "genuineoem":
-        this.Oem = "genuine";
-        break;
-      default:
-        this.Oem = null;
-    }
+    if (status)
+      switch (status.toLowerCase().replace(/[_.-\s]/g, "")) {
+        case "research":
+        case "researchoem":
+        case "":
+          this.Status = "research";
+          break;
+        case "waiting":
+        case "waitingonvendor":
+        case "waitingonvendorquote":
+          this.Status = "waiting";
+          break;
+        case "costdone":
+        case "costingcompleted":
+          this.Status = "costDone";
+          break;
+        case "approval":
+        case "waitingapproval":
+          this.Status = "approval";
+          break;
+        case "pinnacle":
+        case "addedtopinnacle":
+          this.Status = "pinnacle";
+          break;
+        case "peach":
+        case "addedtopeach":
+          this.Status = "peach";
+          break;
+        default:
+          this.Status = null;
+      }
+    else this.Status = null;
+    if (oem)
+      switch (oem.toLowerCase().replace(/[_.-\s]/g, "")) {
+        case "aftermarket":
+        case "aftermarketoem":
+        case "":
+          this.Oem = "aftermarket";
+          break;
+        case "genuine":
+        case "genuineoem":
+          this.Oem = "genuine";
+          break;
+        default:
+          this.Oem = null;
+      }
+    else this.Oem = null;
   }
 }
 
@@ -450,20 +464,25 @@ class AlternateIndex {
     this.CostCurrency = costCurrency;
     this.CostAud = costAud;
     this.LastUpdated = lastUpdated;
-    if (quality.trim().length <= 0) {
-      this.Oem = "Good";
-    } else {
-      switch (quality.toLowerCase().replace(" ", " ")) {
-        case "good" || "goodquality":
-          this.Quality = "Good";
-        case "normal" || "normalquality":
-          this.Quality = "Normal";
-        case "bad" || "badquality":
-          this.Quality = "Bad";
+    if (quality)
+      switch (quality.toLowerCase().replace(" ", "")) {
+        case "good":
+        case "goodquality":
+        case "g":
+          this.Quality = "good";
+        case "normal":
+        case "normalquality":
+        case "n":
+        case "":
+          this.Quality = "normal";
+        case "bad":
+        case "badquality":
+        case "b":
+          this.Quality = "bad";
         default:
-          this.Quality = quality;
+          this.Quality = null;
       }
-    }
+    else this.Quality = null;
     this.SupplierPartType = supplierPartType;
     this.WcpPartType = wcpPartType;
     this.IsMain = isMain ? "MAIN" : "";

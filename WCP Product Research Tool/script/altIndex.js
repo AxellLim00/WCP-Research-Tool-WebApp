@@ -46,6 +46,15 @@ $(function () {
       { data: "IsMain" },
     ],
     stateSave: true,
+    columnDefs: [
+      {
+        targets: 6, // Assuming "Quality" is the 7th column
+        render: function (data) {
+          return toTitleCase(data);
+        },
+        orderable: true,
+      },
+    ],
   });
 
   $(`${TABLE_NAME}_filter`).remove();
@@ -92,6 +101,21 @@ $(function () {
   $('button[name="importBtn"]').on("click", function () {
     formSelected = "import";
     showPopUpForm(formSelected, "Import Alternate Index");
+  });
+
+  // Edit button
+  $('button[name="editBtn"]').on("click", function () {
+    formSelected = "edit";
+    $(`#${formSelected}Id`).text(productSelected.Id);
+    $(`#${formSelected}Sku`).text(productSelected.Sku);
+    $(`#${formSelected}Make`).text(productSelected.Make);
+    $(`#${formSelected}Model`).text(productSelected.Model);
+    $(`#${formSelected}Type`).text(productSelected.Type);
+    $(`#${formSelected}Num`).text(productSelected.Num);
+    $(`#${formSelected}Desc`).text(productSelected.Desc);
+    $(`#${formSelected}Status`).val(productSelected.Status);
+    $(`#${formSelected}Oem`).val(productSelected.Oem);
+    showPopUpForm(formSelected, "Edit Product");
   });
 
   //#endregion
