@@ -85,16 +85,16 @@
           style="display: none"
         >
           <label>
-            File to import
+            File to import<b style="color: red">*</b>
             <br />
             <input id="importFile" type="file" accept=".xls, .xlsx, .csv" />
           </label>
-          <label>
+          <label name="Vin Header">
             Vin Number Header
             <br />
             <input id="importVin" type="text" />
           </label>
-          <label>
+          <label name="Oem Header">
             Oem Header
             <br />
             <input id="importOem" type="text" />
@@ -104,12 +104,12 @@
             <input id="importDiffWS" type="checkbox" />
           </label>
           <label class="ws-name" style="display: none">
-            Vin Number Worksheet Name
+            Vin Number Worksheet Name<b style="color: red">*</b>
             <br />
             <input id="importVinWS" type="text" />
           </label>
           <label class="ws-name" style="display: none">
-            Oem Worksheet Name
+            Oem Worksheet Name<b style="color: red">*</b>
             <br />
             <input id="importOemWS" type="text" />
           </label>

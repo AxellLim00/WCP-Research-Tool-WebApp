@@ -88,7 +88,6 @@ $(function () {
     const POSTAGE_VALUE = $(`#${formSelected}Postage`).val();
     const EXT_GP_VALUE = $(`#${formSelected}Ext`).val();
     let changesMade = [];
-    let missingHeader = "";
     let isFormFilled = false;
     let incompleteMessage = "Please complete all non-optional fields";
     // validation on import
@@ -127,7 +126,7 @@ $(function () {
         return;
       }
 
-      missingHeader = findMissingColumnHeader(SHEET_JSON[0], [
+      let missingHeader = findMissingColumnHeader(SHEET_JSON[0], [
         ID_VALUE,
         COST_USD_VALUE,
         isEstCostAudEmpty ? null : EST_COST_AUD_VALUE,
@@ -143,7 +142,7 @@ $(function () {
         );
         return;
       }
-      // TO DO: Test this error message
+
       let errorMessage = [];
       let importCosVol = SHEET_JSON.map((row) => {
         // Check if all value that in the row has the correct format

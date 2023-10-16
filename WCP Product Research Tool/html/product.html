@@ -116,7 +116,7 @@
           <label
             title="Make, Model, and Part Type must be more than 3 characters long to generate."
           >
-            Research ID
+            Research ID<b style="color: red">*</b>
             <img
               src="../icon/info.png"
               alt="Info Icon"
@@ -133,42 +133,36 @@
           </label>
           <label>
             WCP SKU
-            <img
-              src="../icon/info.png"
-              alt="Info Icon"
-              class="info-icon"
-              title="Optional"
-            />
             <br />
             <input id="newSku" type="text" />
           </label>
           <label>
-            Make
+            Make<b style="color: red">*</b>
             <br />
             <input id="newMake" type="text" />
           </label>
           <label>
-            Model
+            Model<b style="color: red">*</b>
             <br />
             <input id="newModel" type="text" />
           </label>
           <label>
-            Part Type
+            Part Type<b style="color: red">*</b>
             <br />
             <input id="newType" type="text" />
           </label>
           <label>
-            IC Number
+            IC Number<b style="color: red">*</b>
             <br />
             <input id="newNum" type="text" />
           </label>
           <label>
-            IC Description
+            IC Description<b style="color: red">*</b>
             <br />
             <input id="newDesc" type="text" />
           </label>
           <label>
-            Status
+            Status<b style="color: red">*</b>
             <br />
             <select id="newStatus">
               <option value="">--Please choose a status--</option>
@@ -181,7 +175,7 @@
             </select>
           </label>
           <label>
-            Aftermarket/Genuine OEM
+            Aftermarket/Genuine OEM<b style="color: red">*</b>
             <br />
             <select id="newOem">
               <option value="">--Please choose a status--</option>
@@ -196,43 +190,55 @@
           style="display: none"
         >
           <label>
-            File to import
+            File to import<b style="color: red">*</b>
             <br />
             <input id="importFile" type="file" accept=".xls, .xlsx, .csv" />
           </label>
           <label for="importSku">
             WCP SKU Header
-            <img
-              src="../icon/info.png"
-              alt="Info Icon"
-              class="info-icon"
-              title="Optional"
-            />
             <br />
             <input id="importSku" type="text" />
           </label>
           <label>
-            Make Header
+            Make Header<b style="color: red">*</b>
+            <img
+              src="../icon/info.png"
+              alt="Info Icon"
+              class="info-icon"
+              title="Values must be at least 3 characters long"
+            />
             <br />
             <input id="importMake" type="text" />
           </label>
           <label>
-            Model Header
+            Model Header<b style="color: red">*</b>
+            <img
+              src="../icon/info.png"
+              alt="Info Icon"
+              class="info-icon"
+              title="Values must be at least 3 characters long"
+            />
             <br />
             <input id="importModel" type="text" />
           </label>
           <label>
-            Part Type Header
+            Part Type Header<b style="color: red">*</b>
+            <img
+              src="../icon/info.png"
+              alt="Info Icon"
+              class="info-icon"
+              title="Values must be at least 3 characters long"
+            />
             <br />
             <input id="importType" type="text" />
           </label>
           <label>
-            IC Number Header
+            IC Number Header<b style="color: red">*</b>
             <br />
             <input id="importNum" type="text" />
           </label>
           <label>
-            IC Description Header
+            IC Description Header<b style="color: red">*</b>
             <br />
             <input id="importDesc" type="text" />
           </label>
@@ -242,7 +248,7 @@
               src="../icon/info.png"
               alt="Info Icon"
               class="info-icon"
-              title="Optional: defaults to Research OEM"
+              title="Default to Research OEM&#10;&#10;Valid Values(not case-sensitive):&#10;    > research || research oem&#10;    > waiting || waiting on vendor || waiting on vendor quote&#10;    > cost done || costing completed&#10;    > approval || waiting approval&#10;    > pinnacle || added to pinnacle&#10;    > peach || added to peach&#10;(NOTE: white-spaces can be replaced with '-', '_', or '.')"
             />
             <br />
             <input id="importStatus" type="text" />
@@ -253,7 +259,7 @@
               src="../icon/info.png"
               alt="Info Icon"
               class="info-icon"
-              title="Optional: defaults to Aftermarket OEM"
+              title="Default to Aftermarket OEM&#10;&#10;Valid Values(not case-sensitive):&#10;    > aftermarket || aftermarket oem&#10;    > genuine || genuine oem&#10;(NOTE: white-spaces can be replaced with '-', '_', or '.')"
             />
             <br />
             <input id="importOem" type="text" />

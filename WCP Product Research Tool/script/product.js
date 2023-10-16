@@ -230,7 +230,6 @@ $(function () {
       let isSkuEmpty = SKU_VALUE.trim().length == 0;
       let isStatusEmtpy = STATUS_VALUE.trim().length == 0;
       let isOemCategoryEmtpy = OEM_CATEGORY_VALUE.trim().length == 0;
-      let missingHeader = "";
 
       const SHEET_JSON = await readFileToJson("#importFile");
 
@@ -245,7 +244,7 @@ $(function () {
         return;
       }
 
-      missingHeader = findMissingColumnHeader(SHEET_JSON[0], [
+      let missingHeader = findMissingColumnHeader(SHEET_JSON[0], [
         isSkuEmpty ? null : SKU_VALUE,
         MAKE_VALUE,
         MODEL_VALUE,
@@ -264,15 +263,21 @@ $(function () {
         return;
       }
 
-      // Put data into table
+      errorMessage = [];
+      // Put map data into Object List
       let importProducts = SHEET_JSON.map((row) => {
         if (
           row[MAKE_VALUE].length < 3 ||
           row[MODEL_VALUE].length < 3 ||
           row[PART_TYPE_VALUE].length < 3
         ) {
-          return false;
+          errorMessage.push(
+            `Make <i>${row[MAKE_VALUE]}</i>, Model <i>${row[MODEL_VALUE]}</i> and ` +
+              `Part Type <i>${row[PART_TYPE_VALUE]}</i> must be at least 3 characters long`
+          );
+          return;
         }
+
         // TO DO: Check if the status and oem is valid, by checkling if it is null
 
         let newObject = new Product(
@@ -291,6 +296,16 @@ $(function () {
           isOemCategoryEmtpy ? "" : row[OEM_CATEGORY_VALUE]
         );
 
+        if (newObject.Status === null) {
+          errorMessage.push(
+            `STATUS <i>${row[STATUS_VALUE]}</i> must be a valid value`
+          );
+        }
+        if (newObject.Oem === null) {
+          errorMessage.push(
+            `OEM type <i>${row[OEM_CATEGORY_VALUE]}</i> must be a valid value`
+          );
+        }
         // Store each new row locally
         changesMade.push(
           new Map([
@@ -303,9 +318,9 @@ $(function () {
         return newObject;
       });
 
-      if (importProducts.includes(false)) {
+      if (errorMessage.length > 0) {
         showAlert(
-          `<strong>Error!</strong> Value in Make, Model and Part Type must be at least 3 characters long.`
+          `<strong>Error!</strong> ${errorMessage.join("<br>")}</strong>`
         );
         return;
       }

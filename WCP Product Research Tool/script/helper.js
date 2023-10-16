@@ -392,6 +392,7 @@ class Product {
         this.Status = "research";
         break;
       case "waiting":
+      case "waitingonvendor":
       case "waitingonvendorquote":
         this.Status = "waiting";
         break;
