@@ -311,7 +311,7 @@ $(function () {
           new Map([
             ["type", "new"],
             ["id", newObject.Id],
-            ["table", "Product"],
+            ["table", "Product"],   
             ["changes", newObject],
           ])
         );

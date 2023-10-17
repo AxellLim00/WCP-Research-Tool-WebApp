@@ -64,7 +64,7 @@ $(function () {
   // Import product Button
   $('button[name="importBtn"]').on("click", function () {
     formSelected = "import";
-    showPopUpForm(formSelected, "Import Vin Numbers and OEMs");
+    showPopUpForm(formSelected, "Import OEMs");
   });
 
   // Export table Button
@@ -97,118 +97,69 @@ $(function () {
   $('button[name="saveForm"]').on("click", async function () {
     //check if mandatory field
     const FILE_VALUE = $(`#${formSelected}File`).val();
-    const VIN_VALUE = $(`#${formSelected}Vin`).val();
     const OEM_VALUE = $(`#${formSelected}Oem`).val();
-    const VIN_WORKSHEET_VALUE = $(`#${formSelected}VinWS`).val();
-    const OEM_WORKSHEET_VALUE = $(`#${formSelected}OemWS`).val();
-    const IS_DIFFERENT_WORKSHEET = $(`#${formSelected}DiffWS`).is(":checked");
     let changesMade = [];
 
-    var isFormFilled = Boolean(FILE_VALUE && (VIN_VALUE || OEM_VALUE));
-
-    // When different worksheet is checked
-    if (IS_DIFFERENT_WORKSHEET) {
-      // VIN and OEM textbox must be filled
-      if (!VIN_VALUE || !OEM_VALUE) {
-        isFormFilled = false;
-      } else {
-        isFormFilled &=
-          Boolean(VIN_WORKSHEET_VALUE) && Boolean(OEM_WORKSHEET_VALUE);
-      }
-    }
+    var isFormFilled = Boolean(FILE_VALUE && OEM_VALUE);
 
     // Successful Save
-    if (isFormFilled) {
-      let sheetJson;
-      if (IS_DIFFERENT_WORKSHEET)
-        sheetJson = await readFileToJson(
-          "#importFile",
-          true,
-          [VIN_WORKSHEET_VALUE, OEM_WORKSHEET_VALUE],
-          [VIN_VALUE, OEM_VALUE]
-        );
-      else sheetJson = await readFileToJson("#importFile");
-
-      let missingHeader = "";
-      // If has erros from reading
-      if (sheetJson === undefined) return;
-      // If file is empty or blank
-      if (sheetJson.length == 0) {
-        showAlert(
-          `<strong>Error!</strong> <i>${$("input[type=file]")
-            .val()
-            .split("\\")
-            .pop()}</i> File is empty or blank.`
-        );
-        return;
-      }
-
-      missingHeader = findMissingColumnHeader(sheetJson[0], [
-        VIN_VALUE,
-        OEM_VALUE,
-      ]);
-
-      // Check if all headers from input are inside the file
-      if (Boolean(missingHeader)) {
-        showAlert(
-          `<strong>Error!</strong> Column ${missingHeader} Header not found in file.`
-        );
-        return;
-      }
-
-      let importVins = sheetJson
-        .filter(function (row) {
-          return row.hasOwnProperty(VIN_VALUE);
-        })
-        .map(function (row) {
-          let newObject = { vin: row[VIN_VALUE] };
-          changesMade.push(
-            new Map([
-              ["type", "new"],
-              ["id", productIdSelected],
-              ["table", "vin"],
-              ["changes", newObject],
-            ])
-          );
-          return newObject;
-        });
-      let importOems = sheetJson
-        .filter(function (row) {
-          return row.hasOwnProperty(OEM_VALUE);
-        })
-        .map(function (row) {
-          let newObject = { oem: row[OEM_VALUE] };
-          changesMade.push(
-            new Map([
-              ["type", "new"],
-              ["id", productIdSelected],
-              ["table", "oem"],
-              ["changes", newObject],
-            ])
-          );
-          return { oem: row[OEM_VALUE] };
-        });
-
-      // save new rows into Session Storage
-      updateChanges(changesMade);
-      // Toggle hasChanges On
-      updateHasChanges(true);
-      // Add data to table
-      if (isEmptyData) {
-        isEmptyData = false;
-        VIN_TABLE.clear().draw();
-        OEM_TABLE.clear().draw();
-      }
-      VIN_TABLE.rows.add(importVins).draw();
-      OEM_TABLE.rows.add(importOems).draw();
-      exitPopUpForm(formSelected);
-      $(`.ws-name`).hide();
-    }
-    // Unsuccessful Save
-    else {
+    if (!isFormFilled) {
       showAlert("<strong>Error!</strong> Please complete necessary fields.");
       return;
     }
+    let sheetJson;
+    sheetJson = await readFileToJson("#importFile");
+
+    let missingHeader = "";
+    // If has erros from reading
+    if (sheetJson === undefined) return;
+    // If file is empty or blank
+    if (sheetJson.length == 0) {
+      showAlert(
+        `<strong>Error!</strong> <i>${$("input[type=file]")
+          .val()
+          .split("\\")
+          .pop()}</i> File is empty or blank.`
+      );
+      return;
+    }
+
+    missingHeader = findMissingColumnHeader(sheetJson[0], [OEM_VALUE]);
+
+    // Check if all headers from input are inside the file
+    if (Boolean(missingHeader)) {
+      showAlert(
+        `<strong>Error!</strong> Column ${missingHeader} Header not found in file.`
+      );
+      return;
+    }
+
+    let importOems = sheetJson.map(function (row) {
+      let newObject = { oem: row[OEM_VALUE] };
+      changesMade.push(
+        new Map([
+          ["type", "new"],
+          ["id", productIdSelected],
+          ["table", "oem"],
+          ["changes", newObject],
+        ])
+      );
+      return newObject;
+    });
+
+    // save new rows into Session Storage
+    updateChanges(changesMade);
+    // Toggle hasChanges On
+    updateHasChanges(true);
+    // Add data to table
+    if (isEmptyData) {
+      isEmptyData = false;
+      OEM_TABLE.clear().draw();
+    }
+    OEM_TABLE.rows.add(importOems).draw();
+    // Exit form
+    exitPopUpForm(formSelected);
+    $(`.ws-name`).hide();
   });
 
   // Cancel Form - NOTE: keep last thing written

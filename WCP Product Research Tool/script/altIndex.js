@@ -55,6 +55,12 @@ $(function () {
         },
         orderable: true,
       },
+      {
+        targets: 9, // Assuming "Main Supplier" is the 10th column
+        render: function (data) {
+          return data ? "MAIN" : "";
+        },
+      },
     ],
   });
 
@@ -112,7 +118,9 @@ $(function () {
     $(`#${formSelected}Moq`).text(altIndexSelected.Moq);
     $(`#${formSelected}Currency`).text(altIndexSelected.CostCurrency);
     $(`#${formSelected}Aud`).val(altIndexSelected.CostAud);
-    $(`#${formSelected}Date`).text(altIndexSelected.LastUpdated);
+    $(`#${formSelected}Date`).text(
+      altIndexSelected.LastUpdated.toLocaleString("en-AU")
+    );
     $(`#${formSelected}Quality`).val(altIndexSelected.Quality);
     $(`#${formSelected}SupType`).text(altIndexSelected.SupplierPartType);
     $(`#${formSelected}WcpType`).text(altIndexSelected.WcpPartType);
@@ -295,10 +303,10 @@ $(function () {
 
       // TO DO: IF NEEDED, check if Supplier Number is correct format
 
-      // TO DO: Check if this works
+      // Check if Supplier number already exist in Column
       if (
         SUPPLIER_NUMBER_VALUE != altIndexSelected.Number &&
-        SUPPLIER_NUMBER_VALUE in TABLE.columns(1).nodes()
+        TABLE.columns(1).data().toArray()[0].includes(SUPPLIER_NUMBER_VALUE)
       )
         errorMessage.push(
           `Supplier Number <i>${SUPPLIER_NUMBER_VALUE}</i> already exist`
@@ -319,7 +327,7 @@ $(function () {
         newUpdate.Number = rowData.Number = SUPPLIER_NUMBER_VALUE;
 
       if (altIndexSelected.CostAud != COST_AUD_VALUE)
-        newUpdate.CostAud = rowData.CostAud = COST_AUD_VALUE;
+        newUpdate.CostAud = rowData.CostAud = parseFloat(COST_AUD_VALUE);
 
       if (altIndexSelected.Quality != QUALITY_VALUE)
         newUpdate.Quality = rowData.Quality = QUALITY_VALUE;

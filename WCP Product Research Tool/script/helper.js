@@ -458,10 +458,10 @@ class AlternateIndex {
     isMain
   ) {
     this.Name = name;
-    this.Number = number;
+    this.Number = String(number);
     this.Moq = moq;
     this.CostCurrency = costCurrency;
-    this.CostAud = costAud;
+    this.CostAud = typeof costAud == String ? parseFloat(costAud) : costAud;
     this.LastUpdated = lastUpdated;
     if (quality)
       switch (quality.toLowerCase().replace(" ", "")) {
@@ -487,7 +487,7 @@ class AlternateIndex {
     else this.Quality = null;
     this.SupplierPartType = supplierPartType;
     this.WcpPartType = wcpPartType;
-    this.IsMain = isMain ? "MAIN" : "";
+    this.IsMain = isMain;
   }
 }
 

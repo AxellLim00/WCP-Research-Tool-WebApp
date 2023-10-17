@@ -99,6 +99,10 @@ tr.highlight {
   background-color: lig;
 }
 
+input[readonly="readonly"]:hover {
+  cursor: context-menu;
+}
+
 /* Filters */
 
 #period-picker,

@@ -23,22 +23,22 @@
         <label>
           Requests
           <br />
-          <input id="requestValue" type="text" />
+          <input id="requestValue" type="text" readonly="readonly"/>
         </label>
         <label>
           N/F
           <br />
-          <input id="nfValue" type="text" />
+          <input id="nfValue" type="text" readonly="readonly"/>
         </label>
         <label>
           Std B $
           <br />
-          <input id="stdValue" type="text" />
+          <input id="stdValue" type="text" readonly="readonly"/>
         </label>
         <label>
           Sales Number
           <br />
-          <input id="salesValue" type="text" />
+          <input id="salesValue" type="text" readonly="readonly"/>
         </label>
         <label>
           Estimated Sales Volume
@@ -89,29 +89,10 @@
             <br />
             <input id="importFile" type="file" accept=".xls, .xlsx, .csv" />
           </label>
-          <label name="Vin Header">
-            Vin Number Header
-            <br />
-            <input id="importVin" type="text" />
-          </label>
           <label name="Oem Header">
             Oem Header
             <br />
             <input id="importOem" type="text" />
-          </label>
-          <label>
-            Tables On Different Worksheets
-            <input id="importDiffWS" type="checkbox" />
-          </label>
-          <label class="ws-name" style="display: none">
-            Vin Number Worksheet Name<b style="color: red">*</b>
-            <br />
-            <input id="importVinWS" type="text" />
-          </label>
-          <label class="ws-name" style="display: none">
-            Oem Worksheet Name<b style="color: red">*</b>
-            <br />
-            <input id="importOemWS" type="text" />
           </label>
         </section>
         <section class="flex-buttons form-button">
