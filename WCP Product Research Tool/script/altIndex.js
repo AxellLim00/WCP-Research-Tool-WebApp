@@ -8,6 +8,9 @@ $(function () {
   var currencyList = new Set();
   var productIDSelected = sessionStorage.getItem("productIDSelected");
   var altIndexSelected = new AlternateIndex();
+  var mainSupplier = null;
+  // temporary variable to store previous values
+  var prevMainSupplier = null;
 
   //TO DO: Load table from SQL
 
@@ -146,7 +149,7 @@ $(function () {
   });
   //#endregion
 
-  //#region Form Button
+  //#region Form Events
   $('button[name="saveForm"]').on("click", async function () {
     const FILE_VALUE = $(`#${formSelected}File`).val();
     const SUPPLIER_NUMBER_VALUE = $(`#${formSelected}Num`).val();
@@ -332,14 +335,36 @@ $(function () {
       if (altIndexSelected.Quality != QUALITY_VALUE)
         newUpdate.Quality = rowData.Quality = QUALITY_VALUE;
 
-      if (altIndexSelected.IsMain != IS_MAIN_VALUE)
+      if (altIndexSelected.IsMain != IS_MAIN_VALUE) {
         newUpdate.IsMain = rowData.IsMain = IS_MAIN_VALUE;
+        mainSupplier = IS_MAIN_VALUE ? rowData.Number : null;
 
+        // Change previous Main Supplier into normal supplier in table
+        if (prevMainSupplier && prevMainSupplier != altIndexSelected.Number) {
+          let prevMainRow = TABLE.column(1).data().indexOf(prevMainSupplier); // column index 1 for Supplier Number
+          let prevMainRowData = TABLE.row(prevMainRow).data();
+          let updatePrevMain = {};
+          prevMainRowData.IsMain = updatePrevMain.IsMain = false;
+
+          changesMade.push(
+            new Map([
+              ["type", "edit"],
+              ["id", productIDSelected],
+              ["table", "AlternateIndex"],
+              ["changes", updatePrevMain],
+            ])
+          );
+
+          TABLE.row(prevMainRow).data(prevMainRowData).invalidate();
+        }
+      }
       // exit if no changes were made
       if (Object.keys(newUpdate).length === 0) {
         exitPopUpForm(formSelected);
         return;
       }
+
+      // TO DO: Checkl if the main ID for supplier is the supplier number, and double check if this is editable
       changesMade.push(
         new Map([
           ["type", "edit"],
@@ -363,6 +388,43 @@ $(function () {
   // Cancel Form - NOTE: keep last thing written
   $('button[name="cancelForm"]').on("click", function () {
     hidePopUpForm(formSelected);
+    mainSupplier = prevMainSupplier;
+  });
+
+  $("#editMain").on("change", function () {
+    prevMainSupplier = mainSupplier;
+    $("#mainConfirmation.confirmation").show();
+    $("#popupForm").css("z-index", 0);
+    currentSupplierName = $("#editName").text();
+    if (!mainSupplier)
+      $("#changeInfo").html(
+        `from <b>Nothing</b> to <b>${currentSupplierName}</b>`
+      );
+    else if ($("#editMain").is(":checked")) {
+      let row = TABLE.column(1).data().indexOf(mainSupplier); // column index 1 for Supplier Number
+      let rowData = TABLE.row(row).data();
+      $("#changeInfo").html(
+        `from <b>${rowData.Name}</b> to <b>${currentSupplierName}</b>`
+      );
+    } else
+      $("#changeInfo").html(
+        `from <b>${currentSupplierName}</b> to <b>Nothing</b>`
+      );
+  });
+
+  $('#mainConfirmation button[name="yes"]').on("click", function () {
+    debugger;
+    sessionStorage.setItem("hasChanges", false);
+    $("#mainConfirmation.confirmation").hide();
+    $("#popupForm").css("z-index", "");
+    mainSupplier = $("#editMain").is(":checked") ? $("#editNum").val() : null;
+  });
+
+  $('#mainConfirmation button[name="no"]').on("click", function () {
+    $("#mainConfirmation.confirmation").hide();
+    $("#popupForm").css("z-index", "");
+    $("#editMain").prop("checked", !$("#editMain").is(":checked"));
+    mainSupplier = prevMainSupplier;
   });
 
   //#endregion

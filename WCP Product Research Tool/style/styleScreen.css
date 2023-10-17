@@ -202,11 +202,12 @@ button[disabled] {
 
 /* New Form */
 .confirmation {
+  display: flex;
   position: fixed;
-  top: calc(50% - (10em / 2));
+  top: calc(50% - (15em / 2));
   left: calc(50% - (25em / 2));
   width: 25em;
-  height: 10em;
+  height: 15em;
   background-color: white;
   border-color: black;
   border: solid;
@@ -241,12 +242,9 @@ button[disabled] {
 
 form h2,
 .confirmation h2,
-.confirmation h3 {
+.confirmation h3,
+.confirmation h4 {
   text-align: center;
-}
-
-.confirmation h3 {
-  padding-bottom: 1.5em;
 }
 
 .form-button {

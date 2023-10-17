@@ -23,7 +23,7 @@ $(function () {
     tabChosen = $(this).attr("id");
     var hasChanges = sessionStorage.getItem("hasChanges") == "true";
     if (hasChanges) {
-      $(".confirmation").show();
+      $("#switchConfirmation.confirmation").show();
       $("#darkLayer").show();
       $("#darkLayer").css("position", "fixed");
     } else {
@@ -32,17 +32,17 @@ $(function () {
     }
   });
 
-  $('button[name="yes"]').on("click", function () {
+  $('#switchConfirmation button[name="yes"]').on("click", function () {
     sessionStorage.setItem("hasChanges", false);
-    $(".confirmation").hide();
+    $("#switchConfirmation.confirmation").hide();
     $("#darkLayer").hide();
     $("#darkLayer").css("position", "absolute");
     selectTab($(`#${tabChosen}`).attr("id"));
     tabChosen = "";
   });
 
-  $('button[name="no"]').on("click", function () {
-    $(".confirmation").hide();
+  $('#switchConfirmation button[name="no"]').on("click", function () {
+    $("#switchConfirmation.confirmation").hide();
     $("#darkLayer").hide();
     $("#darkLayer").css("position", "absolute");
   });

@@ -1,5 +1,6 @@
 In Alternate Index Page
 1. is there an example of the cost currency? will it be standardized when employees import? right now i'm assuming it has this format everytime 24.00 USD ([amount] [currency])
+2. What is the supplier's ID? is it the Number? if so, does that mean the number cannot be editable?
 
 Regarding SQL
-Is there any update to the SQL access for me to start working and testing?
+1. Is there any update to the SQL access for me to start working and testing?
