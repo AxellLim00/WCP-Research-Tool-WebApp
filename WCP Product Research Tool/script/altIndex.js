@@ -5,14 +5,16 @@ $(function () {
   var isEmptyData = true;
   var formSelected = "";
   var currencyRate = new Object();
-  var currencyList = new Set();
+  var currencySupplierMap = new Map();
   var productIDSelected = sessionStorage.getItem("productIDSelected");
   var altIndexSelected = new AlternateIndex();
   var mainSupplier = null;
   // temporary variable to store previous values
   var prevMainSupplier = null;
 
-  //TO DO: Load table from SQL
+  // TO DO: Load table from SQL
+  // TO DO: get all currency and supplier pair from SQL
+  // currencySupplierMap =
 
   // TO DO: Get all currency from SQL into currencyList
   // currencyList.add()
@@ -117,7 +119,6 @@ $(function () {
   $('button[name="editBtn"]').on("click", function () {
     formSelected = "edit";
     $(`#${formSelected}Name`).text(altIndexSelected.Name);
-    // $(`#${formSelected}Num`).val(altIndexSelected.Number);
     $(`#${formSelected}Num`).text(altIndexSelected.Number);
     $(`#${formSelected}Moq`).text(altIndexSelected.Moq);
     $(`#${formSelected}Currency`).text(altIndexSelected.CostCurrency);
@@ -176,9 +177,7 @@ $(function () {
           WCP_PART_TYPE_VALUE
       );
     } else if (formSelected == "edit") {
-      isFormFilled = Boolean(
-        SUPPLIER_NUMBER_VALUE && COST_AUD_VALUE && QUALITY_VALUE
-      );
+      isFormFilled = Boolean(COST_AUD_VALUE && QUALITY_VALUE);
     }
     // On Form being filled Incompletely
     if (!isFormFilled) {
@@ -226,15 +225,6 @@ $(function () {
       // Will create a map
       let supplierListJson = new Map([]);
 
-      // clear the list
-      currencyList = new Set();
-      // TO DO:  Change according to this: yes I think its probably easier to store 
-      // the currency the supplier quotes in against the supplier and the import will just be a $ value
-      currencyList = SHEET_JSON.map((row) => {
-        return row[COST_CURRENCY_VALUE].split(" ", 2)[1];
-      });
-      currencyRate = getCurrencyRates(currencyList);
-
       let importAltIndexes = SHEET_JSON.map((row) => {
         // Temporary Code TO DO: DELETE THIS
         supplierListJson[row[SUPPLIER_NUMBER_VALUE]] =
@@ -248,12 +238,13 @@ $(function () {
           );
           return null;
         }
-
-        let costForeignCurrency = row[COST_CURRENCY_VALUE].split(" ", 2);
-        let costAud = calculateAUD(
-          costForeignCurrency[1],
-          costForeignCurrency[0]
-        );
+        // Change according to this: yes I think its probably easier to store
+        // the currency the supplier quotes in against the supplier and the import will just be a $ value
+        // TO DO: Find currency from Supplier Number
+        // let Currency = currencySupplierMap[row[SUPPLIER_NUMBER_VALUE]];
+        let Currency = "AUD";
+        // TEMP
+        let costAud = calculateAUD(Currency, row[COST_CURRENCY_VALUE]);
 
         // If converting currency occured an error
         if (typeof costAud === "string" || costAud instanceof String) {
@@ -265,7 +256,7 @@ $(function () {
           supplierListJson[row[SUPPLIER_NUMBER_VALUE]],
           row[SUPPLIER_NUMBER_VALUE],
           row[MOQ_VALUE],
-          row[COST_CURRENCY_VALUE],
+          String(row[COST_CURRENCY_VALUE]) + ` ${Currency}`,
           costAud,
           new Date(),
           isQualityEmpty ? "" : row[QUALITY_VALUE],
@@ -306,15 +297,6 @@ $(function () {
           `Cost AUD <i>${COST_AUD_VALUE}</i> is not a number value`
         );
 
-      // Check if Supplier number already exist in Column
-      // if (
-      //   SUPPLIER_NUMBER_VALUE != altIndexSelected.Number &&
-      //   TABLE.columns(1).data().toArray()[0].includes(SUPPLIER_NUMBER_VALUE)
-      // )
-      //   errorMessage.push(
-      //     `Supplier Number <i>${SUPPLIER_NUMBER_VALUE}</i> already exist`
-      //   );
-
       if (errorMessage.length) {
         showAlert(`<strong>ERROR!</strong> ${errorMessage.join(".\n")}`);
         return;
@@ -324,9 +306,6 @@ $(function () {
       let rowData = TABLE.row(row).data();
       // Save if there are any changes compared to old value (can be found in productSelected)
       newUpdate = {};
-      // TO DO: uncomment if can be changed
-      // if (altIndexSelected.Number != SUPPLIER_NUMBER_VALUE)
-      //   newUpdate.Number = rowData.Number = SUPPLIER_NUMBER_VALUE;
 
       if (altIndexSelected.CostAud != COST_AUD_VALUE)
         newUpdate.CostAud = rowData.CostAud = parseFloat(COST_AUD_VALUE);
@@ -364,7 +343,6 @@ $(function () {
         return;
       }
 
-      // TO DO: Checkl if the main ID for supplier is the supplier number, and double check if this is editable
       changesMade.push(
         new Map([
           ["type", "edit"],

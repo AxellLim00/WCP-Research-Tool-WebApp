@@ -89,10 +89,10 @@ $(function () {
 
     if (!jQuery.isEmptyObject(update)) updateChanges(update);
 
-    // save changes to SQL
-
-    // if save successful
-    updateHasChanges(false);
+    // on successful save to SQL
+    if (saveChangesToSQL()) {
+      updateHasChanges(false);
+    }
   });
 
   // Import product Button

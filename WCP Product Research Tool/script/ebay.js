@@ -49,9 +49,10 @@ $(function () {
 
   // Save changes Button
   $('button[name="saveBtn"]').on("click", function () {
-    // find changes
-    // save changes to SQL
-    updateHasChanges(false);
+    // on successful save to SQL
+    if (saveChangesToSQL()) {
+      updateHasChanges(false);
+    }
   });
 
   // Export table Button
@@ -65,13 +66,124 @@ $(function () {
         fileName: `${productIdSelected} - eBay Compatibility Table`,
         mso: {
           fileFormat: "xlsx",
-          worksheetName: ["K Types", "EPIDs"],
+          worksheetName: ["K-Types", "EPIDs"],
         },
       });
     }
   });
 
-  // TO DO: make new button to add new rows to either K types or EPIDs
+  $('button[name="newBtn"]').on("click", function () {
+    formSelected = "new";
+    showPopUpForm(formSelected, "New Item");
+  });
+
+  $('button[name="editBtn"]').on("click", function () {
+    formSelected = "edit";
+    showPopUpForm(formSelected, "Edit Item");
+  });
+
+  //#endregion
+
+  //#region Form Event
+
+  $('button[name="saveForm"]').on("click", async function () {
+    const FILE_VALUE = $(`#${formSelected}File`).val();
+    const ID_VALUE = $(`#${formSelected}Id`).val();
+    let changesMade = [];
+    let isFormFilled = false;
+    // validation on import
+    if (formSelected == "import")
+      isFormFilled = Boolean(ID_VALUE && COST_USD_VALUE && FILE_VALUE);
+    // validation on edit
+    else if (formSelected == "edit") {
+      isFormFilled = Boolean(
+        EST_COST_AUD_VALUE && EST_SELL_VALUE && POSTAGE_VALUE && EXT_GP_VALUE
+      );
+    }
+    // Successful Save
+    if (!isFormFilled) {
+      showAlert(
+        `<strong>Error!</strong> Please complete all non-optional fields.`
+      );
+      return;
+    }
+
+    // Import Form Save
+    if (formSelected == "edit") {
+      // Check if all inputs are numbers or in float format.
+      if (
+        !(
+          isFloat(EST_COST_AUD_VALUE) &&
+          isFloat(EST_SELL_VALUE) &&
+          isFloat(POSTAGE_VALUE) &&
+          isFloat(EXT_GP_VALUE)
+        )
+      ) {
+        showAlert(
+          "<strong>Error!</strong> Please have all fields filled with the correct format."
+        );
+        return;
+      }
+      // Save if there are any changes compared to old value (can be found in costVolSelected)
+      newUpdate = {};
+      let costAud = parseFloat(EST_COST_AUD_VALUE).toFixed(2);
+      if (costVolSelected.EstimateCostAUD != costAud)
+        newUpdate.EstimateCostAUD = costAud;
+
+      let sell = parseFloat(EST_SELL_VALUE).toFixed(2);
+      if (costVolSelected.EstimateSell != sell) newUpdate.EstimateSell = sell;
+
+      let post = parseFloat(POSTAGE_VALUE).toFixed(2);
+      if (costVolSelected.Postage != post) newUpdate.Postage = post;
+
+      let extGP = parseFloat(EXT_GP_VALUE).toFixed(2);
+      if (costVolSelected.ExtGP != extGP) newUpdate.ExtGP = extGP;
+
+      // exit if no changes were made
+      if (Object.keys(newUpdate).length === 0) {
+        exitPopUpForm(formSelected);
+        return;
+      }
+      changesMade.push(
+        new Map([
+          ["type", "edit"],
+          ["id", productIdSelected],
+          ["table", "CostVolume"],
+          ["changes", newUpdate],
+        ])
+      );
+      costVolSelected = updateObject(costVolSelected, newUpdate);
+      $.each(Object.keys(costVolSelected), function (i, val) {
+        TABLE.find("tr").find("td").eq(i).text(costVolSelected[val]);
+      });
+    }
+
+    updateChanges(changesMade);
+    // Toggle hasChanges On
+    updateHasChanges(true);
+    exitPopUpForm(formSelected);
+  });
+
+  // Cancel Form - NOTE: keep last thing written
+  $('button[name="cancelForm"]').on("click", function () {
+    hidePopUpForm(formSelected);
+  });
+
+  $('input[name="newItem"]').on("click", function () {
+    switch ($(this).val()) {
+      case "K-Type":
+        $("#newKtypeTextbox").show();
+        $("#newEpidTextbox").hide();
+        break;
+      case "EPID":
+        $("#newKtypeTextbox").hide();
+        $("#newEpidTextbox").show();
+        break;
+    }
+  });
 
   //#endregion
 });
+
+// TO DO: New item logic
+// TO DO: Edit item logic

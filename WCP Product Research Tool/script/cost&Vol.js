@@ -37,10 +37,10 @@ $(function () {
 
   // Save changes Button
   $('button[name="saveBtn"]').on("click", function () {
-    // save changes to SQL
-    let isSaved = saveChangesToSQL();
-    // if successful save
-    if (isSaved) updateHasChanges(false);
+    // on successful save to SQL
+    if (saveChangesToSQL()) {
+      updateHasChanges(false);
+    }
   });
 
   // Export table Button
@@ -78,7 +78,7 @@ $(function () {
 
   //#endregion
 
-  //#region Form Button
+  //#region Form Event
   $('button[name="saveForm"]').on("click", async function () {
     const FILE_VALUE = $(`#${formSelected}File`).val();
     const ID_VALUE = $(`#${formSelected}Id`).val();
