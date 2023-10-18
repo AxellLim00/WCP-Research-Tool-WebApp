@@ -23,22 +23,22 @@
         <label>
           Requests
           <br />
-          <input id="requestValue" type="text" readonly="readonly"/>
+          <input id="requestValue" type="text" readonly="readonly" />
         </label>
         <label>
           N/F
           <br />
-          <input id="nfValue" type="text" readonly="readonly"/>
+          <input id="nfValue" type="text" readonly="readonly" />
         </label>
         <label>
           Std B $
           <br />
-          <input id="stdValue" type="text" readonly="readonly"/>
+          <input id="stdValue" type="text" readonly="readonly" />
         </label>
         <label>
           Sales Number
           <br />
-          <input id="salesValue" type="text" readonly="readonly"/>
+          <input id="salesValue" type="text" readonly="readonly" />
         </label>
         <label>
           Estimated Sales Volume
@@ -73,6 +73,7 @@
     </section>
     <section class="product-sections flex-buttons">
       <button name="saveBtn" class="save" disabled>Save</button>
+      <button name="editBtn" disabled>Edit</button>
       <button name="importBtn">Import</button>
       <button name="exportBtn">Export</button>
     </section>
@@ -90,9 +91,20 @@
             <input id="importFile" type="file" accept=".xls, .xlsx, .csv" />
           </label>
           <label name="Oem Header">
-            Oem Header
+            Oem Header<b style="color: red">*</b>
             <br />
             <input id="importOem" type="text" />
+          </label>
+        </section>
+        <section
+          id="editForm"
+          class="flex-form form-information"
+          style="display: none"
+        >
+          <label>
+            OEM Number
+            <br />
+            <input id="editOem" type="text" />
           </label>
         </section>
         <section class="flex-buttons form-button">

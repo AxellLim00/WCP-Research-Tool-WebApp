@@ -7,6 +7,12 @@ $(function () {
   var formSelected = "";
   var isEmptyData = true;
   var productIdSelected = sessionStorage.getItem("productIDSelected");
+  var oemSelected = "";
+  var estSalesChanges = false;
+  var notesChanges = false;
+  // Temporary previous values variables
+  var prevEstSales = "";
+  var prevNote = "";
 
   //Load table from SQL
 
@@ -25,6 +31,8 @@ $(function () {
     // $("#oemTable > tbody:last-child").append(
     // html here
     // );
+    // prevEstSales = ;
+    // prevNote = ;
   }
 
   const VIN_TABLE = new DataTable(VIN_TABLE_NAME, {
@@ -50,11 +58,37 @@ $(function () {
   // });
   $("#productSelected").val(productIdSelected);
 
+  //#region textbox event
+
+  $("#estSalesVolValue").on("change", function () {
+    if ($("#estSalesVolValue").val() != prevEstSales) estSalesChanges = true;
+    else estSalesChanges = false;
+    updateHasChanges(estSalesChanges || notesChanges);
+  });
+
+  $("#note").on("change", function () {
+    if ($("#note").val() != prevNote) notesChanges = true;
+    else notesChanges = false;
+    updateHasChanges(estSalesChanges || notesChanges);
+  });
+
+  //#endregion
+
   //#region Screen Button
 
   // Save changes Button
   $('button[name="saveBtn"]').on("click", function () {
-    // find changes
+    // find changes in textboxes
+    const EST_SALES_VOLUME_VALUE = $("#estSalesVolValue").val();
+    const NOTES_VALUE = $("#note").val();
+    let update = {};
+    if (EST_SALES_VOLUME_VALUE != prevEstSales)
+      update.estSaleVol = prevEstSales = EST_SALES_VOLUME_VALUE;
+
+    if (NOTES_VALUE != prevNote) update.note = prevNote = NOTES_VALUE;
+
+    if (!jQuery.isEmptyObject(update)) updateChanges(update);
+
     // save changes to SQL
 
     // if save successful
@@ -83,83 +117,145 @@ $(function () {
     }
   });
 
+  // Edit button
+  $('button[name="editBtn"]').on("click", function () {
+    formSelected = "edit";
+    $(`#${formSelected}Oem`).val(oemSelected);
+    showPopUpForm(formSelected, "Edit Product");
+  });
+
+  //#endregion
+
+  //#region Row Click event
+
+  $(`${OEM_TABLE_NAME} tbody`).on("click", "tr", function () {
+    if (isEmptyData) return;
+    // Clear highlight of all row in Datatable
+    OEM_TABLE.rows().nodes().to$().css("background-color", "");
+    // highlight clicked row
+    $(this).css("background-color", "#D5F3FE");
+    // Assign row to productSelected
+    oemSelected = Object.values(OEM_TABLE.row(this).data())[0];
+    // Enable Edit button
+    $('button[name="editBtn"]').prop("disabled", false);
+  });
+
   //#endregion
 
   //#region Form Button
-  $("#importDiffWS").on("change", function () {
-    if ($(this).is(":checked")) {
-      $(".ws-name").show();
-    } else {
-      $(".ws-name").hide();
-    }
-  });
 
   $('button[name="saveForm"]').on("click", async function () {
+    debugger;
     //check if mandatory field
     const FILE_VALUE = $(`#${formSelected}File`).val();
     const OEM_VALUE = $(`#${formSelected}Oem`).val();
     let changesMade = [];
+    let isFormFilled = Boolean(OEM_VALUE);
 
-    var isFormFilled = Boolean(FILE_VALUE && OEM_VALUE);
+    if (formSelected == "import") isFormFilled &= Boolean(FILE_VALUE);
 
     // Successful Save
     if (!isFormFilled) {
       showAlert("<strong>Error!</strong> Please complete necessary fields.");
       return;
     }
-    let sheetJson;
-    sheetJson = await readFileToJson("#importFile");
+    // Import Form Save
+    if (formSelected == "import") {
+      let sheetJson;
+      sheetJson = await readFileToJson("#importFile");
 
-    let missingHeader = "";
-    // If has erros from reading
-    if (sheetJson === undefined) return;
-    // If file is empty or blank
-    if (sheetJson.length == 0) {
-      showAlert(
-        `<strong>Error!</strong> <i>${$("input[type=file]")
-          .val()
-          .split("\\")
-          .pop()}</i> File is empty or blank.`
-      );
-      return;
+      let missingHeader = "";
+      // If has erros from reading
+      if (sheetJson === undefined) return;
+      // If file is empty or blank
+      if (sheetJson.length == 0) {
+        showAlert(
+          `<strong>Error!</strong> <i>${$("input[type=file]")
+            .val()
+            .split("\\")
+            .pop()}</i> File is empty or blank.`
+        );
+        return;
+      }
+
+      missingHeader = findMissingColumnHeader(sheetJson[0], [OEM_VALUE]);
+
+      // Check if all headers from input are inside the file
+      if (Boolean(missingHeader)) {
+        showAlert(
+          `<strong>Error!</strong> Column <i>${missingHeader}</i> Header not found in file.`
+        );
+        return;
+      }
+
+      let importOems = sheetJson.map(function (row) {
+        let newObject = { oem: row[OEM_VALUE] };
+        changesMade.push(
+          new Map([
+            ["type", "new"],
+            ["id", productIdSelected],
+            ["table", "oem"],
+            ["changes", newObject],
+          ])
+        );
+        return newObject;
+      });
+
+      // Add data to table
+      if (isEmptyData) {
+        isEmptyData = false;
+        OEM_TABLE.clear().draw();
+      }
+      OEM_TABLE.rows.add(importOems).draw();
     }
+    // Edit Form Save
+    else if (formSelected == "edit") {
+      // Find the row in the DataTable with the matching ID.
+      let row = OEM_TABLE.column(0).data().indexOf(oemSelected);
+      let rowData = OEM_TABLE.row(row).data();
 
-    missingHeader = findMissingColumnHeader(sheetJson[0], [OEM_VALUE]);
+      if (oemSelected != OEM_VALUE) {
+        // Get all OEMs without special characters
+        oemArray = OEM_TABLE.columns(0)
+          .data()
+          .toArray()[0]
+          .map(function (item) {
+            return String(item).replace(/[-_.,#~:;]]/g, "");
+          });
+        // Check if the number is the same as existing ones
+        if (oemArray.includes(OEM_VALUE)) {
+          showAlert(
+            `<b>ERROR!</b> OEM Number <i>${OEM_VALUE}</i> already exist`
+          );
+          return;
+        }
+        rowData.oem = OEM_VALUE;
+      } else {
+        // exit if no changes were made
+        exitPopUpForm(formSelected);
+        return;
+      }
 
-    // Check if all headers from input are inside the file
-    if (Boolean(missingHeader)) {
-      showAlert(
-        `<strong>Error!</strong> Column ${missingHeader} Header not found in file.`
-      );
-      return;
-    }
-
-    let importOems = sheetJson.map(function (row) {
-      let newObject = { oem: row[OEM_VALUE] };
       changesMade.push(
         new Map([
-          ["type", "new"],
+          ["type", "edit"],
           ["id", productIdSelected],
-          ["table", "oem"],
-          ["changes", newObject],
+          ["table", "Product"],
+          ["oldValue", oemSelected],
+          ["newValue", OEM_VALUE],
         ])
       );
-      return newObject;
-    });
+      // Redraw the table to reflect the changes
+      OEM_TABLE.row(row).data(rowData).invalidate();
+      oemSelected = OEM_VALUE;
+    }
 
-    // save new rows into Session Storage
+    // Save new rows into Session Storage
     updateChanges(changesMade);
     // Toggle hasChanges On
     updateHasChanges(true);
-    // Add data to table
-    if (isEmptyData) {
-      isEmptyData = false;
-      OEM_TABLE.clear().draw();
-    }
-    OEM_TABLE.rows.add(importOems).draw();
     // Exit form
     exitPopUpForm(formSelected);
-    $(`.ws-name`).hide();
   });
 
   // Cancel Form - NOTE: keep last thing written

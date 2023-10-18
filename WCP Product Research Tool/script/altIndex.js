@@ -117,7 +117,8 @@ $(function () {
   $('button[name="editBtn"]').on("click", function () {
     formSelected = "edit";
     $(`#${formSelected}Name`).text(altIndexSelected.Name);
-    $(`#${formSelected}Num`).val(altIndexSelected.Number);
+    // $(`#${formSelected}Num`).val(altIndexSelected.Number);
+    $(`#${formSelected}Num`).text(altIndexSelected.Number);
     $(`#${formSelected}Moq`).text(altIndexSelected.Moq);
     $(`#${formSelected}Currency`).text(altIndexSelected.CostCurrency);
     $(`#${formSelected}Aud`).val(altIndexSelected.CostAud);
@@ -216,7 +217,7 @@ $(function () {
       // Check if all headers from input are inside the file
       if (Boolean(missingHeader)) {
         showAlert(
-          `<strong>Error!</strong> Column ${missingHeader} Header not found in file.`
+          `<strong>Error!</strong> Column <i>${missingHeader}</i> Header not found in file.`
         );
         return;
       }
@@ -304,20 +305,16 @@ $(function () {
           `Cost AUD <i>${COST_AUD_VALUE}</i> is not a number value`
         );
 
-      // TO DO: IF NEEDED, check if Supplier Number is correct format
-
       // Check if Supplier number already exist in Column
-      if (
-        SUPPLIER_NUMBER_VALUE != altIndexSelected.Number &&
-        TABLE.columns(1).data().toArray()[0].includes(SUPPLIER_NUMBER_VALUE)
-      )
-        errorMessage.push(
-          `Supplier Number <i>${SUPPLIER_NUMBER_VALUE}</i> already exist`
-        );
+      // if (
+      //   SUPPLIER_NUMBER_VALUE != altIndexSelected.Number &&
+      //   TABLE.columns(1).data().toArray()[0].includes(SUPPLIER_NUMBER_VALUE)
+      // )
+      //   errorMessage.push(
+      //     `Supplier Number <i>${SUPPLIER_NUMBER_VALUE}</i> already exist`
+      //   );
 
       if (errorMessage.length) {
-        // Assuming the 2nd Column is Supplier Number
-
         showAlert(`<strong>ERROR!</strong> ${errorMessage.join(".\n")}`);
         return;
       }
@@ -326,8 +323,9 @@ $(function () {
       let rowData = TABLE.row(row).data();
       // Save if there are any changes compared to old value (can be found in productSelected)
       newUpdate = {};
-      if (altIndexSelected.Number != SUPPLIER_NUMBER_VALUE)
-        newUpdate.Number = rowData.Number = SUPPLIER_NUMBER_VALUE;
+      // TO DO: uncomment if can be changed
+      // if (altIndexSelected.Number != SUPPLIER_NUMBER_VALUE)
+      //   newUpdate.Number = rowData.Number = SUPPLIER_NUMBER_VALUE;
 
       if (altIndexSelected.CostAud != COST_AUD_VALUE)
         newUpdate.CostAud = rowData.CostAud = parseFloat(COST_AUD_VALUE);
@@ -351,6 +349,7 @@ $(function () {
               ["type", "edit"],
               ["id", productIDSelected],
               ["table", "AlternateIndex"],
+              ["number", prevMainRowData.Number],
               ["changes", updatePrevMain],
             ])
           );
@@ -370,6 +369,7 @@ $(function () {
           ["type", "edit"],
           ["id", productIDSelected],
           ["table", "AlternateIndex"],
+          ["number", altIndexSelected.Number],
           ["changes", newUpdate],
         ])
       );

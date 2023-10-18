@@ -258,7 +258,7 @@ $(function () {
       // Check if all headers from input are inside the file
       if (Boolean(missingHeader)) {
         showAlert(
-          `<strong>Error!</strong> Column ${missingHeader} Header not found in file.`
+          `<strong>Error!</strong> Column <i>${missingHeader}</i> Header not found in file.`
         );
         return;
       }
@@ -311,7 +311,7 @@ $(function () {
           new Map([
             ["type", "new"],
             ["id", newObject.Id],
-            ["table", "Product"],   
+            ["table", "Product"],
             ["changes", newObject],
           ])
         );

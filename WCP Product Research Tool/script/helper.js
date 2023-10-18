@@ -158,7 +158,7 @@ function exitPopUpForm(type) {
 
 /**
  * Save changes made to Session Storage's "savedChanges" in JSON Format
- * @param {Map[]} change Map of changes to be saved
+ * @param {Map[]} change Map Array of changes to be saved
  * @returns
  */
 function updateChanges(change) {
@@ -394,6 +394,7 @@ class Product {
     this.Type = type;
     this.Num = num;
     this.Desc = desc;
+    status = String(status);
     if (status)
       switch (status.toLowerCase().replace(/[_.-\s]/g, "")) {
         case "research":
@@ -426,6 +427,7 @@ class Product {
           this.Status = null;
       }
     else this.Status = null;
+    oem = String(oem);
     if (oem)
       switch (oem.toLowerCase().replace(/[_.-\s]/g, "")) {
         case "aftermarket":
@@ -463,6 +465,7 @@ class AlternateIndex {
     this.CostCurrency = costCurrency;
     this.CostAud = typeof costAud == String ? parseFloat(costAud) : costAud;
     this.LastUpdated = lastUpdated;
+    quality = String(quality);
     if (quality)
       switch (quality.toLowerCase().replace(" ", "")) {
         case "good":
