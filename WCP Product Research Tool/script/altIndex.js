@@ -228,7 +228,8 @@ $(function () {
 
       // clear the list
       currencyList = new Set();
-      // TO DO: get all of currency in SHEET_JSON, once there is an example
+      // TO DO:  Change according to this: yes I think its probably easier to store 
+      // the currency the supplier quotes in against the supplier and the import will just be a $ value
       currencyList = SHEET_JSON.map((row) => {
         return row[COST_CURRENCY_VALUE].split(" ", 2)[1];
       });
