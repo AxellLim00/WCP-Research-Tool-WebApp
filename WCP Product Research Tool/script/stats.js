@@ -145,7 +145,6 @@ $(function () {
   //#region Form Button
 
   $('button[name="saveForm"]').on("click", async function () {
-    debugger;
     //check if mandatory field
     const FILE_VALUE = $(`#${formSelected}File`).val();
     const OEM_VALUE = $(`#${formSelected}Oem`).val();

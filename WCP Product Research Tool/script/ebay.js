@@ -5,6 +5,7 @@ $(function () {
   const EPID_TABLE_NAME = "#epIDTable";
   var isEmptyData = true;
   var productIdSelected = sessionStorage.getItem("productIDSelected");
+  var itemSelected = { table: "", value: "" };
   //Load table from SQL
 
   // if loading from SQL empty
@@ -58,7 +59,6 @@ $(function () {
   });
 
   // Export table Button
-
   $('button[name="exportBtn"]').on("click", function () {
     if (isEmptyData) {
       showAlert("<strong>Error!</strong> No data found in table.");
@@ -74,16 +74,60 @@ $(function () {
     }
   });
 
+  // New table Button
   $('button[name="newBtn"]').on("click", function () {
     formSelected = "new";
     $("#default").prop("checked", true);
     showPopUpForm(formSelected, "New Item");
   });
 
+  // Edit table Button
   $('button[name="editBtn"]').on("click", function () {
     formSelected = "edit";
-    // TO DO: Find out which table did the user click from
-    showPopUpForm(formSelected, "Edit Item");
+    // Change text on label without changing other contents in label
+    $("#editItemField")
+      .contents()
+      .filter(function () {
+        return this.nodeType == 3;
+      })
+      .first()
+      .replaceWith(itemSelected.table);
+    $("#editItem").val(itemSelected.value);
+    showPopUpForm(formSelected, `Edit ${itemSelected.table}`);
+  });
+
+  //#endregion
+
+  //#region Row Click event
+
+  // Click on K-Type table
+  $(`${K_TYPE_TABLE_NAME} tbody`).on("click", "tr", function () {
+    if (isEmptyData) return;
+    // Clear highlight of all row in Datatable
+    itemSelected.table = "K-Type";
+    itemSelected.value = Object.values(K_TYPE_TABLE.row(this).data());
+    K_TYPE_TABLE.rows().nodes().to$().css("background-color", "");
+    EPID_TABLE.rows().nodes().to$().css("background-color", "");
+    // highlight clicked row
+    $(this).css("background-color", "#D5F3FE");
+    // Assign row to productSelected
+    // Enable Edit button
+    $('button[name="editBtn"]').prop("disabled", false);
+  });
+
+  // Click on EPID table
+  $(`${EPID_TABLE_NAME} tbody`).on("click", "tr", function () {
+    if (isEmptyData) return;
+    // Clear highlight of all row in Datatable
+    itemSelected.table = "EPID";
+    itemSelected.value = Object.values(EPID_TABLE.row(this).data());
+    K_TYPE_TABLE.rows().nodes().to$().css("background-color", "");
+    EPID_TABLE.rows().nodes().to$().css("background-color", "");
+    // highlight clicked row
+    $(this).css("background-color", "#D5F3FE");
+    // Assign row to productSelected
+    // Enable Edit button
+    $('button[name="editBtn"]').prop("disabled", false);
   });
 
   //#endregion
@@ -182,4 +226,4 @@ $(function () {
   //#endregion
 });
 
- // TO DO: Edit item logic
+// TO DO: Edit item logic

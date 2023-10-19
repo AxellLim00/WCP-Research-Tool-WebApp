@@ -392,7 +392,6 @@ $(function () {
   });
 
   $('#mainConfirmation button[name="yes"]').on("click", function () {
-    debugger;
     sessionStorage.setItem("hasChanges", false);
     $("#mainConfirmation.confirmation").hide();
     $("#popupForm").css("z-index", "");
