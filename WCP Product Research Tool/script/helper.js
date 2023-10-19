@@ -151,9 +151,9 @@ function exitPopUpForm(type) {
   hidePopUpForm(type);
 
   // Reset textboxes' and selectboxes' values
-  $(`#${type}Form input`).val("");
+  $(`#${type}Form input[type="text"]`).val("");
   $(`#${type}Form select`).val("");
-  $(`#${type}Form input`).prop("checked", false);
+  $(`#${type}Form input[type="checkbox"]`).prop("checked", false);
 }
 
 /**

@@ -25,10 +25,12 @@ $(function () {
 
   const K_TYPE_TABLE = new DataTable(K_TYPE_TABLE_NAME, {
     orderCellsTop: true,
+    columns: [{ data: "KType" }],
     stateSave: true,
   });
   const EPID_TABLE = new DataTable(EPID_TABLE_NAME, {
     orderCellsTop: true,
+    columns: [{ data: "EpId" }],
     stateSave: true,
   });
 
@@ -74,11 +76,13 @@ $(function () {
 
   $('button[name="newBtn"]').on("click", function () {
     formSelected = "new";
+    $("#default").prop("checked", true);
     showPopUpForm(formSelected, "New Item");
   });
 
   $('button[name="editBtn"]').on("click", function () {
     formSelected = "edit";
+    // TO DO: Find out which table did the user click from
     showPopUpForm(formSelected, "Edit Item");
   });
 
@@ -87,19 +91,27 @@ $(function () {
   //#region Form Event
 
   $('button[name="saveForm"]').on("click", async function () {
-    const FILE_VALUE = $(`#${formSelected}File`).val();
-    const ID_VALUE = $(`#${formSelected}Id`).val();
+    const ITEM_CHOSEN_VALUE = $('input[name="newItem"]:checked').val();
+    const K_TYPE_VALUE = $(`#${formSelected}KType`).val();
+    const EPID_VALUE = $(`#${formSelected}EpId`).val();
+    var table;
     let changesMade = [];
     let isFormFilled = false;
-    // validation on import
-    if (formSelected == "import")
-      isFormFilled = Boolean(ID_VALUE && COST_USD_VALUE && FILE_VALUE);
-    // validation on edit
-    else if (formSelected == "edit") {
-      isFormFilled = Boolean(
-        EST_COST_AUD_VALUE && EST_SELL_VALUE && POSTAGE_VALUE && EXT_GP_VALUE
-      );
+    // validation on new
+    if (formSelected == "new") {
+      switch (ITEM_CHOSEN_VALUE) {
+        case "K-Type":
+          table = K_TYPE_TABLE;
+          isFormFilled = Boolean(K_TYPE_VALUE);
+          break;
+        case "EPID":
+          table = EPID_TABLE;
+          isFormFilled = Boolean(EPID_VALUE);
+          break;
+      }
+    } else if (formSelected == "edit") {
     }
+
     // Successful Save
     if (!isFormFilled) {
       showAlert(
@@ -108,54 +120,39 @@ $(function () {
       return;
     }
 
-    // Import Form Save
-    if (formSelected == "edit") {
-      // Check if all inputs are numbers or in float format.
-      if (
-        !(
-          isFloat(EST_COST_AUD_VALUE) &&
-          isFloat(EST_SELL_VALUE) &&
-          isFloat(POSTAGE_VALUE) &&
-          isFloat(EXT_GP_VALUE)
-        )
-      ) {
-        showAlert(
-          "<strong>Error!</strong> Please have all fields filled with the correct format."
-        );
-        return;
+    // New Form Save
+    if (formSelected == "new") {
+      let newItem = {};
+
+      switch (ITEM_CHOSEN_VALUE) {
+        case "K-Type":
+          newItem.KType = K_TYPE_VALUE;
+          break;
+        case "EPID":
+          newItem.EpId = EPID_VALUE;
+          break;
       }
-      // Save if there are any changes compared to old value (can be found in costVolSelected)
-      newUpdate = {};
-      let costAud = parseFloat(EST_COST_AUD_VALUE).toFixed(2);
-      if (costVolSelected.EstimateCostAUD != costAud)
-        newUpdate.EstimateCostAUD = costAud;
 
-      let sell = parseFloat(EST_SELL_VALUE).toFixed(2);
-      if (costVolSelected.EstimateSell != sell) newUpdate.EstimateSell = sell;
-
-      let post = parseFloat(POSTAGE_VALUE).toFixed(2);
-      if (costVolSelected.Postage != post) newUpdate.Postage = post;
-
-      let extGP = parseFloat(EXT_GP_VALUE).toFixed(2);
-      if (costVolSelected.ExtGP != extGP) newUpdate.ExtGP = extGP;
-
-      // exit if no changes were made
-      if (Object.keys(newUpdate).length === 0) {
-        exitPopUpForm(formSelected);
-        return;
+      // Empty Table if DataTable previosly was empty
+      if (isEmptyData) {
+        isEmptyData = false;
+        K_TYPE_TABLE.clear().draw();
+        EPID_TABLE.clear().draw();
       }
+
       changesMade.push(
         new Map([
-          ["type", "edit"],
+          ["type", "new"],
           ["id", productIdSelected],
-          ["table", "CostVolume"],
-          ["changes", newUpdate],
+          ["table", "Ebay"],
+          ["changes", newItem],
         ])
       );
-      costVolSelected = updateObject(costVolSelected, newUpdate);
-      $.each(Object.keys(costVolSelected), function (i, val) {
-        TABLE.find("tr").find("td").eq(i).text(costVolSelected[val]);
-      });
+      // Add data to table
+      table.row.add(newItem).draw();
+    }
+    // Edit Form Save
+    else if (formSelected == "edit") {
     }
 
     updateChanges(changesMade);
@@ -172,12 +169,12 @@ $(function () {
   $('input[name="newItem"]').on("click", function () {
     switch ($(this).val()) {
       case "K-Type":
-        $("#newKtypeTextbox").show();
-        $("#newEpidTextbox").hide();
+        $("#newKtypeField").show();
+        $("#newEpIdField").hide();
         break;
       case "EPID":
-        $("#newKtypeTextbox").hide();
-        $("#newEpidTextbox").show();
+        $("#newKtypeField").hide();
+        $("#newEpIdField").show();
         break;
     }
   });
@@ -185,5 +182,4 @@ $(function () {
   //#endregion
 });
 
-// TO DO: New item logic
-// TO DO: Edit item logic
+ // TO DO: Edit item logic
