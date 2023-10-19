@@ -394,7 +394,7 @@ $(function () {
       // Redraw the table to reflect the changes
       TABLE.row(row).data(rowData).invalidate();
     }
-    // save new rows into sessionStorage
+    // save changes in rows into sessionStorage
     updateChanges(changesMade);
     // Toggle hasChanges ON
     updateHasChanges(true);

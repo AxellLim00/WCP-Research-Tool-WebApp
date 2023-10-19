@@ -26,12 +26,12 @@ $(function () {
 
   const K_TYPE_TABLE = new DataTable(K_TYPE_TABLE_NAME, {
     orderCellsTop: true,
-    columns: [{ data: "KType" }],
+    columns: [{ data: "item" }],
     stateSave: true,
   });
   const EPID_TABLE = new DataTable(EPID_TABLE_NAME, {
     orderCellsTop: true,
-    columns: [{ data: "EpId" }],
+    columns: [{ data: "item" }],
     stateSave: true,
   });
 
@@ -78,6 +78,8 @@ $(function () {
   $('button[name="newBtn"]').on("click", function () {
     formSelected = "new";
     $("#default").prop("checked", true);
+    $("#newKtypeField").show();
+    $("#newEpIdField").hide();
     showPopUpForm(formSelected, "New Item");
   });
 
@@ -105,12 +107,11 @@ $(function () {
     if (isEmptyData) return;
     // Clear highlight of all row in Datatable
     itemSelected.table = "K-Type";
-    itemSelected.value = Object.values(K_TYPE_TABLE.row(this).data());
+    itemSelected.value = Object.values(K_TYPE_TABLE.row(this).data())[0];
     K_TYPE_TABLE.rows().nodes().to$().css("background-color", "");
     EPID_TABLE.rows().nodes().to$().css("background-color", "");
     // highlight clicked row
     $(this).css("background-color", "#D5F3FE");
-    // Assign row to productSelected
     // Enable Edit button
     $('button[name="editBtn"]').prop("disabled", false);
   });
@@ -120,12 +121,11 @@ $(function () {
     if (isEmptyData) return;
     // Clear highlight of all row in Datatable
     itemSelected.table = "EPID";
-    itemSelected.value = Object.values(EPID_TABLE.row(this).data());
+    itemSelected.value = Object.values(EPID_TABLE.row(this).data())[0];
     K_TYPE_TABLE.rows().nodes().to$().css("background-color", "");
     EPID_TABLE.rows().nodes().to$().css("background-color", "");
     // highlight clicked row
     $(this).css("background-color", "#D5F3FE");
-    // Assign row to productSelected
     // Enable Edit button
     $('button[name="editBtn"]').prop("disabled", false);
   });
@@ -138,6 +138,7 @@ $(function () {
     const ITEM_CHOSEN_VALUE = $('input[name="newItem"]:checked').val();
     const K_TYPE_VALUE = $(`#${formSelected}KType`).val();
     const EPID_VALUE = $(`#${formSelected}EpId`).val();
+    const EDIT_VALUE = $(`#${formSelected}Item`).val();
     var table;
     let changesMade = [];
     let isFormFilled = false;
@@ -153,7 +154,18 @@ $(function () {
           isFormFilled = Boolean(EPID_VALUE);
           break;
       }
-    } else if (formSelected == "edit") {
+    }
+    // validation on edit
+    else if (formSelected == "edit") {
+      isFormFilled = Boolean(EDIT_VALUE);
+      switch (itemSelected.table) {
+        case "K-Type":
+          table = K_TYPE_TABLE;
+          break;
+        case "EPID":
+          table = EPID_TABLE;
+          break;
+      }
     }
 
     // Successful Save
@@ -170,10 +182,10 @@ $(function () {
 
       switch (ITEM_CHOSEN_VALUE) {
         case "K-Type":
-          newItem.KType = K_TYPE_VALUE;
+          newItem.item = K_TYPE_VALUE;
           break;
         case "EPID":
-          newItem.EpId = EPID_VALUE;
+          newItem.item = EPID_VALUE;
           break;
       }
 
@@ -197,11 +209,49 @@ $(function () {
     }
     // Edit Form Save
     else if (formSelected == "edit") {
-    }
+      debugger;
+      let row = -1;
+      let rowData = table
+        .rows((idx, data) => {
+          if (data.item === itemSelected.value) {
+            row = idx;
+            return;
+          }
+        })
+        .data();
+      newUpdate = {};
+      if (itemSelected.value != EDIT_VALUE)
+        switch (itemSelected.table) {
+          case "K-Type":
+            rowData.item = newUpdate.KType = EDIT_VALUE;
+            break;
+          case "EPID":
+            rowData.item = newUpdate.EpId = EDIT_VALUE;
+            break;
+        }
 
+      // exit if no changes were made
+      if (Object.keys(newUpdate).length === 0) {
+        exitPopUpForm(formSelected);
+        return;
+      }
+      changesMade.push(
+        new Map([
+          ["type", "edit"],
+          ["id", productIdSelected],
+          ["table", "Ebay"],
+          ["changes", newUpdate],
+        ])
+      );
+      itemSelected.value = EDIT_VALUE;
+      // Redraw the table to reflect the changes
+      table.row(row).data(rowData).invalidate();
+    }
+    // save changes in rows into sessionStorage
     updateChanges(changesMade);
     // Toggle hasChanges On
     updateHasChanges(true);
+    // Exit form
     exitPopUpForm(formSelected);
   });
 
@@ -225,5 +275,3 @@ $(function () {
 
   //#endregion
 });
-
-// TO DO: Edit item logic
