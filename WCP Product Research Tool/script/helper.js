@@ -220,6 +220,7 @@ function saveChangesToSQL() {
  * @param {String} filenameInput HTML file input Id
  * @param {Boolean} worksheetSeperated
  * @param {String[]} worksheetName
+ * @param {String[] | String[String[]]} header List of Column Header names or List of Worksheet's List of header (when located in different worksheet)
  * @returns {Promise<Map> | undefined} Excel Worksheet data in JSON format when resolved, if fail to read or rejects returns undefined
  */
 async function readFileToJson(
@@ -228,6 +229,8 @@ async function readFileToJson(
   worksheetName = [],
   header = []
 ) {
+  // TO DO: solve when excel file is not formatted correctly (i.e. it has headers and not centered)
+  // https://stackoverflow.com/questions/55805851/while-using-header-option-with-xlsx-utils-json-to-sheet-headers-not-overriding
   // Read file
   const FILE = $(filenameInput).prop("files");
   const READER = new FileReader();
@@ -239,6 +242,7 @@ async function readFileToJson(
       if (!worksheetSeperated) {
         const SHEET_NAME = WORKBOOK.SheetNames[0];
         const SHEET = WORKBOOK.Sheets[SHEET_NAME];
+        debugger;
         resolve(XLSX.utils.sheet_to_json(SHEET));
       } else {
         let jsonData = [];
