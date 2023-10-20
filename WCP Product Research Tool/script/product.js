@@ -230,7 +230,17 @@ $(function () {
       let isSkuEmpty = SKU_VALUE.trim().length == 0;
       let isStatusEmtpy = STATUS_VALUE.trim().length == 0;
       let isOemCategoryEmtpy = OEM_CATEGORY_VALUE.trim().length == 0;
-
+      let columnHeader = [
+        SKU_VALUE,
+        MAKE_VALUE,
+        MODEL_VALUE,
+        PART_TYPE_VALUE,
+        IC_NUMBER_VALUE,
+        IC_DESCRIPTION_VALUE,
+        STATUS_VALUE,
+        OEM_CATEGORY_VALUE,
+      ];
+      columnHeader.filter((n) => n);
       const SHEET_JSON = await readFileToJson("#importFile");
 
       // Check if file is empty or blank

@@ -220,14 +220,14 @@ function saveChangesToSQL() {
  * @param {String} filenameInput HTML file input Id
  * @param {Boolean} worksheetSeperated
  * @param {String[]} worksheetName
- * @param {String[] | String[String[]]} header List of Column Header names or List of Worksheet's List of header (when located in different worksheet)
+ * @param {String[] | String[String[]]} columnHeader List of Column Header names or List of Worksheet's List of header (when located in different worksheet)
  * @returns {Promise<Map> | undefined} Excel Worksheet data in JSON format when resolved, if fail to read or rejects returns undefined
  */
 async function readFileToJson(
   filenameInput,
   worksheetSeperated = false,
   worksheetName = [],
-  header = []
+  columnHeader = []
 ) {
   // TO DO: solve when excel file is not formatted correctly (i.e. it has headers and not centered)
   // https://stackoverflow.com/questions/55805851/while-using-header-option-with-xlsx-utils-json-to-sheet-headers-not-overriding
@@ -236,14 +236,21 @@ async function readFileToJson(
   const READER = new FileReader();
   return new Promise((resolve, reject) => {
     READER.onloadend = function () {
+      debugger;
       const FILE_DATA = new Uint8Array(READER.result);
       const WORKBOOK = XLSX.read(FILE_DATA, { type: "array" });
       // Assuming the first sheet of the workbook is the relevant one
       if (!worksheetSeperated) {
         const SHEET_NAME = WORKBOOK.SheetNames[0];
         const SHEET = WORKBOOK.Sheets[SHEET_NAME];
+        // Get all header cell location
+        headerCell = [];
+        for (let cell in SHEET)
+          if (SHEET[cell].v in columnHeader) headerCell.push(cell);
+        // sort for index 0 to be the most top left cell
+        headerCell.sort();
         debugger;
-        resolve(XLSX.utils.sheet_to_json(SHEET));
+        resolve(XLSX.utils.sheet_to_json(SHEET, { origin: headerCell[0] }));
       } else {
         let jsonData = [];
         let errorMessage = [];
@@ -253,7 +260,9 @@ async function readFileToJson(
             return;
           }
           let worksheet = WORKBOOK.Sheets[sheetName];
-          let worksheetData = XLSX.utils.sheet_to_json(worksheet);
+          let worksheetData = XLSX.utils.sheet_to_json(worksheet, {
+            header: columnHeader[index],
+          });
           jsonData[sheetName] = worksheetData;
         });
         // If there is one or more error messages

@@ -190,7 +190,16 @@ $(function () {
     // Import Form Save
     if (formSelected == "import") {
       let isQualityEmpty = QUALITY_VALUE.trim().length == 0;
-      const SHEET_JSON = await readFileToJson("#importFile");
+      let columnHeader = [
+        SUPPLIER_NUMBER_VALUE,
+        MOQ_VALUE,
+        COST_CURRENCY_VALUE,
+        SUPPLIER_PART_TYPE_VALUE,
+        WCP_PART_TYPE_VALUE,
+        QUALITY_VALUE,
+      ];
+      columnHeader.filter(n => n);
+      const SHEET_JSON = await readFileToJson("#importFile", columnHeader);
       let missingHeader = "";
 
       // Check if file is empty or blank
