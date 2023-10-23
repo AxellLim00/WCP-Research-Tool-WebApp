@@ -230,7 +230,7 @@ $(function () {
       let isSkuEmpty = SKU_VALUE.trim().length == 0;
       let isStatusEmtpy = STATUS_VALUE.trim().length == 0;
       let isOemCategoryEmtpy = OEM_CATEGORY_VALUE.trim().length == 0;
-      let columnHeader = [
+      let columnHeaders = [
         SKU_VALUE,
         MAKE_VALUE,
         MODEL_VALUE,
@@ -240,8 +240,11 @@ $(function () {
         STATUS_VALUE,
         OEM_CATEGORY_VALUE,
       ];
-      columnHeader.filter((n) => n);
-      const SHEET_JSON = await readFileToJson("#importFile");
+      columnHeaders.filter((n) => n);
+      const SHEET_JSON = await readFileToJson(
+        "#importFile",
+        columnHeaders
+      );
 
       // Check if file is empty or blank
       if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {

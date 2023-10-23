@@ -218,57 +218,73 @@ function saveChangesToSQL() {
 /**
  * Read XLSX and XLS file to JSON representation format/
  * @param {String} filenameInput HTML file input Id
- * @param {Boolean} worksheetSeperated
- * @param {String[]} worksheetName
  * @param {String[] | String[String[]]} columnHeader List of Column Header names or List of Worksheet's List of header (when located in different worksheet)
+ * @param {Boolean} worksheetSeperated Defaults to false
+ * @param {String[]} worksheetName  Defaults to empty list
  * @returns {Promise<Map> | undefined} Excel Worksheet data in JSON format when resolved, if fail to read or rejects returns undefined
  */
 async function readFileToJson(
   filenameInput,
+  columnHeader,
   worksheetSeperated = false,
-  worksheetName = [],
-  columnHeader = []
+  worksheetName = []
 ) {
   // TO DO: solve when excel file is not formatted correctly (i.e. it has headers and not centered)
   // https://stackoverflow.com/questions/55805851/while-using-header-option-with-xlsx-utils-json-to-sheet-headers-not-overriding
   // Read file
   const FILE = $(filenameInput).prop("files");
   const READER = new FileReader();
+
   return new Promise((resolve, reject) => {
     READER.onloadend = function () {
       debugger;
       const FILE_DATA = new Uint8Array(READER.result);
       const WORKBOOK = XLSX.read(FILE_DATA, { type: "array" });
+
       // Assuming the first sheet of the workbook is the relevant one
       if (!worksheetSeperated) {
         const SHEET_NAME = WORKBOOK.SheetNames[0];
         const SHEET = WORKBOOK.Sheets[SHEET_NAME];
+
         // Get all header cell location
-        headerCell = [];
-        for (let cell in SHEET)
-          if (SHEET[cell].v in columnHeader) headerCell.push(cell);
+        let headerCell = [];
+        // const SHEET_ARRAY = XLSX.utils.sheet_to_json(SHEET);
+        for (let cellAddress in SHEET)
+          if (columnHeader.includes(SHEET[cellAddress].v)) {
+            headerCell.push(cellAddress);
+          }
         // sort for index 0 to be the most top left cell
         headerCell.sort();
+        // Fix with this solution https://github.com/SheetJS/sheetjs/issues/728
         debugger;
-        resolve(XLSX.utils.sheet_to_json(SHEET, { origin: headerCell[0] }));
+        resolve(
+          XLSX.utils.sheet_to_json(SHEET, {
+            range: headerCell[0],
+          })
+        );
       } else {
         let jsonData = [];
         let errorMessage = [];
+
         worksheetName.forEach((sheetName, index) => {
           if (!WORKBOOK.SheetNames.includes(sheetName)) {
             errorMessage.push(`Worksheet "${sheetName}" not found.`);
             return;
           }
+
           let worksheet = WORKBOOK.Sheets[sheetName];
           let worksheetData = XLSX.utils.sheet_to_json(worksheet, {
             header: columnHeader[index],
           });
+
           jsonData[sheetName] = worksheetData;
         });
+
         // If there is one or more error messages
         if (errorMessage.length) {
           showAlert(`<strong>ERROR!</strong> ${errorMessage.join(".\n")}`);
           resolve(undefined);
+
           return;
         }
         // Combine all worksheet data into one JSON object
@@ -280,6 +296,7 @@ async function readFileToJson(
         let maxRows = Math.max(
           ...properties.map((prop) => jsonData[prop].length)
         );
+
         // Combine all properties into one JSON object
         for (let i = 0; i < maxRows; i++) {
           let combinedRow = {};
@@ -287,12 +304,14 @@ async function readFileToJson(
           for (const prop of properties) {
             let propArray = jsonData[prop];
             // Use an empty object if the property array is shorter
+
             let propObj = propArray[i] || {};
             combinedRow[prop] = propObj[prop];
           }
 
           combinedData.push(combinedRow);
         }
+
         // Clean up combinedData
         combinedData.forEach((obj) => {
           // Delete properties that are undefined
@@ -300,6 +319,7 @@ async function readFileToJson(
             (key) => obj[key] === undefined && delete obj[key]
           );
         });
+
         resolve(combinedData);
       }
     };
@@ -307,8 +327,10 @@ async function readFileToJson(
       showAlert(
         `<strong>Error!</strong> File fail to load: ${fileReader.error}`
       );
+
       reject(undefined);
     };
+
     READER.readAsArrayBuffer(FILE[0]);
   });
 }
