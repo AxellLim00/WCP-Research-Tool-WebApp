@@ -607,24 +607,28 @@ class WorkFlowAPI {
           },
         }
       );
-
       // Check for a successful response
       if (response.status === 200) {
         // Authentication was successful, you can handle the response data here
-        console.log("Authentication successful");
-        console.log(response.data);
-        return response.data;
+        let responseData = await response.json();
+        return {
+          status: response.status,
+          data: responseData,
+        };
       } else {
         // Handle the error response
-        console.error(
-          "Authentication failed:",
-          response.status,
-          response.statusText
-        );
+        return {
+          status: response.status,
+          data: null,
+        };
       }
     } catch (error) {
       // Handle any network or request errors
-      console.log("Error:", error.message);
+      return {
+        status: "error",
+        data: null,
+        error: error.message,
+      };
     }
   }
 }

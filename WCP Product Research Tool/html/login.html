@@ -8,26 +8,28 @@
       integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
       crossorigin="anonymous"
     ></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <link rel="stylesheet" href="../style/styleLogin.css" />
   </head>
   <body>
     <div class="container">
       <h1 class="label">User Login</h1>
-      <form
-        class="login_form"
-        action="../html/layout.html"
-        method="post"
-        name="form"
-      >
+      <form class="login_form">
         <!-- onsubmit="return validated()" -->
         <div class="font">Username</div>
         <input autocomplete="on" type="text" name="user" />
+        <p id="no-username" class="error_text" style="display: none">
+          Fill in username
+        </p>
         <div class="font font2">Password</div>
         <input type="password" name="password" />
-        <button type="submit">Login</button>
+        <p id="no-password" class="error_text" style="display: none">
+          Fill in password
+        </p>
+        <button type="button" id="loginBtn">Login</button>
       </form>
     </div>
-    <script src="../script/valid.js"></script>
     <script src="../script/helper.js"></script>
+    <script type="module" src="../script/valid.js"></script>
   </body>
 </html>
