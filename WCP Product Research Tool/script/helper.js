@@ -255,11 +255,16 @@ async function readFileToJson(
           }
         // sort for index 0 to be the most top left cell
         headerCell.sort();
+
+        //encode range
+        let range = XLSX.utils.decode_range(SHEET['!ref']);
+        range.s = XLSX.utils.decode_cell(headerCell[0]);
+        let new_range = XLSX.utils.encode_range(range);
         // Fix with this solution https://github.com/SheetJS/sheetjs/issues/728
         debugger;
         resolve(
           XLSX.utils.sheet_to_json(SHEET, {
-            range: headerCell[0],
+            range: new_range,
           })
         );
       } else {
