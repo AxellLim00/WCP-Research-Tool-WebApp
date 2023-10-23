@@ -257,7 +257,7 @@ async function readFileToJson(
         headerCell.sort();
 
         //encode range
-        let range = XLSX.utils.decode_range(SHEET['!ref']);
+        let range = XLSX.utils.decode_range(SHEET["!ref"]);
         range.s = XLSX.utils.decode_cell(headerCell[0]);
         let new_range = XLSX.utils.encode_range(range);
         // Fix with this solution https://github.com/SheetJS/sheetjs/issues/728
@@ -534,7 +534,19 @@ class AlternateIndex {
   }
 }
 
-class Freecurrencyapi {
+class CostVolume {
+  constructor(id, costUsd, costAud, estCostAud, estSell, postage, extGP) {
+    this.Id = id;
+    this.CostUSD = costUsd;
+    this.CostAUD = costAud;
+    this.EstimateCostAUD = estCostAud ?? 0;
+    this.EstimateSell = estSell ?? 0;
+    this.Postage = postage ?? 0;
+    this.ExtGP = extGP ?? 0;
+  }
+}
+
+class FreeCurrencyAPI {
   baseUrl = "https://api.freecurrencyapi.com/v1/";
 
   // temporary API_KEY using Axell's account from https://freecurrencyapi.com
@@ -575,14 +587,44 @@ class Freecurrencyapi {
   }
 }
 
-class CostVolume {
-  constructor(id, costUsd, costAud, estCostAud, estSell, postage, extGP) {
-    this.Id = id;
-    this.CostUSD = costUsd;
-    this.CostAUD = costAud;
-    this.EstimateCostAUD = estCostAud ?? 0;
-    this.EstimateSell = estSell ?? 0;
-    this.Postage = postage ?? 0;
-    this.ExtGP = extGP ?? 0;
+class WorkFlowAPI {
+  baseUrl = "https://workflow.wholesalecarparts.com.au/api/";
+
+  async authenticate(applicationName, applicationSecret) {
+    try {
+      const requestBody = {
+        ApplicationName: applicationName,
+        ApplicationSecret: applicationSecret,
+      };
+
+      // Make the POST request to the authenticate endpoint
+      const response = await axios.post(
+        `${this.baseURL}/api/auth/authenticate`,
+        requestBody,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      // Check for a successful response
+      if (response.status === 200) {
+        // Authentication was successful, you can handle the response data here
+        console.log("Authentication successful");
+        console.log(response.data);
+        return response.data;
+      } else {
+        // Handle the error response
+        console.error(
+          "Authentication failed:",
+          response.status,
+          response.statusText
+        );
+      }
+    } catch (error) {
+      // Handle any network or request errors
+      console.log("Error:", error.message);
+    }
   }
 }

@@ -18,17 +18,16 @@
         action="../html/layout.html"
         method="post"
         name="form"
-        onsubmit="return validated()"
       >
+        <!-- onsubmit="return validated()" -->
         <div class="font">Username</div>
-        <input autocomplete="off" type="text" name="email" />
-        <div id="email_error">Please fill up your Username</div>
+        <input autocomplete="on" type="text" name="user" />
         <div class="font font2">Password</div>
         <input type="password" name="password" />
-        <div id="pass_error">Please fill up your Password</div>
         <button type="submit">Login</button>
       </form>
     </div>
     <script src="../script/valid.js"></script>
+    <script src="../script/helper.js"></script>
   </body>
 </html>

@@ -198,7 +198,7 @@ $(function () {
         WCP_PART_TYPE_VALUE,
         QUALITY_VALUE,
       ];
-      columnHeader.filter(n => n);
+      columnHeader.filter((n) => n);
       const SHEET_JSON = await readFileToJson("#importFile", columnHeader);
       let missingHeader = "";
 
@@ -434,7 +434,7 @@ async function getCurrencyRates() {
   }
   let responseJSON;
   // Get the currency rates from API
-  const FREE_CURRENCY_API = new Freecurrencyapi();
+  const FREE_CURRENCY_API = new FreeCurrencyAPI();
   await FREE_CURRENCY_API.latest({
     base_currency: "AUD",
   }).then((response) => {
