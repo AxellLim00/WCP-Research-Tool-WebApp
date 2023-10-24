@@ -24,8 +24,9 @@ $(function () {
         console.error("Authentication Failed:", response.status);
         return;
       }
-      // TO DO: handle when successful login, save JWT Token
       location.href = "../html/layout.html";
+      // When successful login, save JWT Token
+      // sessionStorage.setItem("token", response.JWT);
       return;
     } catch (error) {
       showAlert(`<b>ERROR!</b> ${error}`);

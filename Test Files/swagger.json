@@ -1,0 +1,198 @@
+{
+    "x-generator": "NSwag v13.18.2.0 (NJsonSchema v10.8.0.0 (Newtonsoft.Json v11.0.0.0))",
+    "swagger": "2.0",
+    "info": {
+        "title": "WCP Workflow Request History API",
+        "version": "1.0.0"
+    },
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "paths": {
+        "/api/auth/authenticate": {
+            "post": {
+                "tags": [
+                    "AuthApi"
+                ],
+                "operationId": "AuthApi_Authenticate",
+                "parameters": [
+                    {
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/GetApplicationQuery"
+                        },
+                        "x-nullable": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "x-nullable": true,
+                        "description": "",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/request-history/search": {
+            "post": {
+                "tags": [
+                    "RequestHistoryApi"
+                ],
+                "operationId": "RequestHistoryApi_Search",
+                "parameters": [
+                    {
+                        "name": "query",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/SearchProductRequestHistoryQuery"
+                        },
+                        "x-nullable": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "x-nullable": true,
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/PaginatedEnumerableOfProductRequestHistoryDto"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "GetApplicationQuery": {
+            "type": "object",
+            "properties": {
+                "ApplicationName": {
+                    "type": "string"
+                },
+                "ApplicationSecret": {
+                    "type": "string"
+                }
+            }
+        },
+        "PaginatedEnumerableOfProductRequestHistoryDto": {
+            "type": "object",
+            "required": [
+                "CurrentPage",
+                "PageSize",
+                "RecordCount"
+            ],
+            "properties": {
+                "CurrentPage": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "PageSize": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "RecordCount": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "Records": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ProductRequestHistoryDto"
+                    }
+                }
+            }
+        },
+        "ProductRequestHistoryDto": {
+            "type": "object",
+            "required": [
+                "PinnacleItemTypeId"
+            ],
+            "properties": {
+                "PinnacleItemTypeId": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "PartTypeCode": {
+                    "type": "string"
+                },
+                "PartTypeFriendlyName": {
+                    "type": "string"
+                },
+                "InterchangeNumber": {
+                    "type": "string"
+                },
+                "InterchangeVersion": {
+                    "type": "string"
+                },
+                "TotalNumberOfRequests": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "TotalNumberOfNotFoundRequests": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "TotalNumberOfUnitsSold": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "VehicleManufacturers": {
+                    "type": "string"
+                },
+                "VehicleModels": {
+                    "type": "string"
+                },
+                "VehicleIdentificationNumbers": {
+                    "type": "string"
+                },
+                "InterchangeDescriptions": {
+                    "type": "string"
+                },
+                "ProductStockNumber": {
+                    "type": "string"
+                },
+                "AltIndexNumber": {
+                    "type": "string"
+                },
+                "VendorName": {
+                    "type": "string"
+                },
+                "AverageConditionPrice": {
+                    "type": "number",
+                    "format": "decimal"
+                },
+                "CostPrice": {
+                    "type": "number",
+                    "format": "decimal"
+                }
+            }
+        },
+        "SearchProductRequestHistoryQuery": {
+            "type": "object",
+            "properties": {
+                "InterchangeNumber": {
+                    "type": "string"
+                },
+                "InterchangeVersion": {
+                    "type": "string"
+                },
+                "PartTypeCode": {
+                    "type": "string"
+                },
+                "PageNo": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "PageSize": {
+                    "type": "integer",
+                    "format": "int32"
+                }
+            }
+        }
+    }
+}

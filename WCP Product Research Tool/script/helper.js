@@ -632,3 +632,63 @@ class WorkFlowAPI {
     }
   }
 }
+
+class ProductRequestHistoryDto {
+  /**
+   *
+   * @param {Number} pinnacleItemTypeId
+   * @param {String} partTypeCode
+   * @param {String} partTypeFriendlyName
+   * @param {String} interchangeNumber
+   * @param {String} interchangeVersion
+   * @param {Number} totalNumberOfRequests
+   * @param {Number} totalNumberOfNotFoundRequests
+   * @param {Number} totalNumberOfUnitsSold
+   * @param {String} vehicleManufacturers
+   * @param {String} vehicleModels
+   * @param {String} vehicleIdentificationNumbers
+   * @param {String} interchangeDescriptions
+   * @param {String} productStockNumber
+   * @param {String} altIndexNumber
+   * @param {String} vendorName
+   * @param {Number} averageConditionPrice
+   * @param {Number} costPrice
+   */
+  constructor(
+    pinnacleItemTypeId,
+    partTypeCode,
+    partTypeFriendlyName,
+    interchangeNumber,
+    interchangeVersion,
+    totalNumberOfRequests,
+    totalNumberOfNotFoundRequests,
+    totalNumberOfUnitsSold,
+    vehicleManufacturers,
+    vehicleModels,
+    vehicleIdentificationNumbers,
+    interchangeDescriptions,
+    productStockNumber,
+    altIndexNumber,
+    vendorName,
+    averageConditionPrice,
+    costPrice
+  ) {
+    this.PinnacleItemTypeId = pinnacleItemTypeId;
+    this.PartTypeCode = partTypeCode;
+    this.PartTypeFriendlyName = partTypeFriendlyName;
+    this.InterchangeNumber = interchangeNumber;
+    this.InterchangeVersion = interchangeVersion;
+    this.TotalNumberOfRequests = totalNumberOfRequests;
+    this.TotalNumberOfNotFoundRequests = totalNumberOfNotFoundRequests;
+    this.TotalNumberOfUnitsSold = totalNumberOfUnitsSold;
+    this.VehicleManufacturers = vehicleManufacturers;
+    this.VehicleModels = vehicleModels;
+    this.VehicleIdentificationNumbers = vehicleIdentificationNumbers;
+    this.InterchangeDescriptions = interchangeDescriptions;
+    this.ProductStockNumber = productStockNumber;
+    this.AltIndexNumber = altIndexNumber;
+    this.VendorName = vendorName;
+    this.AverageConditionPrice = averageConditionPrice;
+    this.CostPrice = costPrice;
+  }
+}
