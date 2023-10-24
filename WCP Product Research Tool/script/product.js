@@ -32,10 +32,7 @@ $(function () {
     orderCellsTop: true,
     columns: [
       { data: "Id" },
-      {
-        data: "Sku",
-        defaultContent: "<i>Not set</i>",
-      },
+      { data: "Sku" },
       { data: "Make" },
       { data: "Model" },
       { data: "Type" },
@@ -47,8 +44,16 @@ $(function () {
     stateSave: true,
     columnDefs: [
       {
+        target: 1,
+        render: function (data) {
+          if (String(data).trim().length > 0) return data;
+          return "<i>Not set</i>";
+        },
+      },
+      {
         targets: 7, // Assuming "Status" is the 8th column
         render: function (data) {
+          if ([null, undefined, ""].includes(data)) return null;
           switch (data) {
             case "research":
               return "Research OEM";
@@ -63,7 +68,7 @@ $(function () {
             case "peach":
               return "Added to Peach";
             default:
-              return "";
+              return `ERROR: ${data} not supported`;
           }
         },
         orderable: true,
@@ -71,13 +76,14 @@ $(function () {
       {
         targets: 8, // Assuming "OEM" is the 9th column
         render: function (data) {
+          if ([null, undefined, ""].includes(data)) return null;
           switch (data) {
             case "aftermarket":
               return "Aftermarket";
             case "genuine":
               return "Genuine";
             default:
-              return "";
+              return `ERROR: ${data} not supported`;
           }
         },
         orderable: true,
@@ -241,10 +247,7 @@ $(function () {
         OEM_CATEGORY_VALUE,
       ];
       columnHeaders.filter((n) => n);
-      const SHEET_JSON = await readFileToJson(
-        "#importFile",
-        columnHeaders
-      );
+      const SHEET_JSON = await readFileToJson("#importFile", columnHeaders);
 
       // Check if file is empty or blank
       if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {

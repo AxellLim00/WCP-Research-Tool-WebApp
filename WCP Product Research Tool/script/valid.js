@@ -21,7 +21,7 @@ $(function () {
       }
       if (response.status != 200) {
         showAlert(`<b>Login Failed!</b> Invalid username or password.`);
-        console.error("Authentication Failed:", response.status);
+        console.error("Authentication Failed:", response.status, response.data);
         return;
       }
       location.href = "../html/layout.html";

@@ -422,71 +422,88 @@ function toTitleCase(str) {
 }
 
 class Product {
+  /**
+   *
+   * @param {String} id
+   * @param {String} sku
+   * @param {String} make
+   * @param {String} model
+   * @param {String} type
+   * @param {String} num
+   * @param {String} desc
+   * @param {String} status
+   * @param {String} oem
+   */
   constructor(id, sku, make, model, type, num, desc, status, oem) {
     this.Id = id;
-    if (String(sku).trim().length > 0) {
-      this.Sku = sku;
-    } else {
-      this.Sku = "<i>Not set</i>";
-    }
+    this.Sku = sku;
     this.Make = make;
     this.Model = model;
     this.Type = type;
     this.Num = num;
     this.Desc = desc;
     status = String(status);
-    if (status)
-      switch (status.toLowerCase().replace(/[_.-\s]/g, "")) {
-        case "research":
-        case "researchoem":
-        case "":
-          this.Status = "research";
-          break;
-        case "waiting":
-        case "waitingonvendor":
-        case "waitingonvendorquote":
-          this.Status = "waiting";
-          break;
-        case "costdone":
-        case "costingcompleted":
-          this.Status = "costDone";
-          break;
-        case "approval":
-        case "waitingapproval":
-          this.Status = "approval";
-          break;
-        case "pinnacle":
-        case "addedtopinnacle":
-          this.Status = "pinnacle";
-          break;
-        case "peach":
-        case "addedtopeach":
-          this.Status = "peach";
-          break;
-        default:
-          this.Status = null;
-      }
-    else this.Status = null;
+    switch (status.toLowerCase().replace(/[_.-\s]/g, "")) {
+      case "research":
+      case "researchoem":
+      case "":
+        this.Status = "research";
+        break;
+      case "waiting":
+      case "waitingonvendor":
+      case "waitingonvendorquote":
+        this.Status = "waiting";
+        break;
+      case "costdone":
+      case "costingcompleted":
+        this.Status = "costDone";
+        break;
+      case "approval":
+      case "waitingapproval":
+        this.Status = "approval";
+        break;
+      case "pinnacle":
+      case "addedtopinnacle":
+        this.Status = "pinnacle";
+        break;
+      case "peach":
+      case "addedtopeach":
+        this.Status = "peach";
+        break;
+      default:
+        this.Status = null;
+    }
     oem = String(oem);
-    if (oem)
-      switch (oem.toLowerCase().replace(/[_.-\s]/g, "")) {
-        case "aftermarket":
-        case "aftermarketoem":
-        case "":
-          this.Oem = "aftermarket";
-          break;
-        case "genuine":
-        case "genuineoem":
-          this.Oem = "genuine";
-          break;
-        default:
-          this.Oem = null;
-      }
-    else this.Oem = null;
+    switch (oem.toLowerCase().replace(/[_.-\s]/g, "")) {
+      case "aftermarket":
+      case "aftermarketoem":
+      case "":
+        this.Oem = "aftermarket";
+        break;
+      case "genuine":
+      case "genuineoem":
+        this.Oem = "genuine";
+        break;
+      default:
+        this.Oem = null;
+    }
   }
 }
 
 class AlternateIndex {
+  /**
+   *
+   * @param {String} name
+   * @param {String} number
+   * @param {String} moq
+   * @param {String} costCurrency
+   * @param {Number} costAud
+   * @param {Date} lastUpdated
+   * @param {String} quality
+   * @param {String} supplierPartType
+   * @param {String} wcpPartType
+   * @param {Boolean} isMain
+   */
   constructor(
     name,
     number,
@@ -535,6 +552,16 @@ class AlternateIndex {
 }
 
 class CostVolume {
+  /**
+   *
+   * @param {String} id
+   * @param {Number} costUsd
+   * @param {Number} costAud
+   * @param {Number} estCostAud
+   * @param {Number} estSell
+   * @param {Number} postage
+   * @param {Number} extGP
+   */
   constructor(id, costUsd, costAud, estCostAud, estSell, postage, extGP) {
     this.Id = id;
     this.CostUSD = costUsd;
@@ -590,27 +617,66 @@ class FreeCurrencyAPI {
 class WorkFlowAPI {
   baseUrl = "https://workflow.wholesalecarparts.com.au/api/";
 
+  // async authenticate(applicationName, applicationSecret) {
+  //   try {
+  //     const requestBody = {
+  //       ApplicationName: applicationName,
+  //       ApplicationSecret: applicationSecret,
+  //     };
+
+  //     // Make the POST request to the authenticate endpoint
+  //     const response = await axios.post(
+  //       `${this.baseURL}/api/auth/authenticate`,
+  //       requestBody,
+  //       {
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //       }
+  //     );
+  //     // Check for a successful response
+  //     if (response.status === 200) {
+  //       // Authentication was successful, you can handle the response data here
+  //       let responseData = await response.json();
+  //       return {
+  //         status: response.status,
+  //         data: responseData,
+  //       };
+  //     } else {
+  //       // Handle the error response
+  //       return {
+  //         status: response.status,
+  //         data: null,
+  //       };
+  //     }
+  //   } catch (error) {
+  //     // Handle any network or request errors
+  //     return {
+  //       status: "error",
+  //       data: null,
+  //       error: error.message,
+  //     };
+  //   }
+  // }
+
   async authenticate(applicationName, applicationSecret) {
     try {
-      const requestBody = {
+      const requestBody = JSON.stringify({
         ApplicationName: applicationName,
         ApplicationSecret: applicationSecret,
-      };
+      });
 
-      // Make the POST request to the authenticate endpoint
-      const response = await axios.post(
-        `${this.baseURL}/api/auth/authenticate`,
-        requestBody,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      // Check for a successful response
-      if (response.status === 200) {
+      const response = await fetch(`${this.baseURL}/api/auth/authenticate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: requestBody,
+      });
+
+      if (response.ok) {
         // Authentication was successful, you can handle the response data here
-        let responseData = await response.json();
+        const responseData = await response.json();
         return {
           status: response.status,
           data: responseData,
@@ -619,7 +685,7 @@ class WorkFlowAPI {
         // Handle the error response
         return {
           status: response.status,
-          data: null,
+          data: response.statusText,
         };
       }
     } catch (error) {
