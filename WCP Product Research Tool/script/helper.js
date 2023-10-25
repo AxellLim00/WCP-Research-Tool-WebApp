@@ -237,7 +237,6 @@ async function readFileToJson(
 
   return new Promise((resolve, reject) => {
     READER.onloadend = function () {
-      debugger;
       const FILE_DATA = new Uint8Array(READER.result);
       const WORKBOOK = XLSX.read(FILE_DATA, { type: "array" });
 
@@ -250,18 +249,21 @@ async function readFileToJson(
         let headerCell = [];
         // const SHEET_ARRAY = XLSX.utils.sheet_to_json(SHEET);
         for (let cellAddress in SHEET)
-          if (columnHeader.includes(SHEET[cellAddress].v)) {
+          if (columnHeader.includes(String(SHEET[cellAddress].v))) {
             headerCell.push(cellAddress);
           }
         // sort for index 0 to be the most top left cell
         headerCell.sort();
+        if (headerCell.length == 0) {
+          resolve([{ no_header_found: true }]);
+          return;
+        }
 
         //encode range
         let range = XLSX.utils.decode_range(SHEET["!ref"]);
         range.s = XLSX.utils.decode_cell(headerCell[0]);
         let new_range = XLSX.utils.encode_range(range);
         // Fix with this solution https://github.com/SheetJS/sheetjs/issues/728
-        debugger;
         resolve(
           XLSX.utils.sheet_to_json(SHEET, {
             range: new_range,
@@ -523,28 +525,26 @@ class AlternateIndex {
     this.CostAud = typeof costAud == String ? parseFloat(costAud) : costAud;
     this.LastUpdated = lastUpdated;
     quality = String(quality);
-    if (quality)
-      switch (quality.toLowerCase().replace(" ", "")) {
-        case "good":
-        case "goodquality":
-        case "g":
-          this.Quality = "good";
-          break;
-        case "normal":
-        case "normalquality":
-        case "n":
-        case "":
-          this.Quality = "normal";
-          break;
-        case "bad":
-        case "badquality":
-        case "b":
-          this.Quality = "bad";
-          break;
-        default:
-          this.Quality = null;
-      }
-    else this.Quality = null;
+    switch (quality.toLowerCase().replace(" ", "")) {
+      case "good":
+      case "goodquality":
+      case "g":
+        this.Quality = "good";
+        break;
+      case "normal":
+      case "normalquality":
+      case "n":
+      case "":
+        this.Quality = "normal";
+        break;
+      case "bad":
+      case "badquality":
+      case "b":
+        this.Quality = "bad";
+        break;
+      default:
+        this.Quality = null;
+    }
     this.SupplierPartType = supplierPartType;
     this.WcpPartType = wcpPartType;
     this.IsMain = isMain;
@@ -615,86 +615,109 @@ class FreeCurrencyAPI {
 }
 
 class WorkFlowAPI {
-  baseUrl = "https://workflow.wholesalecarparts.com.au/api/";
+  baseUrl = "https://workflow.wholesalecarparts.com.au/api";
 
   // async authenticate(applicationName, applicationSecret) {
-  //   try {
-  //     const requestBody = {
-  //       ApplicationName: applicationName,
-  //       ApplicationSecret: applicationSecret,
-  //     };
+  //   const requestBody = {
+  //     ApplicationName: applicationName,
+  //     ApplicationSecret: applicationSecret,
+  //   };
 
-  //     // Make the POST request to the authenticate endpoint
+  //   return await axios
+  //     .post(`${this.baseUrl}/auth/authenticate`, requestBody, {
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Accept: "application/json",
+  //         "Access-Control-Allow-Origin":
+  //           "https://workflow.wholesalecarparts.com.au/api",
+  //       },
+  //     })
+  //     .then(function (response) {
+  //       console.log(response.data); // Output the response data
+  //       return response;
+  //     })
+  //     .catch(function (error) {
+  //       console.error("Auth error", error);
+  //       return {
+  //         status: "error",
+  //         error: error,
+  //       };
+  //     });
+  // }
+  // async authenticate(applicationName, applicationSecret) {
+  //   try {
   //     const response = await axios.post(
-  //       `${this.baseURL}/api/auth/authenticate`,
-  //       requestBody,
+  //       `${this.baseUrl}/auth/authenticate`,
   //       {
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         },
-  //       }
+  //         ApplicationName: applicationName,
+  //         ApplicationSecret: applicationSecret,
+  //       },
   //     );
-  //     // Check for a successful response
-  //     if (response.status === 200) {
-  //       // Authentication was successful, you can handle the response data here
-  //       let responseData = await response.json();
-  //       return {
-  //         status: response.status,
-  //         data: responseData,
-  //       };
-  //     } else {
-  //       // Handle the error response
-  //       return {
-  //         status: response.status,
-  //         data: null,
-  //       };
-  //     }
+
+  //     // Handle the response here, for example, you can return the response data.
+  //     return response.data;
   //   } catch (error) {
-  //     // Handle any network or request errors
-  //     return {
-  //       status: "error",
-  //       data: null,
-  //       error: error.message,
-  //     };
+  //     // Handle errors here
+  //     console.error("Error authenticating:", error);
+  //     throw error;
   //   }
   // }
-
+  //#region Auth without axios
   async authenticate(applicationName, applicationSecret) {
+    var myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+    myHeaders.append("Accept", "application/json");
+
+    var raw = JSON.stringify({
+      ApplicationName: "product-research-tool",
+      ApplicationSecret:
+        "QkBMw43qt/AIydnTcYq0Ao3bt/fey5K7G5a6gU2zhHYF7isWN1Dtw4TlTuZHvOrIT/nWaL/vqOAy0cll9uP/pA==",
+    });
+
+    var requestOptions = {
+      method: "POST",
+      headers: myHeaders,
+      body: raw,
+      redirect: "follow",
+    };
+
+    await fetch(`${this.baseUrl}/auth/authenticate`, requestOptions)
+      .then((response) => response.text())
+      .then((result) => console.log(result))
+      .catch((error) => console.log("error", error));
+  }
+  //#endregion
+
+  async searchProductRequestHistory(
+    InterchangeNumber,
+    InterchangeVersion,
+    PartTypeCode,
+    PageNo,
+    PageSize
+  ) {
     try {
-      const requestBody = JSON.stringify({
-        ApplicationName: applicationName,
-        ApplicationSecret: applicationSecret,
-      });
-
-      const response = await fetch(`${this.baseURL}/api/auth/authenticate`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: requestBody,
-      });
-
-      if (response.ok) {
-        // Authentication was successful, you can handle the response data here
-        const responseData = await response.json();
-        return {
-          status: response.status,
-          data: responseData,
-        };
-      } else {
-        // Handle the error response
-        return {
-          status: response.status,
-          data: response.statusText,
-        };
+      const response = await axios.post(
+        `${this.apiBaseUrl}/request-history/search`,
+        {
+          InterchangeNumber,
+          InterchangeVersion,
+          PartTypeCode,
+          PageNo,
+          PageSize,
+        }
+      );
+      if (response.statusCode != 200) {
+        showAlert(
+          `Error: ${response.statusCode} ${response.statusText}, ${response.message}`
+        );
       }
+      // Handle the response here, for example, you can return the response data.
+      return response.data;
     } catch (error) {
-      // Handle any network or request errors
-      return {
-        status: "error",
-        data: null,
-        error: error.message,
-      };
+      // Handle errors here
+      console.error("Error searching product request history:", error);
+      showAlert("Error searching product request history:", error);
+      throw error;
     }
   }
 }

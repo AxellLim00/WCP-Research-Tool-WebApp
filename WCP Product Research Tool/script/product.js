@@ -32,26 +32,20 @@ $(function () {
     orderCellsTop: true,
     columns: [
       { data: "Id" },
-      { data: "Sku" },
-      { data: "Make" },
-      { data: "Model" },
-      { data: "Type" },
-      { data: "Num" },
-      { data: "Desc" },
-      { data: "Status" },
-      { data: "Oem" },
-    ],
-    stateSave: true,
-    columnDefs: [
       {
-        target: 1,
+        data: "Sku",
         render: function (data) {
           if (String(data).trim().length > 0) return data;
           return "<i>Not set</i>";
         },
       },
+      { data: "Make" },
+      { data: "Model" },
+      { data: "Type" },
+      { data: "Num" },
+      { data: "Desc" },
       {
-        targets: 7, // Assuming "Status" is the 8th column
+        data: "Status",
         render: function (data) {
           if ([null, undefined, ""].includes(data)) return null;
           switch (data) {
@@ -74,7 +68,7 @@ $(function () {
         orderable: true,
       },
       {
-        targets: 8, // Assuming "OEM" is the 9th column
+        data: "Oem",
         render: function (data) {
           if ([null, undefined, ""].includes(data)) return null;
           switch (data) {
@@ -89,6 +83,7 @@ $(function () {
         orderable: true,
       },
     ],
+    stateSave: true,
   });
 
   $(`${TABLE_NAME}_filter`).remove();

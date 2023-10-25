@@ -209,7 +209,6 @@ $(function () {
     }
     // Edit Form Save
     else if (formSelected == "edit") {
-      debugger;
       let row = -1;
       let rowData = table
         .rows((idx, data) => {

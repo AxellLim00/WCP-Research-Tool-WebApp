@@ -46,27 +46,23 @@ $(function () {
         data: "LastUpdated",
         render: DataTable.render.datetime("D MMM YYYY"),
       },
-      { data: "Quality" },
-      { data: "SupplierPartType" },
-      { data: "WcpPartType" },
-      { data: "IsMain" },
-    ],
-    stateSave: true,
-    columnDefs: [
       {
-        targets: 6, // Assuming "Quality" is the 7th column
+        data: "Quality",
         render: function (data) {
           return toTitleCase(data);
         },
         orderable: true,
       },
+      { data: "SupplierPartType" },
+      { data: "WcpPartType" },
       {
-        targets: 9, // Assuming "Main Supplier" is the 10th column
+        data: "IsMain",
         render: function (data) {
           return data ? "MAIN" : "";
         },
       },
     ],
+    stateSave: true,
   });
 
   $(`${TABLE_NAME}_filter`).remove();
@@ -199,9 +195,10 @@ $(function () {
         QUALITY_VALUE,
       ];
       columnHeader.filter((n) => n);
-      const SHEET_JSON = await readFileToJson("#importFile", columnHeader);
-      let missingHeader = "";
 
+      const SHEET_JSON = await readFileToJson("#importFile", columnHeader);
+      
+      let missingHeader = "";
       // Check if file is empty or blank
       if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {
         showAlert(
