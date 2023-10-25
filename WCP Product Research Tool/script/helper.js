@@ -617,33 +617,31 @@ class FreeCurrencyAPI {
 class WorkFlowAPI {
   baseUrl = "https://workflow.wholesalecarparts.com.au/api";
 
-  // async authenticate(applicationName, applicationSecret) {
-  //   const requestBody = {
-  //     ApplicationName: applicationName,
-  //     ApplicationSecret: applicationSecret,
-  //   };
+  async authenticate(applicationName, applicationSecret) {
+    const requestBody = {
+      ApplicationName: applicationName,
+      ApplicationSecret: applicationSecret,
+    };
 
-  //   return await axios
-  //     .post(`${this.baseUrl}/auth/authenticate`, requestBody, {
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Accept: "application/json",
-  //         "Access-Control-Allow-Origin":
-  //           "https://workflow.wholesalecarparts.com.au/api",
-  //       },
-  //     })
-  //     .then(function (response) {
-  //       console.log(response.data); // Output the response data
-  //       return response;
-  //     })
-  //     .catch(function (error) {
-  //       console.error("Auth error", error);
-  //       return {
-  //         status: "error",
-  //         error: error,
-  //       };
-  //     });
-  // }
+    return await axios
+      .post(`${this.baseUrl}/auth/authenticate`, requestBody, {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      })
+      .then(function (response) {
+        console.log(response.data); // Output the response data
+        return response;
+      })
+      .catch(function (error) {
+        console.error("Auth error", error);
+        return {
+          status: "error",
+          error: error,
+        };
+      });
+  }
   // async authenticate(applicationName, applicationSecret) {
   //   try {
   //     const response = await axios.post(
@@ -663,29 +661,29 @@ class WorkFlowAPI {
   //   }
   // }
   //#region Auth without axios
-  async authenticate(applicationName, applicationSecret) {
-    var myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
-    myHeaders.append("Accept", "application/json");
+  // async authenticate(applicationName, applicationSecret) {
+  //   var myHeaders = new Headers();
+  //   myHeaders.append("Content-Type", "application/json");
+  //   myHeaders.append("Accept", "application/json");
 
-    var raw = JSON.stringify({
-      ApplicationName: "product-research-tool",
-      ApplicationSecret:
-        "QkBMw43qt/AIydnTcYq0Ao3bt/fey5K7G5a6gU2zhHYF7isWN1Dtw4TlTuZHvOrIT/nWaL/vqOAy0cll9uP/pA==",
-    });
+  //   var raw = JSON.stringify({
+  //     ApplicationName: "product-research-tool",
+  //     ApplicationSecret:
+  //       "QkBMw43qt/AIydnTcYq0Ao3bt/fey5K7G5a6gU2zhHYF7isWN1Dtw4TlTuZHvOrIT/nWaL/vqOAy0cll9uP/pA==",
+  //   });
 
-    var requestOptions = {
-      method: "POST",
-      headers: myHeaders,
-      body: raw,
-      redirect: "follow",
-    };
+  //   var requestOptions = {
+  //     method: "POST",
+  //     headers: myHeaders,
+  //     body: raw,
+  //     redirect: "follow",
+  //   };
 
-    await fetch(`${this.baseUrl}/auth/authenticate`, requestOptions)
-      .then((response) => response.text())
-      .then((result) => console.log(result))
-      .catch((error) => console.log("error", error));
-  }
+  //   await fetch(`${this.baseUrl}/auth/authenticate`, requestOptions)
+  //     .then((response) => response.text())
+  //     .then((result) => console.log(result))
+  //     .catch((error) => console.log("error", error));
+  // }
   //#endregion
 
   async searchProductRequestHistory(

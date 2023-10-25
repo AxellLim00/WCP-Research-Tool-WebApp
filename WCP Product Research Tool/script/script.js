@@ -2,7 +2,11 @@ $(function () {
   var tabChosen = "";
   var menuToggle = true;
 
+  const TOKEN = sessionStorage.getItem("token");
+  if (TOKEN === undefined || TOKEN == "null")
+    this.location.href = "../html/login.html";
   sessionStorage.clear();
+  sessionStorage.setItem("token", TOKEN);
 
   sessionStorage.setItem("currentTab", "tab1");
   selectTab("tab1");

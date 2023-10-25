@@ -15,19 +15,19 @@ $(function () {
     try {
       let response = await WORKFLOW_API.authenticate(username, password);
       if (response.status === "error") {
-        showAlert(`<b>ERROR!</b> ${response.error}`);
-        return;
-      }
-      if (response.status != 200) {
-        showAlert(`<b>Login Failed!</b> Invalid username or password.`);
-        console.error(
-          `Authentication Failed: ${response.status} ${response.data}, ${response.error}`
+        if (response.error.response.status === 404)
+          showAlert(
+            `<b>Authentication Failed:</b> Username or password is incorrect`
+          );
+        else showAlert(
+          `<b>Authentication error:</b> ${response.error.response.status}, ${response.error}`
         );
         return;
       }
-      location.href = "../html/layout.html";
       // When successful login, save JWT Token
-      sessionStorage.setItem("token", response.data.JWT);
+      sessionStorage.setItem("token", response.data.token);
+      // Move to main screen
+      location.href = "../html/layout.html";
       return;
     } catch (error) {
       showAlert(`<b>ERROR!</b> ${error}`);
