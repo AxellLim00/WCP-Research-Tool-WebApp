@@ -24,8 +24,6 @@ $(function () {
         );
         return;
       }
-      // When successful login, save JWT Token
-      sessionStorage.setItem("token", response.data.token);
       // Move to main screen
       location.href = "../html/layout.html";
       return;
