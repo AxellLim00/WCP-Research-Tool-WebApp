@@ -1,4 +1,4 @@
-$(function () {
+$(async function () {
   var tabChosen = "";
   var menuToggle = true;
 
@@ -11,6 +11,10 @@ $(function () {
   sessionStorage.setItem("currentTab", "tab1");
   selectTab("tab1");
   sessionStorage.setItem("hasChanges", false);
+  
+  const WORKFLOW_API = new WorkFlowAPI();
+  const products = await WORKFLOW_API.searchProductRequestHistory();
+  debugger;
 
   $("#menu").on("click", function () {
     if (menuToggle) {

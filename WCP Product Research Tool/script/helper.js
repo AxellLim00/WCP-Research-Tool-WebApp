@@ -645,32 +645,66 @@ class WorkFlowAPI {
       });
   }
 
+  /**
+   * Get Search Product Request History from Workflow API
+   * @param {Number} pageNo Defaults to 1 ~ Page number for search page request history
+   * @param {Number} pageSize Defaults to 5000 ~ Number of Product for each page
+   * @param {String} partTypeCode (optional) Type of part requested to filter products
+   * @param {String} interchangeNumber (optional) interchangeNumber to filter products
+   * @param {String} interchangeVersion (optional) interchangeVersion to filter products
+   * @param {Boolean} isGetAll Flag to get all product requests
+   * @returns List of ProductRequestHistoryDto
+   */
   async searchProductRequestHistory(
-    interchangeNumber,
-    interchangeVersion,
-    partTypeCode,
-    pageNo,
-    pageSize
+    pageNo = 1,
+    pageSize = 5000,
+    partTypeCode = null,
+    interchangeNumber = null,
+    interchangeVersion = null,
+    isGetAll = true
   ) {
-    return await axios
-      .post(
-        `${this.apiBaseUrl}/request-history/search`,
-        {
-          InterchangeNumber: interchangeNumber,
-          InterchangeVersion: interchangeVersion,
-          PartTypeCode: partTypeCode,
-          PageNo: pageNo,
-          PageSize: pageSize,
+    const requestBody = {
+      InterchangeNumber: interchangeNumber,
+      InterchangeVersion: interchangeVersion,
+      PartTypeCode: partTypeCode,
+      PageNo: pageNo,
+      PageSize: pageSize,
+    };
+    let result = await axios
+      .post(`${this.baseUrl}/request-history/search`, requestBody, {
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-        {
-          headers: {
-            Authorization: `Bearer ${sessionStorage.getItem("token")}`,
-          },
-        }
-      )
+      })
       .then(function (response) {
-        console.log(response.data); // Output the response data
-        return response;
+        var dtoList = response.data.records.map(
+          (record) => new ProductRequestHistoryDto(record)
+        );
+        // Get all products
+        if (
+          isGetAll &&
+          response.data.currentPage === 1 &&
+          response.data.pageSize < response.data.recordCount
+        ) {
+          let loopsToGetTotal = Math.ceil(
+            response.data.recordCount / response.data.pageSize
+          );
+          // skip first iteration
+          for (let i = 1; i < loopsToGetTotal; i++) {
+            let toAdd = searchProductRequestHistory(
+              interchangeNumber,
+              interchangeVersion,
+              partTypeCode,
+              pageNo,
+              pageSize
+            );
+            dtoList.push(...toAdd);
+          }
+        }
+        // return list of
+        return dtoList;
       })
       .catch(function (error) {
         if (error.response.status === 401) {
@@ -683,6 +717,7 @@ class WorkFlowAPI {
         showAlert("Error searching product request history:", error);
         throw error;
       });
+    return result;
   }
 }
 
