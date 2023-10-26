@@ -707,7 +707,7 @@ class WorkFlowAPI {
         return dtoList;
       })
       .catch(function (error) {
-        if (error.response.status === 401) {
+        if (error.response && error.response.status === 401) {
           console.log(
             "Token has expired or invalidated. Bring user back to login page."
           );

@@ -8,13 +8,15 @@ $(async function () {
   sessionStorage.clear();
   sessionStorage.setItem("token", TOKEN);
 
-  sessionStorage.setItem("currentTab", "tab1");
-  selectTab("tab1");
+  sessionStorage.setItem("currentTab", "tab0");
+  selectTab("tab0");
   sessionStorage.setItem("hasChanges", false);
-  
+
+  // TO DO: make loading screen to wait for this to finish
+  // TO DO: store products in session storage and prevent it from loading again unless session restarts
   const WORKFLOW_API = new WorkFlowAPI();
   const products = await WORKFLOW_API.searchProductRequestHistory();
-  debugger;
+  console.log(products);
 
   $("#menu").on("click", function () {
     if (menuToggle) {
