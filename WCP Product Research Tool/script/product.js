@@ -28,22 +28,27 @@ $(function () {
       Object.assign(new ProductRequestHistoryDto(), object)
     );
     console.log(productData);
-    productList = productData.map(
-      (object) =>
-        new Product(
-          "",
-          object.productStockNumber ?? "",
-          object.vehicleManufacturers.split("\r").join(", "),
-          object.vehicleModels.split("\r").join(", "),
-          object.partTypeFriendlyName,
-          object.interchangeNumber,
-          object.interchangeDescriptions,
-          object.    && object.productStockNumber.includes("P-")
-            ? "pinnacle"
-            : "catalouge",
-          ""
-        )
-    );
+    productData.forEach(function (data) {
+      var i = data.productStockNumber
+        ? productList.findIndex((x) => x.Sku == data.productStockNumber)
+        : -1;
+      if (i <= -1)
+        productList.push(
+          new Product(
+            "",
+            data.productStockNumber ?? "",
+            data.vehicleManufacturers.split("\r").join(", "),
+            data.vehicleModels.split("\r").join(", "),
+            data.partTypeFriendlyName,
+            data.interchangeNumber,
+            data.interchangeDescriptions,
+            data.productStockNumber && data.productStockNumber.includes("P-")
+              ? "catalouge"
+              : "pinnacle",
+            ""
+          )
+        );
+    });
   }
 
   const TABLE = new DataTable(TABLE_NAME, {
