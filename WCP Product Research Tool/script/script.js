@@ -3,20 +3,37 @@ $(async function () {
   var menuToggle = true;
 
   const TOKEN = sessionStorage.getItem("token");
+  const PRODUCT_REQUEST_HISTORY_JSON_STRING = sessionStorage.getItem(
+    "productRequestHistory"
+  );
   if (TOKEN === undefined || TOKEN == "null")
     this.location.href = "../html/login.html";
+
   sessionStorage.clear();
   sessionStorage.setItem("token", TOKEN);
+  sessionStorage.setItem(
+    "productRequestHistory",
+    PRODUCT_REQUEST_HISTORY_JSON_STRING
+  );
 
-  sessionStorage.setItem("currentTab", "tab0");
-  selectTab("tab0");
+  sessionStorage.setItem("currentTab", "tab1");
+  selectTab("tab1");
   sessionStorage.setItem("hasChanges", false);
 
   // TO DO: make loading screen to wait for this to finish
   // TO DO: store products in session storage and prevent it from loading again unless session restarts
-  const WORKFLOW_API = new WorkFlowAPI();
-  const products = await WORKFLOW_API.searchProductRequestHistory();
-  console.log(products);
+
+  let jsonArray = JSON.parse(PRODUCT_REQUEST_HISTORY_JSON_STRING);
+  if (jsonArray === null) {
+    showLoadingScreen("Loading Products from system");
+    const WORKFLOW_API = new WorkFlowAPI();
+    jsonArray = await WORKFLOW_API.searchProductRequestHistory();
+    sessionStorage.setItem("productRequestHistory", JSON.stringify(jsonArray));
+    hideLoadingScreen();
+  }
+  const PRODUCTS = jsonArray.map((object) =>
+    Object.assign(new ProductRequestHistoryDto(), object)
+  );
 
   $("#menu").on("click", function () {
     if (menuToggle) {

@@ -151,3 +151,23 @@ body {
   top: 0px;
   left: 0px;
 }
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  position: absolute;
+  top: 25%;
+  left: 25%;
+  width: 50%;
+  height: 50%;
+  z-index: 101;
+  pointer-events: none;
+}
+
+.loading p {
+  padding-top: 20px;
+  color: white;
+}

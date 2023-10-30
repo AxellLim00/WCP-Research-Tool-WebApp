@@ -5,6 +5,7 @@ $(function () {
   var formSelected = "";
   var isEmptyData = true;
   var productSelected = new Product();
+  var productList = [];
   // Temporary variables for the new product form
   var prevMake = "";
   var prevModel = "";
@@ -12,26 +13,49 @@ $(function () {
   var prevID = "";
 
   //#region Initialize Page
-  //Load table from SQL
+  //Load table from API
 
-  // if loading from SQL empty
+  // if loading from API empty
+  const JSON_ARRAY = JSON.parse(
+    sessionStorage.getItem("productRequestHistory")
+  );
+  isEmptyData = JSON_ARRAY === null;
 
   if (isEmptyData) {
     $(TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
   } else {
-    let productData;
-    let productList = [];
-
-    // TO DO: fill in table with the data
-    // TO DO: create for loop to loop to every data in productData and translate SQL to product object
-    // productList.push() --> To push every product Object to list
-    // TABLE.rows.add(productList).draw();
+    let productData = JSON_ARRAY.map((object) =>
+      Object.assign(new ProductRequestHistoryDto(), object)
+    );
+    console.log(productData);
+    productList = productData.map(
+      (object) =>
+        new Product(
+          "",
+          object.productStockNumber ?? "",
+          object.vehicleManufacturers.split("\r").join(", "),
+          object.vehicleModels.split("\r").join(", "),
+          object.partTypeFriendlyName,
+          object.interchangeNumber,
+          object.interchangeDescriptions,
+          object.    && object.productStockNumber.includes("P-")
+            ? "pinnacle"
+            : "catalouge",
+          ""
+        )
+    );
   }
 
   const TABLE = new DataTable(TABLE_NAME, {
     orderCellsTop: true,
     columns: [
-      { data: "Id" },
+      {
+        data: "Id",
+        render: function (data) {
+          if (data.length > 0) return data;
+          return "<i>Not set</i>";
+        },
+      },
       {
         data: "Sku",
         render: function (data) {
@@ -61,6 +85,8 @@ $(function () {
               return "Added to Pinnacle";
             case "peach":
               return "Added to Peach";
+            case "catalouge":
+              return "In Pinnacle Catalouge";
             default:
               return `ERROR: ${data} not supported`;
           }
@@ -88,6 +114,8 @@ $(function () {
 
   $(`${TABLE_NAME}_filter`).remove();
   $(".dataTables_length").css("padding-bottom", "1%");
+
+  TABLE.rows.add(productList).draw();
 
   //#endregion
 

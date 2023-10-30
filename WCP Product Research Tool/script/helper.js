@@ -156,6 +156,19 @@ function exitPopUpForm(type) {
   $(`#${type}Form input[type="checkbox"]`).prop("checked", false);
 }
 
+function showLoadingScreen(loadingMessage) {
+  $("#darkLayer").css("position", "fixed");
+  $("#darkLayer").show();
+  $(".loading").show();
+  $(".loading p").text(loadingMessage);
+}
+
+function hideLoadingScreen() {
+  $("#darkLayer").hide();
+  $("#darkLayer").css("position", "absolute");
+  $(".loading").hide();
+}
+
 /**
  * Save changes made to Session Storage's "savedChanges" in JSON Format
  * @param {Map[]} change Map Array of changes to be saved
@@ -472,6 +485,9 @@ class Product {
       case "addedtopeach":
         this.Status = "peach";
         break;
+      case "catalouge":
+      case "inpinnaclecatalouge":
+        this.Status = "catalouge";
       default:
         this.Status = null;
     }
@@ -679,9 +695,7 @@ class WorkFlowAPI {
         },
       })
       .then(function (response) {
-        var dtoList = response.data.records.map(
-          (record) => new ProductRequestHistoryDto(record)
-        );
+        let jsonArray = response.data.records;
         // Get all products
         if (
           isGetAll &&
@@ -700,11 +714,11 @@ class WorkFlowAPI {
               pageNo,
               pageSize
             );
-            dtoList.push(...toAdd);
+            jsonArray.push(...toAdd);
           }
         }
         // return list of
-        return dtoList;
+        return jsonArray;
       })
       .catch(function (error) {
         if (error.response && error.response.status === 401) {
@@ -761,22 +775,22 @@ class ProductRequestHistoryDto {
     averageConditionPrice,
     costPrice
   ) {
-    this.PinnacleItemTypeId = pinnacleItemTypeId;
-    this.PartTypeCode = partTypeCode;
-    this.PartTypeFriendlyName = partTypeFriendlyName;
-    this.InterchangeNumber = interchangeNumber;
-    this.InterchangeVersion = interchangeVersion;
-    this.TotalNumberOfRequests = totalNumberOfRequests;
-    this.TotalNumberOfNotFoundRequests = totalNumberOfNotFoundRequests;
-    this.TotalNumberOfUnitsSold = totalNumberOfUnitsSold;
-    this.VehicleManufacturers = vehicleManufacturers;
-    this.VehicleModels = vehicleModels;
-    this.VehicleIdentificationNumbers = vehicleIdentificationNumbers;
-    this.InterchangeDescriptions = interchangeDescriptions;
-    this.ProductStockNumber = productStockNumber;
-    this.AltIndexNumber = altIndexNumber;
-    this.VendorName = vendorName;
-    this.AverageConditionPrice = averageConditionPrice;
-    this.CostPrice = costPrice;
+    this.pinnacleItemTypeId = pinnacleItemTypeId;
+    this.partTypeCode = partTypeCode;
+    this.partTypeFriendlyName = partTypeFriendlyName;
+    this.interchangeNumber = interchangeNumber;
+    this.interchangeVersion = interchangeVersion;
+    this.totalNumberOfRequests = totalNumberOfRequests;
+    this.totalNumberOfNotFoundRequests = totalNumberOfNotFoundRequests;
+    this.totalNumberOfUnitsSold = totalNumberOfUnitsSold;
+    this.vehicleManufacturers = vehicleManufacturers;
+    this.vehicleModels = vehicleModels;
+    this.vehicleIdentificationNumbers = vehicleIdentificationNumbers;
+    this.interchangeDescriptions = interchangeDescriptions;
+    this.productStockNumber = productStockNumber;
+    this.altIndexNumber = altIndexNumber;
+    this.vendorName = vendorName;
+    this.averageConditionPrice = averageConditionPrice;
+    this.costPrice = costPrice;
   }
 }
