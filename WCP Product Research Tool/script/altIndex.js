@@ -33,8 +33,7 @@ $(function () {
     // altIndexList.push() --> To push every altIndex Object to list
     // TABLE.rows.add(altIndexList).draw();
   }
-
-  const TABLE = new DataTable(TABLE_NAME, {
+  var tableOptions = {
     orderCellsTop: true,
     columns: [
       { data: "Name" },
@@ -63,7 +62,9 @@ $(function () {
       },
     ],
     stateSave: true,
-  });
+    paging: true,
+  };
+  var table = new DataTable(TABLE_NAME, tableOptions);
 
   $(`${TABLE_NAME}_filter`).remove();
   $(".dataTables_length").css("padding-bottom", "1%");
@@ -91,18 +92,12 @@ $(function () {
 
   // Export table Button
   $('button[name="exportBtn"]').on("click", function () {
-    if (isEmptyData) {
-      showAlert("<strong>Error!</strong> No data found in table.");
-    } else {
-      $(TABLE_NAME).tableExport({
-        type: "excel",
-        fileName: `${productIDSelected} - Alternate Index Table`,
-        mso: {
-          fileFormat: "xlsx",
-        },
-        ignoreRow: ["#searchRow"],
-      });
-    }
+    exportDataTable(
+      TABLE_NAME,
+      tableOptions,
+      `${productIDSelected} - Alternate Index Table`,
+      isEmptyData
+    );
   });
 
   // Import product Button
@@ -135,12 +130,12 @@ $(function () {
   $(`${TABLE_NAME} tbody`).on("click", "tr", function () {
     if (isEmptyData) return;
     // Clear highlight of all row in Datatable
-    TABLE.rows().nodes().to$().css("background-color", "");
+    table.rows().nodes().to$().css("background-color", "");
     // highlight clicked row
     $(this).css("background-color", "#D5F3FE");
     // Assign row to productSelected
     altIndexSelected = new AlternateIndex(
-      ...Object.values(TABLE.row(this).data())
+      ...Object.values(table.row(this).data())
     );
     // Enable Edit button
     $('button[name="editBtn"]').prop("disabled", false);
@@ -197,7 +192,7 @@ $(function () {
       columnHeader.filter((n) => n);
 
       const SHEET_JSON = await readFileToJson("#importFile", columnHeader);
-      
+
       let missingHeader = "";
       // Check if file is empty or blank
       if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {
@@ -291,10 +286,10 @@ $(function () {
       // Empty Data if data before is is empty
       if (isEmptyData) {
         isEmptyData = false;
-        TABLE.clear().draw();
+        table.clear().draw();
       }
       // Add data to table
-      TABLE.rows.add(importAltIndexes).draw();
+      table.rows.add(importAltIndexes).draw();
     }
     // Edit Form Save
     else if (formSelected == "edit") {
@@ -308,8 +303,8 @@ $(function () {
         return;
       }
       // Find the row in the DataTable with the matching ID.
-      let row = TABLE.column(1).data().indexOf(altIndexSelected.Number); // column index 1 for Supplier Number
-      let rowData = TABLE.row(row).data();
+      let row = table.column(1).data().indexOf(altIndexSelected.Number); // column index 1 for Supplier Number
+      let rowData = table.row(row).data();
       // Save if there are any changes compared to old value (can be found in productSelected)
       newUpdate = {};
 
@@ -325,8 +320,8 @@ $(function () {
 
         // Change previous Main Supplier into normal supplier in table
         if (prevMainSupplier && prevMainSupplier != altIndexSelected.Number) {
-          let prevMainRow = TABLE.column(1).data().indexOf(prevMainSupplier); // column index 1 for Supplier Number
-          let prevMainRowData = TABLE.row(prevMainRow).data();
+          let prevMainRow = table.column(1).data().indexOf(prevMainSupplier); // column index 1 for Supplier Number
+          let prevMainRowData = table.row(prevMainRow).data();
           let updatePrevMain = {};
           prevMainRowData.IsMain = updatePrevMain.IsMain = false;
 
@@ -340,7 +335,7 @@ $(function () {
             ])
           );
 
-          TABLE.row(prevMainRow).data(prevMainRowData).invalidate();
+          table.row(prevMainRow).data(prevMainRowData).invalidate();
         }
       }
       // exit if no changes were made
@@ -360,7 +355,7 @@ $(function () {
       );
       altIndexSelected = updateObject(altIndexSelected, newUpdate);
       // Redraw the table to reflect the changes
-      TABLE.row(row).data(rowData).invalidate();
+      table.row(row).data(rowData).invalidate();
     }
     // save new rows into sessionStorage
     updateChanges(changesMade);
@@ -386,8 +381,8 @@ $(function () {
         `from <b>Nothing</b> to <b>${currentSupplierName}</b>`
       );
     else if ($("#editMain").is(":checked")) {
-      let row = TABLE.column(1).data().indexOf(mainSupplier); // column index 1 for Supplier Number
-      let rowData = TABLE.row(row).data();
+      let row = table.column(1).data().indexOf(mainSupplier); // column index 1 for Supplier Number
+      let rowData = table.row(row).data();
       $("#changeInfo").html(
         `from <b>${rowData.Name}</b> to <b>${currentSupplierName}</b>`
       );

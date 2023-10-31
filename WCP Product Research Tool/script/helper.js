@@ -410,12 +410,14 @@ function updateObject(object, updates) {
  * @param {String} dataTableOptions DataTable options parameters
  * @param {String} fileName File name to export
  * @param {Boolean} isEmptyData Defaults to False ~ Flag indicating whether table is empty
+ * @param {String[]}
  */
 function exportDataTable(
   tableID,
   dataTableOptions,
   fileName,
-  isEmptyData = false
+  isEmptyData = false,
+  worksheetNames = []
 ) {
   if (isEmptyData) {
     showAlert("<strong>Error!</strong> No data found in table.");
@@ -431,6 +433,9 @@ function exportDataTable(
       },
       ignoreRow: ["#searchRow"],
     };
+    if (worksheetNames.length > 0)
+      exportData.mso["worksheetName"] = worksheetNames;
+    
     $(tableID).tableExport(exportData);
     $(tableID).DataTable().destroy();
     dataTableOptions.paging = true;

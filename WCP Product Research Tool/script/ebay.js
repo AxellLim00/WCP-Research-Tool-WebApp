@@ -24,16 +24,15 @@ $(function () {
     // );
   }
 
-  const K_TYPE_TABLE = new DataTable(K_TYPE_TABLE_NAME, {
+  var tableOptions = {
     orderCellsTop: true,
     columns: [{ data: "item" }],
     stateSave: true,
-  });
-  const EPID_TABLE = new DataTable(EPID_TABLE_NAME, {
-    orderCellsTop: true,
-    columns: [{ data: "item" }],
-    stateSave: true,
-  });
+    paging: true,
+  };
+
+  var kTypeTable = new DataTable(K_TYPE_TABLE_NAME, tableOptions);
+  var epIDTable = new DataTable(EPID_TABLE_NAME, tableOptions);
 
   $(".dataTables_length").css("padding-bottom", "1%");
 
@@ -60,18 +59,13 @@ $(function () {
 
   // Export table Button
   $('button[name="exportBtn"]').on("click", function () {
-    if (isEmptyData) {
-      showAlert("<strong>Error!</strong> No data found in table.");
-    } else {
-      $("table").tableExport({
-        type: "excel",
-        fileName: `${productIdSelected} - eBay Compatibility Table`,
-        mso: {
-          fileFormat: "xlsx",
-          worksheetName: ["K-Types", "EPIDs"],
-        },
-      });
-    }
+    exportDataTable(
+      "table",
+      tableOptions,
+      `${productIdSelected} - eBay Compatibility Table`,
+      isEmptyData,
+      ["K-Types", "EPIDs"]
+    );
   });
 
   // New table Button
@@ -107,9 +101,9 @@ $(function () {
     if (isEmptyData) return;
     // Clear highlight of all row in Datatable
     itemSelected.table = "K-Type";
-    itemSelected.value = Object.values(K_TYPE_TABLE.row(this).data())[0];
-    K_TYPE_TABLE.rows().nodes().to$().css("background-color", "");
-    EPID_TABLE.rows().nodes().to$().css("background-color", "");
+    itemSelected.value = Object.values(kTypeTable.row(this).data())[0];
+    kTypeTable.rows().nodes().to$().css("background-color", "");
+    epIDTable.rows().nodes().to$().css("background-color", "");
     // highlight clicked row
     $(this).css("background-color", "#D5F3FE");
     // Enable Edit button
@@ -121,9 +115,9 @@ $(function () {
     if (isEmptyData) return;
     // Clear highlight of all row in Datatable
     itemSelected.table = "EPID";
-    itemSelected.value = Object.values(EPID_TABLE.row(this).data())[0];
-    K_TYPE_TABLE.rows().nodes().to$().css("background-color", "");
-    EPID_TABLE.rows().nodes().to$().css("background-color", "");
+    itemSelected.value = Object.values(epIDTable.row(this).data())[0];
+    kTypeTable.rows().nodes().to$().css("background-color", "");
+    epIDTable.rows().nodes().to$().css("background-color", "");
     // highlight clicked row
     $(this).css("background-color", "#D5F3FE");
     // Enable Edit button
@@ -146,11 +140,11 @@ $(function () {
     if (formSelected == "new") {
       switch (ITEM_CHOSEN_VALUE) {
         case "K-Type":
-          table = K_TYPE_TABLE;
+          table = kTypeTable;
           isFormFilled = Boolean(K_TYPE_VALUE);
           break;
         case "EPID":
-          table = EPID_TABLE;
+          table = epIDTable;
           isFormFilled = Boolean(EPID_VALUE);
           break;
       }
@@ -160,10 +154,10 @@ $(function () {
       isFormFilled = Boolean(EDIT_VALUE);
       switch (itemSelected.table) {
         case "K-Type":
-          table = K_TYPE_TABLE;
+          table = kTypeTable;
           break;
         case "EPID":
-          table = EPID_TABLE;
+          table = epIDTable;
           break;
       }
     }
@@ -192,8 +186,8 @@ $(function () {
       // Empty Table if DataTable previosly was empty
       if (isEmptyData) {
         isEmptyData = false;
-        K_TYPE_TABLE.clear().draw();
-        EPID_TABLE.clear().draw();
+        kTypeTable.clear().draw();
+        epIDTable.clear().draw();
       }
 
       changesMade.push(
