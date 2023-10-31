@@ -20,7 +20,7 @@ $(function () {
     sessionStorage.getItem("productRequestHistory")
   );
   isEmptyData = JSON_ARRAY === null;
-
+  debugger;
   if (isEmptyData) {
     $(TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
   } else {
@@ -32,7 +32,7 @@ $(function () {
       var i = data.productStockNumber
         ? productList.findIndex((x) => x.Sku == data.productStockNumber)
         : -1;
-      if (i <= -1)
+      if (i <= -1) {
         productList.push(
           new Product(
             "",
@@ -44,14 +44,14 @@ $(function () {
             data.interchangeDescriptions,
             data.productStockNumber && data.productStockNumber.includes("P-")
               ? "catalouge"
-              : "pinnacle",
+              : "research",
             ""
           )
         );
+      }
     });
   }
-
-  const TABLE = new DataTable(TABLE_NAME, {
+  var tableOptions = {
     orderCellsTop: true,
     columns: [
       {
@@ -79,18 +79,25 @@ $(function () {
           if ([null, undefined, ""].includes(data)) return null;
           switch (data) {
             case "research":
+            case "Research OEM":
               return "Research OEM";
             case "waiting":
+            case "Waiting on Vendor Quote":
               return "Waiting on Vendor Quote";
             case "costDone":
+            case "Costing Completed":
               return "Costing Completed";
             case "approval":
+            case "Waiting Approval":
               return "Waiting Approval";
             case "pinnacle":
+            case "Added to Pinnacle":
               return "Added to Pinnacle";
             case "peach":
+            case "Added to Peach":
               return "Added to Peach";
             case "catalouge":
+            case "In Pinnacle Catalouge":
               return "In Pinnacle Catalouge";
             default:
               return `ERROR: ${data} not supported`;
@@ -102,7 +109,7 @@ $(function () {
         data: "Oem",
         render: function (data) {
           if ([null, undefined, ""].includes(data)) return null;
-          switch (data) {
+          switch (data.toLowerCase()) {
             case "aftermarket":
               return "Aftermarket";
             case "genuine":
@@ -115,12 +122,15 @@ $(function () {
       },
     ],
     stateSave: true,
-  });
+    paging: true,
+  };
+
+  var table = new DataTable(TABLE_NAME, tableOptions);
 
   $(`${TABLE_NAME}_filter`).remove();
   $(".dataTables_length").css("padding-bottom", "1%");
 
-  TABLE.rows.add(productList).draw();
+  table.rows.add(productList).draw();
 
   //#endregion
 
@@ -159,18 +169,12 @@ $(function () {
 
   // Export table Button
   $('button[name="exportBtn"]').on("click", function () {
-    if (isEmptyData) {
-      showAlert("<strong>Error!</strong> No data found in table.");
-    } else {
-      $(TABLE_NAME).tableExport({
-        type: "excel",
-        fileName: "Research Product Table",
-        mso: {
-          fileFormat: "xlsx",
-        },
-        ignoreRow: ["#searchRow"],
-      });
-    }
+    exportDataTable(
+      TABLE_NAME,
+      tableOptions,
+      "Research Product Table",
+      isEmptyData
+    );
   });
 
   // Edit button
@@ -195,11 +199,11 @@ $(function () {
   $(`${TABLE_NAME} tbody`).on("click", "tr", function () {
     if (isEmptyData) return;
     // Clear highlight of all row in Datatable
-    TABLE.rows().nodes().to$().css("background-color", "");
+    table.rows().nodes().to$().css("background-color", "");
     // highlight clicked row
     $(this).css("background-color", "#D5F3FE");
     // Assign row to productSelected
-    productSelected = new Product(...Object.values(TABLE.row(this).data()));
+    productSelected = new Product(...Object.values(table.row(this).data()));
     // Enable Edit button
     $('button[name="editBtn"]').prop("disabled", false);
   });
@@ -371,10 +375,10 @@ $(function () {
       // Empty Table if DataTable previosly was empty
       if (isEmptyData) {
         isEmptyData = false;
-        TABLE.clear().draw();
+        table.clear().draw();
       }
       // Add data to table
-      TABLE.rows.add(importProducts).draw();
+      table.rows.add(importProducts).draw();
       // Exit Row
       exitPopUpForm(formSelected);
     }
@@ -394,7 +398,7 @@ $(function () {
       // Empty Table if DataTable previosly was empty
       if (isEmptyData) {
         isEmptyData = false;
-        TABLE.clear().draw();
+        table.clear().draw();
       }
       // save new rows into sessionStorage
       changesMade.push(
@@ -406,13 +410,13 @@ $(function () {
         ])
       );
       // Add data to table
-      TABLE.row.add(newProduct).draw();
+      table.row.add(newProduct).draw();
     }
     // Edit Form Save
     else if (formSelected == "edit") {
       // Find the row in the DataTable with the matching ID.
-      let row = TABLE.column(0).data().indexOf(productSelected.Id); // column index 0 for ID
-      let rowData = TABLE.row(row).data();
+      let row = table.column(0).data().indexOf(productSelected.Id); // column index 0 for ID
+      let rowData = table.row(row).data();
       // Save if there are any changes compared to old value (can be found in productSelected)
       newUpdate = {};
       if (productSelected.Status != STATUS_VALUE)
@@ -436,7 +440,7 @@ $(function () {
       );
       productSelected = updateObject(productSelected, newUpdate);
       // Redraw the table to reflect the changes
-      TABLE.row(row).data(rowData).invalidate();
+      table.row(row).data(rowData).invalidate();
     }
     // save changes in rows into sessionStorage
     updateChanges(changesMade);

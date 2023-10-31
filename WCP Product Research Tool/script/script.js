@@ -6,8 +6,11 @@ $(async function () {
   const PRODUCT_REQUEST_HISTORY_JSON_STRING = sessionStorage.getItem(
     "productRequestHistory"
   );
-  if (TOKEN === undefined || TOKEN == "null")
+  // TO DO: bug where this runs after the API is called
+  if (TOKEN === undefined || TOKEN == "null") {
     this.location.href = "../html/login.html";
+    return;
+  }
 
   sessionStorage.clear();
   sessionStorage.setItem("token", TOKEN);
@@ -16,17 +19,12 @@ $(async function () {
     PRODUCT_REQUEST_HISTORY_JSON_STRING
   );
 
-  sessionStorage.setItem("currentTab", "tab1");
-  selectTab("tab1");
-  sessionStorage.setItem("hasChanges", false);
-
-  // TO DO: make loading screen to wait for this to finish
-  // TO DO: store products in session storage and prevent it from loading again unless session restarts
-
   let jsonArray = JSON.parse(PRODUCT_REQUEST_HISTORY_JSON_STRING);
   if (jsonArray === null) {
     showLoadingScreen("Loading Products from system");
     const WORKFLOW_API = new WorkFlowAPI();
+
+    // TO DO: make sure system waits for this to finish before anything else
     jsonArray = await WORKFLOW_API.searchProductRequestHistory();
     sessionStorage.setItem("productRequestHistory", JSON.stringify(jsonArray));
     hideLoadingScreen();
@@ -34,6 +32,10 @@ $(async function () {
   const PRODUCTS = jsonArray.map((object) =>
     Object.assign(new ProductRequestHistoryDto(), object)
   );
+
+  sessionStorage.setItem("currentTab", "tab1");
+  selectTab("tab1");
+  sessionStorage.setItem("hasChanges", false);
 
   $("#menu").on("click", function () {
     if (menuToggle) {

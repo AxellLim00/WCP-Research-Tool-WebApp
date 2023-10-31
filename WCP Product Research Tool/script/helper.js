@@ -156,6 +156,10 @@ function exitPopUpForm(type) {
   $(`#${type}Form input[type="checkbox"]`).prop("checked", false);
 }
 
+/**
+ * Show loading screen when method is called
+ * @param {String} loadingMessage Message to display when loading
+ */
 function showLoadingScreen(loadingMessage) {
   $("#darkLayer").css("position", "fixed");
   $("#darkLayer").show();
@@ -163,6 +167,9 @@ function showLoadingScreen(loadingMessage) {
   $(".loading p").text(loadingMessage);
 }
 
+/**
+ * Hides loading screen, use this after showLoadingScreen is called
+ */
 function hideLoadingScreen() {
   $("#darkLayer").hide();
   $("#darkLayer").css("position", "absolute");
@@ -371,20 +378,6 @@ function calculateAUD(costCurrency, amount) {
 }
 
 /**
- * To check if string value(s) is a valid float.
- * @param {String} args string values to be validated
- * @returns {Boolean} True if the string is only a float, false otherwise
- */
-function isFloat() {
-  let isAllFloat = true;
-  let args = Array.prototype.slice.call(arguments);
-  args.forEach((str) => {
-    isAllFloat &&= /^\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\s*$/.test(str);
-  });
-  return isAllFloat;
-}
-
-/**
  * Check if value in row is float and adds error to the error list
  * @param {Dictionary} row each dictionary object from json
  * @param {String} key name of the key to check
@@ -412,6 +405,56 @@ function updateObject(object, updates) {
 }
 
 /**
+ * Export all rows in DataTable to Xlsx file ~ more rows make take more time
+ * @param {String} tableID HTML Table ID to export
+ * @param {String} dataTableOptions DataTable options parameters
+ * @param {String} fileName File name to export
+ * @param {Boolean} isEmptyData Defaults to False ~ Flag indicating whether table is empty
+ */
+function exportDataTable(
+  tableID,
+  dataTableOptions,
+  fileName,
+  isEmptyData = false
+) {
+  if (isEmptyData) {
+    showAlert("<strong>Error!</strong> No data found in table.");
+  } else {
+    $(tableID).DataTable().destroy();
+    dataTableOptions.paging = false;
+    $(tableID).DataTable(dataTableOptions);
+    let exportData = {
+      type: "excel",
+      fileName: fileName,
+      mso: {
+        fileFormat: "xlsx",
+      },
+      ignoreRow: ["#searchRow"],
+    };
+    $(tableID).tableExport(exportData);
+    $(tableID).DataTable().destroy();
+    dataTableOptions.paging = true;
+    $(tableID).DataTable(dataTableOptions);
+  }
+}
+
+//#region variable tool methods
+
+/**
+ * To check if string value(s) is a valid float.
+ * @param {String} args string values to be validated
+ * @returns {Boolean} True if the string is only a float, false otherwise
+ */
+function isFloat() {
+  let isAllFloat = true;
+  let args = Array.prototype.slice.call(arguments);
+  args.forEach((str) => {
+    isAllFloat &&= /^\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\s*$/.test(str);
+  });
+  return isAllFloat;
+}
+
+/**
  * For a given date, get the ISO week number
  * @returns the ISO week number
  */
@@ -425,6 +468,7 @@ Date.prototype.getWeekNumber = function () {
   var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
 };
+
 /**
  *
  * @param {str} str string to capitalize in title format
@@ -435,6 +479,10 @@ function toTitleCase(str) {
     return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
   });
 }
+
+//#endregion
+
+//#region Table Class
 
 class Product {
   /**
@@ -488,6 +536,7 @@ class Product {
       case "catalouge":
       case "inpinnaclecatalouge":
         this.Status = "catalouge";
+        break;
       default:
         this.Status = null;
     }
@@ -589,6 +638,10 @@ class CostVolume {
   }
 }
 
+//#endregion
+
+//#region API Class
+
 class FreeCurrencyAPI {
   baseUrl = "https://api.freecurrencyapi.com/v1/";
 
@@ -686,52 +739,58 @@ class WorkFlowAPI {
       PageNo: pageNo,
       PageSize: pageSize,
     };
-    let result = await axios
-      .post(`${this.baseUrl}/request-history/search`, requestBody, {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      })
-      .then(function (response) {
-        let jsonArray = response.data.records;
-        // Get all products
-        if (
-          isGetAll &&
-          response.data.currentPage === 1 &&
-          response.data.pageSize < response.data.recordCount
-        ) {
-          let loopsToGetTotal = Math.ceil(
-            response.data.recordCount / response.data.pageSize
+    return new Promise((resolve, reject) => {
+      setTimeout(async () => {
+        try {
+          let response = await axios.post(
+            `${this.baseUrl}/request-history/search`,
+            requestBody,
+            {
+              headers: {
+                Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+            }
           );
-          // skip first iteration
-          for (let i = 1; i < loopsToGetTotal; i++) {
-            let toAdd = searchProductRequestHistory(
-              interchangeNumber,
-              interchangeVersion,
-              partTypeCode,
-              pageNo,
-              pageSize
+          let jsonArray = response.data.records;
+          // Get all products
+          if (
+            isGetAll &&
+            response.data.currentPage === 1 &&
+            response.data.pageSize < response.data.recordCount
+          ) {
+            let loopsToGetTotal = Math.ceil(
+              response.data.recordCount / response.data.pageSize
             );
-            jsonArray.push(...toAdd);
+            // skip first iteration
+            for (let i = 1; i < loopsToGetTotal; i++) {
+              await new Promise((resolve) => setTimeout(resolve, 25000)); // Simulate a 1-second delay
+              let toAdd = searchProductRequestHistory(
+                interchangeNumber,
+                interchangeVersion,
+                partTypeCode,
+                pageNo,
+                pageSize
+              );
+              jsonArray.push(...toAdd);
+            }
           }
+          // return list of
+          resolve(jsonArray);
+        } catch (error) {
+          if (error.response && error.response.status === 401) {
+            console.log(
+              "Token has expired or invalidated. Bring user back to login page."
+            );
+            location.href = "../html/login.html";
+          }
+          console.error("Error searching product request history:", error);
+          showAlert("Error searching product request history:", error);
+          reject(error);
         }
-        // return list of
-        return jsonArray;
-      })
-      .catch(function (error) {
-        if (error.response && error.response.status === 401) {
-          console.log(
-            "Token has expired or invalidated. Bring user back to login page."
-          );
-          location.href = "../html/login.html";
-        }
-        console.error("Error searching product request history:", error);
-        showAlert("Error searching product request history:", error);
-        throw error;
-      });
-    return result;
+      }, 25000); // Simulate a 25-second delay
+    });
   }
 }
 
@@ -794,3 +853,5 @@ class ProductRequestHistoryDto {
     this.costPrice = costPrice;
   }
 }
+
+//#endregion
