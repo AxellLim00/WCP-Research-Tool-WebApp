@@ -63,10 +63,18 @@ $(function () {
     stateSave: true,
   };
 
+  // initialize DataTable
   var vinTable = new DataTable(VIN_TABLE_NAME, tableOptions);
   var oemTable = new DataTable(OEM_TABLE_NAME, tableOptions);
 
   $(".dataTables_length").css("padding-bottom", "2%");
+
+  // Fill in text fields
+  $("#requestValue").val(productData[0].totalNumberOfRequests);
+  $("#nfValue").val(productData[0].totalNumberOfNotFoundRequests);
+  $("#stdValue").val(productData[0].averageConditionPrice);
+  $("#salesValue").val(productData[0].totalNumberOfRequests);
+  $("#estSalesVolValue").val(productData[0].totalNumberOfRequests);
 
   //  TO DO: Get List of all products in an array
   //  Details:

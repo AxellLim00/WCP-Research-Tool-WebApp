@@ -63,7 +63,6 @@ $(function () {
     });
     console.log("Product Data:");
     console.log(productData);
-    debugger;
     // Update product with new Generated Research ID
     sessionStorage.setItem(
       "productRequestHistory",
