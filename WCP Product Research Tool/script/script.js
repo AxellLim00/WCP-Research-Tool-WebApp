@@ -6,12 +6,11 @@ $(async function () {
   const PRODUCT_REQUEST_HISTORY_JSON_STRING = sessionStorage.getItem(
     "productRequestHistory"
   );
-  // TO DO: bug where this runs after the API is called
-  if (TOKEN === undefined || TOKEN == "null") {
+
+  if (TOKEN === undefined || TOKEN === null) {
     this.location.href = "../html/login.html";
     return;
   }
-
   sessionStorage.clear();
   sessionStorage.setItem("token", TOKEN);
   sessionStorage.setItem(

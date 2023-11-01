@@ -435,7 +435,7 @@ function exportDataTable(
     };
     if (worksheetNames.length > 0)
       exportData.mso["worksheetName"] = worksheetNames;
-    
+
     $(tableID).tableExport(exportData);
     $(tableID).DataTable().destroy();
     dataTableOptions.paging = true;
@@ -538,9 +538,9 @@ class Product {
       case "addedtopeach":
         this.Status = "peach";
         break;
-      case "catalouge":
-      case "inpinnaclecatalouge":
-        this.Status = "catalouge";
+      case "catalogue":
+      case "inpinnaclecatalogue":
+        this.Status = "catalogue";
         break;
       default:
         this.Status = null;
@@ -705,7 +705,6 @@ class WorkFlowAPI {
         },
       })
       .then(function (response) {
-        console.log(response.data); // Output the response data
         // When successful login, save JWT Token
         sessionStorage.setItem("token", response.data.token);
         return response;
@@ -790,7 +789,10 @@ class WorkFlowAPI {
             );
             location.href = "../html/login.html";
           }
-          console.error("Error searching product request history:", error);
+          console.error(
+            "Error searching product request history:",
+            error.message
+          );
           showAlert("Error searching product request history:", error);
           reject(error);
         }
@@ -856,6 +858,7 @@ class ProductRequestHistoryDto {
     this.vendorName = vendorName;
     this.averageConditionPrice = averageConditionPrice;
     this.costPrice = costPrice;
+    this.researchIdentifier = "";
   }
 }
 

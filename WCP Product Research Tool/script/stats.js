@@ -4,47 +4,68 @@ $(function () {
   const ROW_AMOUNT_OEM = 10;
   const VIN_TABLE_NAME = "#vinTable";
   const OEM_TABLE_NAME = "#oemTable";
+  const IS_PRODUCT_EDITABLE = Boolean(
+    sessionStorage.getItem("productIDSelected")
+  );
   var formSelected = "";
   var isEmptyData = true;
   var productIdSelected = sessionStorage.getItem("productIDSelected");
   var oemSelected = "";
   var estSalesChanges = false;
   var notesChanges = false;
+  var productData;
   // Temporary previous values variables
   var prevEstSales = "";
   var prevNote = "";
 
   //Load table from SQL
+  var vinTableData = [];
+  var oemTableData = [];
+  if (productIdSelected.slice(0, 2) == "R-") {
+    // Filter existing ones with interchangeNumber, interchangeNumber and partTypeFriendlyName/partTypeCode
+    productData = JSON.parse(
+      sessionStorage.getItem("productRequestHistory")
+    ).filter((x) => x.researchIdentifier == productIdSelected);
+  } else {
+    productData = JSON.parse(
+      sessionStorage.getItem("productRequestHistory")
+    ).filter((x) => x.productStockNumber == productIdSelected);
+  }
+
+  vinTableData = [
+    // Remove duplicates
+    ...new Set(
+      productData
+        .map((obj) => obj.vehicleIdentificationNumbers)
+        .map((str) => str.split("\r"))
+        .flat()
+    ),
+    // Return Data Table format
+  ].map((vin) => {
+    return { data: vin };
+  });
+
+  console.log("VIN Table Data");
+  console.log(vinTableData);
 
   // if loading from SQL empty
+  isEmptyData = vinTableData.length == 0 && oemTableData.length == 0;
 
+  console.log(`isEmptyData ${isEmptyData}`);
   if (isEmptyData) {
     $(VIN_TABLE_NAME).append(getEmptyRow(ROW_AMOUNT_VIN, COLUMN_AMOUNT));
     $(OEM_TABLE_NAME).append(getEmptyRow(ROW_AMOUNT_OEM, COLUMN_AMOUNT));
-  } else {
-    let vinTableData, oemTableData;
-    //fill in table with the data
-
-    // $("#vinTable > tbody:last-child").append(
-    // html here
-    // );
-    // $("#oemTable > tbody:last-child").append(
-    // html here
-    // );
-    // prevEstSales = ;
-    // prevNote = ;
   }
 
-  const VIN_TABLE = new DataTable(VIN_TABLE_NAME, {
-    columns: [{ data: "vin" }],
+  var tableOptions = {
+    columns: [{ data: "data" }],
     orderCellsTop: true,
     stateSave: true,
-  });
-  const OEM_TABLE = new DataTable(OEM_TABLE_NAME, {
-    columns: [{ data: "oem" }],
-    orderCellsTop: true,
-    stateSave: true,
-  });
+  };
+
+  var vinTable = new DataTable(VIN_TABLE_NAME, tableOptions);
+  var oemTable = new DataTable(OEM_TABLE_NAME, tableOptions);
+
   $(".dataTables_length").css("padding-bottom", "2%");
 
   //  TO DO: Get List of all products in an array
@@ -56,6 +77,7 @@ $(function () {
   // $.each(productList, function (i, item) {
   //   $("#productList").append($("<option>").attr("value", i).text(item));
   // });
+  vinTable.rows.add(vinTableData).draw();
   $("#productSelected").val(productIdSelected);
 
   //#region textbox event
@@ -103,18 +125,13 @@ $(function () {
 
   // Export table Button
   $('button[name="exportBtn"]').on("click", function () {
-    if (isEmptyData) {
-      showAlert("<strong>Error!</strong> No data found in table.");
-    } else {
-      $("table").tableExport({
-        type: "excel",
-        fileName: `${productIdSelected} - Stats Table`,
-        mso: {
-          fileFormat: "xlsx",
-          worksheetName: ["Vin Numbers", "OEMs"],
-        },
-      });
-    }
+    exportDataTable(
+      "table",
+      tableOptions,
+      `${productIdSelected} - Stats Table`,
+      isEmptyData,
+      ["VINs", "OEMs"]
+    );
   });
 
   // Edit button
@@ -131,13 +148,14 @@ $(function () {
   $(`${OEM_TABLE_NAME} tbody`).on("click", "tr", function () {
     if (isEmptyData) return;
     // Clear highlight of all row in Datatable
-    OEM_TABLE.rows().nodes().to$().css("background-color", "");
+    oemTable.rows().nodes().to$().css("background-color", "");
     // highlight clicked row
     $(this).css("background-color", "#D5F3FE");
     // Assign row to productSelected
-    oemSelected = Object.values(OEM_TABLE.row(this).data())[0];
-    // Enable Edit button
-    $('button[name="editBtn"]').prop("disabled", false);
+    oemSelected = Object.values(oemTable.row(this).data())[0];
+    if (IS_PRODUCT_EDITABLE)
+      // Enable Edit button
+      $('button[name="editBtn"]').prop("disabled", false);
   });
 
   //#endregion
@@ -188,7 +206,7 @@ $(function () {
       }
 
       let importOems = sheetJson.map(function (row) {
-        let newObject = { oem: row[OEM_VALUE] };
+        let newObject = { data: row[OEM_VALUE] };
         changesMade.push(
           new Map([
             ["type", "new"],
@@ -203,19 +221,20 @@ $(function () {
       // Add data to table
       if (isEmptyData) {
         isEmptyData = false;
-        OEM_TABLE.clear().draw();
+        oemTable.clear().draw();
       }
-      OEM_TABLE.rows.add(importOems).draw();
+      oemTable.rows.add(importOems).draw();
     }
     // Edit Form Save
     else if (formSelected == "edit") {
       // Find the row in the DataTable with the matching ID.
-      let row = OEM_TABLE.column(0).data().indexOf(oemSelected);
-      let rowData = OEM_TABLE.row(row).data();
+      let row = oemTable.column(0).data().indexOf(oemSelected);
+      let rowData = oemTable.row(row).data();
 
       if (oemSelected != OEM_VALUE) {
         // Get all OEMs without special characters
-        oemArray = OEM_TABLE.columns(0)
+        oemArray = oemTable
+          .columns(0)
           .data()
           .toArray()[0]
           .map(function (item) {
@@ -228,7 +247,7 @@ $(function () {
           );
           return;
         }
-        rowData.oem = OEM_VALUE;
+        rowData.data = OEM_VALUE;
       } else {
         // exit if no changes were made
         exitPopUpForm(formSelected);
@@ -245,7 +264,7 @@ $(function () {
         ])
       );
       // Redraw the table to reflect the changes
-      OEM_TABLE.row(row).data(rowData).invalidate();
+      oemTable.row(row).data(rowData).invalidate();
       oemSelected = OEM_VALUE;
     }
 

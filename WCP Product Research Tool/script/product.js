@@ -13,43 +13,62 @@ $(function () {
   var prevID = "";
 
   //#region Initialize Page
-  //Load table from API
 
-  // if loading from API empty
+  //Load table from API
   const JSON_ARRAY = JSON.parse(
     sessionStorage.getItem("productRequestHistory")
   );
   isEmptyData = JSON_ARRAY === null;
-  debugger;
+  // if loading from API empty
   if (isEmptyData) {
     $(TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
   } else {
     let productData = JSON_ARRAY.map((object) =>
       Object.assign(new ProductRequestHistoryDto(), object)
     );
-    console.log(productData);
+
     productData.forEach(function (data) {
       var i = data.productStockNumber
         ? productList.findIndex((x) => x.Sku == data.productStockNumber)
         : -1;
       if (i <= -1) {
+        // researchIdentifier will be used to place Generated Research ID
+        if (!data.productStockNumber && !data.researchIdentifier) {
+          data.researchIdentifier = generateProductID(
+            data.vehicleManufacturers.split("\r"),
+            data.vehicleModels.split("\r"),
+            data.partTypeFriendlyName.split(" ")
+          );
+        }
         productList.push(
           new Product(
-            "",
+            data.researchIdentifier,
             data.productStockNumber ?? "",
-            data.vehicleManufacturers.split("\r").join(", "),
-            data.vehicleModels.split("\r").join(", "),
+            data.vehicleManufacturers.split("\r").join("; "),
+            data.vehicleModels.split("\r").join("; "),
             data.partTypeFriendlyName,
-            data.interchangeNumber,
-            data.interchangeDescriptions,
+            data.interchangeVersion
+              ? `${data.interchangeNumber.trim()} ${data.interchangeVersion}`
+              : data.interchangeNumber.trim(),
+            data.interchangeDescriptions
+              ? data.interchangeDescriptions.split("\r").join("; ")
+              : "",
             data.productStockNumber && data.productStockNumber.includes("P-")
-              ? "catalouge"
+              ? "catalogue"
               : "research",
             ""
           )
         );
       }
     });
+    console.log("Product Data:");
+    console.log(productData);
+    debugger;
+    // Update product with new Generated Research ID
+    sessionStorage.setItem(
+      "productRequestHistory",
+      JSON.stringify(productData)
+    );
   }
   var tableOptions = {
     orderCellsTop: true,
@@ -96,9 +115,9 @@ $(function () {
             case "peach":
             case "Added to Peach":
               return "Added to Peach";
-            case "catalouge":
-            case "In Pinnacle Catalouge":
-              return "In Pinnacle Catalouge";
+            case "catalogue":
+            case "In Pinnacle Catalogue":
+              return "In Pinnacle Catalogue";
             default:
               return `ERROR: ${data} not supported`;
           }
@@ -196,26 +215,42 @@ $(function () {
 
   //#region Row Click event
 
+  // Single Click Row Event
   $(`${TABLE_NAME} tbody`).on("click", "tr", function () {
     if (isEmptyData) return;
+    // Assign row to productSelected
+    productSelected = new Product(...Object.values(table.row(this).data()));
+
     // Clear highlight of all row in Datatable
     table.rows().nodes().to$().css("background-color", "");
     // highlight clicked row
     $(this).css("background-color", "#D5F3FE");
-    // Assign row to productSelected
-    productSelected = new Product(...Object.values(table.row(this).data()));
+
+    if (productSelected.Status == "catalogue") {
+      $('button[name="editBtn"]').prop("disabled", true);
+      return;
+    }
     // Enable Edit button
     $('button[name="editBtn"]').prop("disabled", false);
   });
 
+  // Double Click Row Event
   $(`${TABLE_NAME} tbody`).on("dblclick", "tr", function () {
     // Find the ID cell in the clicked row and extract its text
-    let rowId = $(this).find("td:first").text();
-    if (rowId.length > 0) {
-      sessionStorage.setItem("productIDSelected", rowId);
+    productSelected = new Product(...Object.values(table.row(this).data()));
+    let id =
+      productSelected.Sku != "" ? productSelected.Sku : productSelected.Id;
+    if (id.length > 0) {
+      sessionStorage.setItem("productIDSelected", id);
+      sessionStorage.setItem(
+        "IsProductEditable",
+        productSelected.Status != "catalogue"
+      );
       selectTab("tab2");
     } else {
-      showAlert("<strong>Error!</strong> Product ID not found.");
+      showAlert(
+        "<strong>Error!</strong> Research ID or Product SKU not found."
+      );
     }
   });
 
@@ -496,28 +531,46 @@ $(function () {
 /**
  * Generate the product ID using first 3 letters of Make, Model and Part Type,
  * followed by an 8 character UUID
- * @param {String} make Product's Make value
- * @param {String} model Product's Model value
- * @param {String} partType Product's Part Type value
+ * @param {String[]} make Product's Make value
+ * @param {String[]} model Product's Model value
+ * @param {String[]} partType Product's Part Type value
  * @returns {String} Product ID
  */
 function generateProductID(make, model, partType) {
   // Extract the first 3 letters from make, model, and partType
-  let makePrefix = make.substring(0, 3).toUpperCase();
-  let modelPrefix = model.substring(0, 3).toUpperCase();
-  let partTypePrefix = partType.substring(0, 3).toUpperCase();
+  let makePrefix =
+    make.length == 1
+      ? make[0].substring(0, 3).toUpperCase()
+      : make
+          .map(([v]) => v)
+          .join("")
+          .toUpperCase();
+  let modelPrefix =
+    model.length == 1
+      ? model[0].substring(0, 3).toUpperCase()
+      : model
+          .map(([v]) => v)
+          .join("")
+          .toUpperCase();
+  let partTypePrefix =
+    partType.length == 1
+      ? partType[0].substring(0, 3).toUpperCase()
+      : partType
+          .map(([v]) => v)
+          .join("")
+          .toUpperCase();
 
   // Combine the prefixes and shortened UUID to create the product ID
-  return makePrefix + modelPrefix + partTypePrefix + "-" + generateShortUUID();
+  return `R-${makePrefix}${modelPrefix}${partTypePrefix}-${generateShortUUID().toUpperCase()}`;
 }
 
 /**
- * Generate a short 8 character UUID
+ * Generate a short 4 character UUID
  * @returns {String} Short UUID
  */
 function generateShortUUID() {
-  // A shorter UUID consisting of 8 hexadecimal digits
-  let uuid = "xxxxxxxx".replace(/[x]/g, function () {
+  // A shorter UUID consisting of 4 hexadecimal digits
+  let uuid = "xxxx".replace(/[x]/g, function () {
     return ((Math.random() * 16) | 0).toString(16);
   });
   return uuid;
@@ -532,37 +585,4 @@ function areAllFieldsFilled() {
   let model = $("#newModel").val();
   let partType = $("#newType").val();
   return make.length >= 3 && model.length >= 3 && partType.length >= 3;
-}
-
-/**
- * Insert row click event into row to highlight
- * @param {String} row datatable's row to insert event
- * @param {Boolean} isEmptyData flag to check if datatable is empty
- */
-function insertRowClickEvent(row, isEmptyData) {
-  $(row).on("click", function (event) {
-    var clickedRow = event.target;
-    if (isEmptyData) return;
-    $(clickedRow).addClass("highlight");
-    let rowId = $(clickedRow).find("td:first").text();
-    console.log("TEST");
-  });
-}
-
-/**
- * Insert row double click event into row to pick product
- * @param {String} row datatable's row to insert event
- */
-function insertRowDoubleClickEvent(row) {
-  $(row).on("dblclick", function (event) {
-    var clickedRow = event.target;
-    // Find the ID cell in the clicked row and extract its text
-    let rowId = $(clickedRow).find("td:first").text();
-    if (rowId.length > 0) {
-      sessionStorage.setItem("productIDSelected", rowId);
-      selectTab("tab2");
-    } else {
-      showAlert("<strong>Error!</strong> Product ID not found.");
-    }
-  });
 }
