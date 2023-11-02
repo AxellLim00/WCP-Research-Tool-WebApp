@@ -3,23 +3,38 @@ $(function () {
   const TABLE = $("#costVolTable");
   var researchID = "Default ID";
   var formSelected = "";
-  var isEmptyData = true;
+  var isTableEmpty = true;
   var productIdSelected = sessionStorage.getItem("productIDSelected");
   var costVolSelected = new CostVolume();
-  //Load table from SQL
+  var productData = null;
 
-  // if loading from SQL empty
+  //Load table from API
+  if (productIdSelected) {
+    if (productIdSelected.slice(0, 2) == "R-") {
+      // Filter existing ones with interchangeNumber, interchangeNumber and partTypeFriendlyName/partTypeCode
+      productData = JSON.parse(
+        sessionStorage.getItem("productRequestHistory")
+      ).filter((x) => x.researchIdentifier == productIdSelected);
+    } else {
+      productData = JSON.parse(
+        sessionStorage.getItem("productRequestHistory")
+      ).filter((x) => x.productStockNumber == productIdSelected);
+    }
+    costVolSelected.Id = productData[0].researchIdentifier
+      ? productData[0].researchIdentifier
+      : "No Research ID Assigned";
+  }
+  // TO-DO: Load Data from Server-side
 
-  if (isEmptyData) {
+  // if loading from API/Server-side empty
+  isTableEmpty = !Boolean(productData);
+  if (isTableEmpty) {
     $('tr[name="values"]').children().text("-");
     $('button[name="editBtn"]').prop("disabled", true);
   } else {
-    let costVolTableData;
-    // TO DO: fill in table with the data
-
-    // $("#productTable > tbody:last-child").append(
-    // html here
-    // );
+    $.each(Object.keys(costVolSelected), function (i, val) {
+      TABLE.find("tr").find("td").eq(i).text(costVolSelected[val]);
+    });
   }
 
   //  TO DO: Get List of all products in an array
@@ -37,15 +52,15 @@ $(function () {
 
   // Save changes Button
   $('button[name="saveBtn"]').on("click", function () {
-    // on successful save to SQL
-    if (saveChangesToSQL()) {
+    // on successful save to Server-side
+    if (saveChanges()) {
       updateHasChanges(false);
     }
   });
 
   // Export table Button
   $('button[name="exportBtn"]').on("click", function () {
-    if (isEmptyData) {
+    if (isTableEmpty) {
       showAlert("<strong>Error!</strong> No data found in table.");
     } else {
       $(COST_VOLUME_TABLE_NAME).tableExport({
@@ -198,7 +213,7 @@ $(function () {
         $.each(Object.keys(foundCostVol), function (i, val) {
           TABLE.find("tr").find("td").eq(i).text(foundCostVol[val]);
         });
-        isEmptyData = false;
+        isTableEmpty = false;
         costVolSelected = foundCostVol;
         $('button[name="editBtn"]').prop("disabled", false);
       }

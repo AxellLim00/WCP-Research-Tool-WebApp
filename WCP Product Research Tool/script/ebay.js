@@ -6,9 +6,9 @@ $(function () {
   var isEmptyData = true;
   var productIdSelected = sessionStorage.getItem("productIDSelected");
   var itemSelected = { table: "", value: "" };
-  //Load table from SQL
+  //Load table from API/Server-side
 
-  // if loading from SQL empty
+  // if loading is empty
   if (isEmptyData) {
     $(K_TYPE_TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
     $(EPID_TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
@@ -51,8 +51,8 @@ $(function () {
 
   // Save changes Button
   $('button[name="saveBtn"]').on("click", function () {
-    // on successful save to SQL
-    if (saveChangesToSQL()) {
+    // on successful save to Server-side
+    if (saveChanges()) {
       updateHasChanges(false);
     }
   });

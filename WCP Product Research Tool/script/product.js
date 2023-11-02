@@ -168,7 +168,7 @@ $(function () {
   // Save changes Button
   $('button[name="saveBtn"]').on("click", function () {
     //on successful save
-    if (saveChangesToSQL()) {
+    if (saveChanges()) {
       updateHasChanges(false);
     }
   });

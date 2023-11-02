@@ -200,12 +200,12 @@ function updateChanges(change) {
 }
 
 /**
- * Save changes made to SQL
+ * Save changes made to Server-side
  * Session Storage's "savedChanges" will be cleared
  * @returns {Boolean} true if successful, false otherwise
  */
-function saveChangesToSQL() {
-  // TO DO: translate Map changes to SQL
+function saveChanges() {
+  // TO DO: translate Map changes to Server-side
   let storedChanges = sessionStorage.getItem("savedChanges");
   let savedChanges = JSON.parse(storedChanges).map((array) => new Map(array));
   // If savedChanges is empty or Array is empty
@@ -480,7 +480,7 @@ Date.prototype.getWeekNumber = function () {
  * @returns
  */
 function toTitleCase(str) {
-  return str.replace(/\w\S*/g, function (txt) {
+  return (str ?? "").replace(/\w\S*/g, function (txt) {
     return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
   });
 }
@@ -590,10 +590,11 @@ class AlternateIndex {
   ) {
     this.Name = name;
     this.Number = String(number);
-    this.Moq = moq;
-    this.CostCurrency = costCurrency;
-    this.CostAud = typeof costAud == String ? parseFloat(costAud) : costAud;
-    this.LastUpdated = lastUpdated;
+    this.Moq = moq ?? "";
+    this.CostCurrency = costCurrency ?? "";
+    this.CostAud =
+      typeof costAud == String ? parseFloat(costAud) : costAud ?? "";
+    this.LastUpdated = lastUpdated ?? "";
     quality = String(quality);
     switch (quality.toLowerCase().replace(" ", "")) {
       case "good":
@@ -615,9 +616,9 @@ class AlternateIndex {
       default:
         this.Quality = null;
     }
-    this.SupplierPartType = supplierPartType;
-    this.WcpPartType = wcpPartType;
-    this.IsMain = isMain;
+    this.SupplierPartType = supplierPartType ?? "";
+    this.WcpPartType = wcpPartType ?? "";
+    this.IsMain = isMain ?? false;
   }
 }
 
@@ -633,9 +634,9 @@ class CostVolume {
    * @param {Number} extGP
    */
   constructor(id, costUsd, costAud, estCostAud, estSell, postage, extGP) {
-    this.Id = id;
-    this.CostUSD = costUsd;
-    this.CostAUD = costAud;
+    this.Id = id ?? "-";
+    this.CostUSD = costUsd ?? 0;
+    this.CostAUD = costAud ?? 0;
     this.EstimateCostAUD = estCostAud ?? 0;
     this.EstimateSell = estSell ?? 0;
     this.Postage = postage ?? 0;

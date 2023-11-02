@@ -8,54 +8,62 @@ $(function () {
     sessionStorage.getItem("productIDSelected")
   );
   var formSelected = "";
-  var isEmptyData = true;
+  var isOemEmpty = true;
+  var isVinEmpty = true;
   var productIdSelected = sessionStorage.getItem("productIDSelected");
   var oemSelected = "";
   var estSalesChanges = false;
   var notesChanges = false;
-  var productData;
+  var productData = [];
   // Temporary previous values variables
   var prevEstSales = "";
   var prevNote = "";
 
-  //Load table from SQL
-  var vinTableData = [];
-  var oemTableData = [];
-  if (productIdSelected.slice(0, 2) == "R-") {
-    // Filter existing ones with interchangeNumber, interchangeNumber and partTypeFriendlyName/partTypeCode
-    productData = JSON.parse(
-      sessionStorage.getItem("productRequestHistory")
-    ).filter((x) => x.researchIdentifier == productIdSelected);
-  } else {
-    productData = JSON.parse(
-      sessionStorage.getItem("productRequestHistory")
-    ).filter((x) => x.productStockNumber == productIdSelected);
+  //Load table from API
+  var vinList = [];
+  var oemList = [];
+  if (productIdSelected) {
+    if (productIdSelected.slice(0, 2) == "R-") {
+      // Filter existing ones with interchangeNumber, interchangeNumber and partTypeFriendlyName/partTypeCode
+      productData = JSON.parse(
+        sessionStorage.getItem("productRequestHistory")
+      ).filter((x) => x.researchIdentifier == productIdSelected);
+    } else {
+      productData = JSON.parse(
+        sessionStorage.getItem("productRequestHistory")
+      ).filter((x) => x.productStockNumber == productIdSelected);
+    }
+
+    vinList = [
+      // Remove duplicates
+      ...new Set(
+        productData
+          .map((obj) => obj.vehicleIdentificationNumbers)
+          .map((str) => str.split("\r"))
+          .flat()
+      ),
+      // Return Data Table format
+    ].map((vin) => {
+      return { data: vin };
+    });
+
+    console.log("VIN Table Data");
+    console.log(vinList);
+
+    // Fill in text fields
+    $("#requestValue").val(productData[0].totalNumberOfRequests);
+    $("#nfValue").val(productData[0].totalNumberOfNotFoundRequests);
+    $("#stdValue").val(productData[0].averageConditionPrice);
+    $("#salesValue").val(productData[0].totalNumberOfRequests);
+    $("#estSalesVolValue").val(productData[0].totalNumberOfRequests);
   }
-
-  vinTableData = [
-    // Remove duplicates
-    ...new Set(
-      productData
-        .map((obj) => obj.vehicleIdentificationNumbers)
-        .map((str) => str.split("\r"))
-        .flat()
-    ),
-    // Return Data Table format
-  ].map((vin) => {
-    return { data: vin };
-  });
-
-  console.log("VIN Table Data");
-  console.log(vinTableData);
-
-  // if loading from SQL empty
-  isEmptyData = vinTableData.length == 0 && oemTableData.length == 0;
-
-  console.log(`isEmptyData ${isEmptyData}`);
-  if (isEmptyData) {
+  isVinEmpty = vinList.length == 0;
+  isOemEmpty = oemList.length == 0;
+  // if loading from API empty
+  if (isVinEmpty)
     $(VIN_TABLE_NAME).append(getEmptyRow(ROW_AMOUNT_VIN, COLUMN_AMOUNT));
+  if (isOemEmpty)
     $(OEM_TABLE_NAME).append(getEmptyRow(ROW_AMOUNT_OEM, COLUMN_AMOUNT));
-  }
 
   var tableOptions = {
     columns: [{ data: "data" }],
@@ -69,13 +77,6 @@ $(function () {
 
   $(".dataTables_length").css("padding-bottom", "2%");
 
-  // Fill in text fields
-  $("#requestValue").val(productData[0].totalNumberOfRequests);
-  $("#nfValue").val(productData[0].totalNumberOfNotFoundRequests);
-  $("#stdValue").val(productData[0].averageConditionPrice);
-  $("#salesValue").val(productData[0].totalNumberOfRequests);
-  $("#estSalesVolValue").val(productData[0].totalNumberOfRequests);
-
   //  TO DO: Get List of all products in an array
   //  Details:
   //  Add options to the datalist:
@@ -85,7 +86,7 @@ $(function () {
   // $.each(productList, function (i, item) {
   //   $("#productList").append($("<option>").attr("value", i).text(item));
   // });
-  vinTable.rows.add(vinTableData).draw();
+  vinTable.rows.add(vinList).draw();
   $("#productSelected").val(productIdSelected);
 
   //#region textbox event
@@ -119,8 +120,8 @@ $(function () {
 
     if (!jQuery.isEmptyObject(update)) updateChanges(update);
 
-    // on successful save to SQL
-    if (saveChangesToSQL()) {
+    // on successful save to Server-side
+    if (saveChanges()) {
       updateHasChanges(false);
     }
   });
@@ -137,7 +138,7 @@ $(function () {
       "table",
       tableOptions,
       `${productIdSelected} - Stats Table`,
-      isEmptyData,
+      isOemEmpty || isVinEmpty,
       ["VINs", "OEMs"]
     );
   });
@@ -154,7 +155,7 @@ $(function () {
   //#region Row Click event
 
   $(`${OEM_TABLE_NAME} tbody`).on("click", "tr", function () {
-    if (isEmptyData) return;
+    if (isOemEmpty) return;
     // Clear highlight of all row in Datatable
     oemTable.rows().nodes().to$().css("background-color", "");
     // highlight clicked row
@@ -227,8 +228,8 @@ $(function () {
       });
 
       // Add data to table
-      if (isEmptyData) {
-        isEmptyData = false;
+      if (isOemEmpty) {
+        isOemEmpty = false;
         oemTable.clear().draw();
       }
       oemTable.rows.add(importOems).draw();

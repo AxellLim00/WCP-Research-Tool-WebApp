@@ -17,9 +17,9 @@ $(function () {
 
   //#endregion
 
-  //Load table from SQL
+  //Load table from Server-side
 
-  // if loading from SQL empty
+  // if loading from Server-side empty
   if (isEmptyData) {
     $("#userResearchTable > tbody:last-child").append(
       getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT_USER)

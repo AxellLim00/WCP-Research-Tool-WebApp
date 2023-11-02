@@ -6,33 +6,47 @@ $(function () {
   var formSelected = "";
   var currencyRate = new Object();
   var currencySupplierMap = new Map();
-  var productIDSelected = sessionStorage.getItem("productIDSelected");
+  var productIdSelected = sessionStorage.getItem("productIDSelected");
   var altIndexSelected = new AlternateIndex();
   var mainSupplier = null;
   // temporary variable to store previous values
   var prevMainSupplier = null;
 
-  // TO DO: Load table from SQL
-  // TO DO: get all currency and supplier pair from SQL
+  // Load table from API and TO DO: Server-side?
+  var altIndexList = [];
+  if (productIdSelected) {
+    let productData = [];
+    if (productIdSelected.slice(0, 2) == "R-") {
+      // Filter existing ones with interchangeNumber, interchangeNumber and partTypeFriendlyName/partTypeCode
+      productData = JSON.parse(
+        sessionStorage.getItem("productRequestHistory")
+      ).filter(
+        (x) => x.researchIdentifier == productIdSelected && x.altIndexNumber
+      );
+    } else {
+      productData = JSON.parse(
+        sessionStorage.getItem("productRequestHistory")
+      ).filter(
+        (x) => x.productStockNumber == productIdSelected && x.altIndexNumber
+      );
+    }
+    altIndexList = productData.map(
+      (product) =>
+        new AlternateIndex(product.vendorName, product.altIndexNumber)
+    );
+  }
+
+  // TO DO: get all currency and supplier pair from Server-side
   // currencySupplierMap =
 
-  // TO DO: Get all currency from SQL into currencyList
-  // currencyList.add()
   // Check if all currency is in currencyRates
   currencyRate = getCurrencyRates();
 
+  // Check if alternative index list is empty
+  isEmptyData = altIndexList.length == 0;
   // Scenario of when data loaded is empty
-  if (isEmptyData) {
-    $(TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
-  } else {
-    let altIndexData;
-    let altIndexList = [];
+  if (isEmptyData) $(TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
 
-    // TO DO: fill in table with the data
-    // TO DO: create for loop to loop to every data in altIndexData and translate SQL to altIndex object
-    // altIndexList.push() --> To push every altIndex Object to list
-    // TABLE.rows.add(altIndexList).draw();
-  }
   var tableOptions = {
     orderCellsTop: true,
     columns: [
@@ -69,6 +83,9 @@ $(function () {
   $(`${TABLE_NAME}_filter`).remove();
   $(".dataTables_length").css("padding-bottom", "1%");
 
+  console.log(altIndexList);
+  table.rows.add(altIndexList).draw();
+
   //  TO DO: Get List of all products in an array
   //  Details:
   //  Add options to the datalist:
@@ -78,14 +95,14 @@ $(function () {
   // $.each(productList, function (i, item) {
   //   $("#productList").append($("<option>").attr("value", i).text(item));
   // });
-  $("#productSelected").val(productIDSelected);
+  $("#productSelected").val(productIdSelected);
 
   //#region Screen Button
 
   // Save changes Button
   $('button[name="saveBtn"]').on("click", function () {
     //on successful save
-    if (saveChangesToSQL()) {
+    if (saveChanges()) {
       updateHasChanges(false);
     }
   });
@@ -222,7 +239,7 @@ $(function () {
         return;
       }
 
-      // TO DO: Get supplier list from SQL to json format
+      // TO DO: Get supplier list from Server-side to json format
       // Will create a map
       let supplierListJson = new Map([]);
 
