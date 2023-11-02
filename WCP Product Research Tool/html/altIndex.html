@@ -114,9 +114,15 @@
             <input id="importFile" type="file" accept=".xls, .xlsx, .csv" />
           </label>
           <label>
-            Supplier Number (From Pinnacle) Header<b style="color: red">*</b>
+            Supplier Number (From Pinnacle)<b style="color: red">*</b>
             <br />
-            <input id="importNum" type="text" />
+            <input id="importNum" type="text" list="altIndexNumList" />
+            <datalist id="altIndexNumList"> </datalist>
+          </label>
+          <label>
+            Supplier Name<b style="color: red">*</b>
+            <br />
+            <p id="importName">-</p>
           </label>
           <label>
             MOQ Header<b style="color: red">*</b>
@@ -156,7 +162,7 @@
           style="display: none"
         >
           <label>
-            Supplier Number:
+            Supplier Name:
             <br />
             <p id="editName">-</p>
           </label>

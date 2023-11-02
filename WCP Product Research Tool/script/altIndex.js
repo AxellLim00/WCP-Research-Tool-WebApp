@@ -8,32 +8,41 @@ $(function () {
   var currencySupplierMap = new Map();
   var productIdSelected = sessionStorage.getItem("productIDSelected");
   var altIndexSelected = new AlternateIndex();
+  var altIndexDictionary = [];
   var mainSupplier = null;
   // temporary variable to store previous values
   var prevMainSupplier = null;
 
+  //#region Initialization
   // Load table from API and TO DO: Server-side?
   var altIndexList = [];
   if (productIdSelected) {
-    let productData = [];
+    let allProductData = JSON.parse(
+      sessionStorage.getItem("productRequestHistory")
+    );
+    let selectedProductData = [];
     if (productIdSelected.slice(0, 2) == "R-") {
       // Filter existing ones with interchangeNumber, interchangeNumber and partTypeFriendlyName/partTypeCode
-      productData = JSON.parse(
-        sessionStorage.getItem("productRequestHistory")
-      ).filter(
+      selectedProductData = allProductData.filter(
         (x) => x.researchIdentifier == productIdSelected && x.altIndexNumber
       );
     } else {
-      productData = JSON.parse(
-        sessionStorage.getItem("productRequestHistory")
-      ).filter(
+      selectedProductData = allProductData.filter(
         (x) => x.productStockNumber == productIdSelected && x.altIndexNumber
       );
     }
-    altIndexList = productData.map(
+    altIndexList = selectedProductData.map(
       (product) =>
-        new AlternateIndex(product.vendorName, product.altIndexNumber)
+        new AlternateIndex(
+          String(product.vendorName),
+          String(product.altIndexNumber)
+        )
     );
+
+    altIndexDictionary = allProductData.reduce((result, product) => {
+      result[String(product.altIndexNumber)] = product.vendorName;
+      return result;
+    }, {});
   }
 
   // TO DO: get all currency and supplier pair from Server-side
@@ -95,7 +104,15 @@ $(function () {
   // $.each(productList, function (i, item) {
   //   $("#productList").append($("<option>").attr("value", i).text(item));
   // });
+
   $("#productSelected").val(productIdSelected);
+
+  // Fill in options for alternative index Name and ID
+  $.each(Object.keys(altIndexDictionary), function (i, item) {
+    $("#altIndexNumList").append($("<option>").attr("value", item).text(item));
+  });
+
+  //#endregion
 
   //#region Screen Button
 
@@ -163,6 +180,7 @@ $(function () {
   $('button[name="saveForm"]').on("click", async function () {
     const FILE_VALUE = $(`#${formSelected}File`).val();
     const SUPPLIER_NUMBER_VALUE = $(`#${formSelected}Num`).val();
+    const SUPPLIER_NAME_VALUE = $(`#${formSelected}Name`).text();
     const MOQ_VALUE = $(`#${formSelected}Moq`).val();
     const COST_CURRENCY_VALUE = $(`#${formSelected}CostCur`).val();
     const SUPPLIER_PART_TYPE_VALUE = $(`#${formSelected}SupPartType`).val();
@@ -176,14 +194,15 @@ $(function () {
 
     //check mandatory fields
     if (formSelected == "import") {
-      isFormFilled = Boolean(
-        FILE_VALUE &&
-          SUPPLIER_NUMBER_VALUE &&
-          MOQ_VALUE &&
-          COST_CURRENCY_VALUE &&
-          SUPPLIER_PART_TYPE_VALUE &&
-          WCP_PART_TYPE_VALUE
-      );
+      isFormFilled =
+        Boolean(
+          FILE_VALUE &&
+            SUPPLIER_NUMBER_VALUE &&
+            MOQ_VALUE &&
+            COST_CURRENCY_VALUE &&
+            SUPPLIER_PART_TYPE_VALUE &&
+            WCP_PART_TYPE_VALUE
+        ) && SUPPLIER_NAME_VALUE != "-";
     } else if (formSelected == "edit") {
       isFormFilled = Boolean(COST_AUD_VALUE && QUALITY_VALUE);
     }
@@ -407,6 +426,15 @@ $(function () {
       $("#changeInfo").html(
         `from <b>${currentSupplierName}</b> to <b>Nothing</b>`
       );
+  });
+
+  $("#importNum").on("focusout", function () {
+    let altIndexNumber = $(this).val();
+    if (altIndexDictionary.hasOwnProperty(altIndexNumber)) {
+      $("#importName").text(altIndexDictionary[altIndexNumber]);
+      return;
+    }
+    $("#importName").text("-");
   });
 
   $('#mainConfirmation button[name="yes"]').on("click", function () {
