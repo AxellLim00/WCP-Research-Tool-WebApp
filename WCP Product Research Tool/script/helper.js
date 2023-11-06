@@ -4,17 +4,18 @@
  * @returns {void}
  */
 function selectTab(tabIdSelected) {
-  currentTab = sessionStorage.getItem("currentTab");
+  currentTab = $(".tab-selected").attr("id");
   if (currentTab) {
     $("#" + currentTab + "-name").removeClass("tab-name-selected");
     $("#" + currentTab + "-icon").removeClass("tab-icon-selected");
+    $("#" + currentTab).removeClass("tab-selected");
   }
 
   $("#" + tabIdSelected + "-name").addClass("tab-name-selected");
   $("#" + tabIdSelected + "-icon").addClass("tab-icon-selected");
+  $("#" + tabIdSelected).addClass("tab-selected");
   // remove any saved changes on Session Storage
   sessionStorage.removeItem("savedChanges");
-  sessionStorage.setItem("currentTab", tabIdSelected);
 
   const content = $("#content");
   switch (tabIdSelected) {
@@ -440,6 +441,61 @@ function exportDataTable(
     $(tableID).DataTable().destroy();
     dataTableOptions.paging = true;
     $(tableID).DataTable(dataTableOptions);
+  }
+}
+
+/**
+ * Get Alternate Index Dictiornary for their ID and Name
+ * @param {ProductRequestHistoryDto[]} productDtoArray Array of ProductRequestHistoryDto as source of data
+ * @return { Dictionary} Dictionary containing Alt Index Number as Keys and Name as Values
+ */
+function getAltIndexValueDictionary(productDtoArray) {
+  return productDtoArray.reduce((result, product) => {
+    if (product.altIndexNumber !== null && product.vendorName !== null) {
+      result[product.altIndexNumber] = product.vendorName;
+    }
+    return result;
+  }, {});
+}
+
+/**
+ * Get Unique list of all researchIdentifier and productStockNumber
+ * @param {ProductRequestHistoryDto[]} productDtoArray Array of ProductRequestHistoryDto as source of data
+ * @returns {String[]} Unique list of all researchIdentifier and productStockNumber
+ */
+function getProductIdentifier(productDtoArray) {
+  let researchIdentifiers = [
+    ...productDtoArray.map((product) => product.researchIdentifier),
+  ];
+  let productStockNumbers = [
+    ...productDtoArray.map((product) => product.productStockNumber),
+  ];
+
+  return [...new Set([...researchIdentifiers, ...productStockNumbers])].filter(
+    (str) => str != null && str.trim() !== ""
+  );
+}
+
+/**
+ * Refresh tab when product is updated
+ * @param {String} newId Product ID on search bar
+ * @param {String[]} idList Complete list of all products to compare against
+ * @param {String} currentId Current product ID selected
+ * @param {String} tabId Current tab ID selected
+ * @param {Boolean} showError Show Alert error message when true
+ */
+function productSelectedChanged(
+  newId,
+  idList,
+  currentId,
+  tabId,
+  showError = false
+) {
+  if (idList.includes(newId) && $(newId != currentId)) {
+    sessionStorage.setItem("productIDSelected", newId);
+    selectTab(tabId);
+  } else if (showError) {
+    showAlert(`Error: Product ID ${newId} not found`);
   }
 }
 

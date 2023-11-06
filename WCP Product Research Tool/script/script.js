@@ -32,8 +32,7 @@ $(async function () {
     Object.assign(new ProductRequestHistoryDto(), object)
   );
 
-  sessionStorage.setItem("currentTab", "tab1");
-  selectTab("tab1");
+  selectTab("tab0");
   sessionStorage.setItem("hasChanges", false);
 
   $("#menu").on("click", function () {

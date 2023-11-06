@@ -1,7 +1,6 @@
 $(function () {
   const COST_VOLUME_TABLE_NAME = "#costVolTable";
   const TABLE = $("#costVolTable");
-  var researchID = "Default ID";
   var formSelected = "";
   var isTableEmpty = true;
   var productIdSelected = sessionStorage.getItem("productIDSelected");
@@ -65,7 +64,7 @@ $(function () {
     } else {
       $(COST_VOLUME_TABLE_NAME).tableExport({
         type: "excel",
-        fileName: `${researchID} - Cost & Volume Table`,
+        fileName: `${productIdSelected} - Cost & Volume Table`,
         mso: {
           fileFormat: "xlsx",
         },

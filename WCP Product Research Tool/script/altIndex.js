@@ -2,36 +2,45 @@ $(function () {
   const COLUMN_AMOUNT = 10;
   const ROW_AMOUNT = 10;
   const TABLE_NAME = "#altIndexTable";
-  var isEmptyData = true;
+  var isTableEmpty = true;
   var formSelected = "";
   var currencyRate = new Object();
   var currencySupplierMap = new Map();
   var productIdSelected = sessionStorage.getItem("productIDSelected");
   var altIndexSelected = new AlternateIndex();
-  var altIndexDictionary = [];
+  var altIndexValueDictionary = [];
   var mainSupplier = null;
+  var productDtoArray = JSON.parse(
+    sessionStorage.getItem("productRequestHistory")
+  );
+  var productIdList = getProductIdentifier(productDtoArray);
   // temporary variable to store previous values
   var prevMainSupplier = null;
 
   //#region Initialization
-  // Load table from API and TO DO: Server-side?
-  var altIndexList = [];
-  if (productIdSelected) {
-    let allProductData = JSON.parse(
-      sessionStorage.getItem("productRequestHistory")
+
+  // Fill in ID search box
+  $.each(productIdList, function (i, item) {
+    $("#productList").append(
+      $("<option>").attr("value", item).text(`${item}  \t`)
     );
+  });
+
+  // Load table from API and TO DO: Server-side?
+  var altIndexObjectList = [];
+  if (productIdSelected) {
     let selectedProductData = [];
     if (productIdSelected.slice(0, 2) == "R-") {
       // Filter existing ones with interchangeNumber, interchangeNumber and partTypeFriendlyName/partTypeCode
-      selectedProductData = allProductData.filter(
+      selectedProductData = productDtoArray.filter(
         (x) => x.researchIdentifier == productIdSelected && x.altIndexNumber
       );
     } else {
-      selectedProductData = allProductData.filter(
+      selectedProductData = productDtoArray.filter(
         (x) => x.productStockNumber == productIdSelected && x.altIndexNumber
       );
     }
-    altIndexList = selectedProductData.map(
+    altIndexObjectList = selectedProductData.map(
       (product) =>
         new AlternateIndex(
           String(product.vendorName),
@@ -39,10 +48,7 @@ $(function () {
         )
     );
 
-    altIndexDictionary = allProductData.reduce((result, product) => {
-      result[String(product.altIndexNumber)] = product.vendorName;
-      return result;
-    }, {});
+    altIndexValueDictionary = getAltIndexValueDictionary(productDtoArray);
   }
 
   // TO DO: get all currency and supplier pair from Server-side
@@ -52,9 +58,10 @@ $(function () {
   currencyRate = getCurrencyRates();
 
   // Check if alternative index list is empty
-  isEmptyData = altIndexList.length == 0;
+  isTableEmpty = altIndexObjectList.length == 0;
   // Scenario of when data loaded is empty
-  if (isEmptyData) $(TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
+  if (isTableEmpty)
+    $(TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
 
   var tableOptions = {
     orderCellsTop: true,
@@ -92,8 +99,8 @@ $(function () {
   $(`${TABLE_NAME}_filter`).remove();
   $(".dataTables_length").css("padding-bottom", "1%");
 
-  console.log(altIndexList);
-  table.rows.add(altIndexList).draw();
+  console.log(altIndexObjectList);
+  table.rows.add(altIndexObjectList).draw();
 
   //  TO DO: Get List of all products in an array
   //  Details:
@@ -108,7 +115,7 @@ $(function () {
   $("#productSelected").val(productIdSelected);
 
   // Fill in options for alternative index Name and ID
-  $.each(Object.keys(altIndexDictionary), function (i, item) {
+  $.each(Object.keys(altIndexValueDictionary), function (i, item) {
     $("#altIndexNumList").append($("<option>").attr("value", item).text(item));
   });
 
@@ -129,8 +136,8 @@ $(function () {
     exportDataTable(
       TABLE_NAME,
       tableOptions,
-      `${productIDSelected} - Alternate Index Table`,
-      isEmptyData
+      `${productIdSelected} - Alternate Index Table`,
+      isTableEmpty
     );
   });
 
@@ -162,7 +169,7 @@ $(function () {
 
   //#region Row Click event
   $(`${TABLE_NAME} tbody`).on("click", "tr", function () {
-    if (isEmptyData) return;
+    if (isTableEmpty) return;
     // Clear highlight of all row in Datatable
     table.rows().nodes().to$().css("background-color", "");
     // highlight clicked row
@@ -218,7 +225,6 @@ $(function () {
     if (formSelected == "import") {
       let isQualityEmpty = QUALITY_VALUE.trim().length == 0;
       let columnHeader = [
-        SUPPLIER_NUMBER_VALUE,
         MOQ_VALUE,
         COST_CURRENCY_VALUE,
         SUPPLIER_PART_TYPE_VALUE,
@@ -242,7 +248,6 @@ $(function () {
       }
 
       missingHeader = findMissingColumnHeader(SHEET_JSON[0], [
-        SUPPLIER_NUMBER_VALUE,
         MOQ_VALUE,
         COST_CURRENCY_VALUE,
         SUPPLIER_PART_TYPE_VALUE,
@@ -258,29 +263,12 @@ $(function () {
         return;
       }
 
-      // TO DO: Get supplier list from Server-side to json format
-      // Will create a map
-      let supplierListJson = new Map([]);
-
       let importAltIndexes = SHEET_JSON.map((row) => {
-        // Temporary Code TO DO: DELETE THIS
-        supplierListJson[row[SUPPLIER_NUMBER_VALUE]] =
-          "Temporary Supplier Name";
-        // DELETE UNTIL HERE
-
-        // TO DO: Find supplier from Json list
-        if (!supplierListJson.hasOwnProperty(row[SUPPLIER_NUMBER_VALUE])) {
-          errorMessage.push(
-            `<i>Supplier Number ${row[SUPPLIER_NUMBER_VALUE]}</i> not found.`
-          );
-          return null;
-        }
         // Change according to this: yes I think its probably easier to store
         // the currency the supplier quotes in against the supplier and the import will just be a $ value
         // TO DO: Find currency from Supplier Number
-        // let Currency = currencySupplierMap[row[SUPPLIER_NUMBER_VALUE]];
-        let Currency = "AUD";
-        // TEMP
+        // let Currency = currencySupplierMap[SUPPLIER_NUMBER_VALUE];
+        let Currency = "AUD"; // TEMP
         let costAud = calculateAUD(Currency, row[COST_CURRENCY_VALUE]);
 
         // If converting currency occured an error
@@ -290,8 +278,8 @@ $(function () {
         }
 
         let newObject = new AlternateIndex(
-          supplierListJson[row[SUPPLIER_NUMBER_VALUE]],
-          row[SUPPLIER_NUMBER_VALUE],
+          SUPPLIER_NAME_VALUE_VALUE,
+          SUPPLIER_NUMBER_VALUE,
           row[MOQ_VALUE],
           String(row[COST_CURRENCY_VALUE]) + ` ${Currency}`,
           costAud,
@@ -306,7 +294,7 @@ $(function () {
         changesMade.push(
           new Map([
             ["type", "new"],
-            ["id", productIDSelected],
+            ["id", productIdSelected],
             ["table", "AlternateIndex"],
             ["changes", newObject],
           ])
@@ -320,8 +308,8 @@ $(function () {
       }
 
       // Empty Data if data before is is empty
-      if (isEmptyData) {
-        isEmptyData = false;
+      if (isTableEmpty) {
+        isTableEmpty = false;
         table.clear().draw();
       }
       // Add data to table
@@ -364,7 +352,7 @@ $(function () {
           changesMade.push(
             new Map([
               ["type", "edit"],
-              ["id", productIDSelected],
+              ["id", productIdSelected],
               ["table", "AlternateIndex"],
               ["number", prevMainRowData.Number],
               ["changes", updatePrevMain],
@@ -383,7 +371,7 @@ $(function () {
       changesMade.push(
         new Map([
           ["type", "edit"],
-          ["id", productIDSelected],
+          ["id", productIdSelected],
           ["table", "AlternateIndex"],
           ["number", altIndexSelected.Number],
           ["changes", newUpdate],
@@ -430,8 +418,8 @@ $(function () {
 
   $("#importNum").on("focusout", function () {
     let altIndexNumber = $(this).val();
-    if (altIndexDictionary.hasOwnProperty(altIndexNumber)) {
-      $("#importName").text(altIndexDictionary[altIndexNumber]);
+    if (altIndexValueDictionary.hasOwnProperty(altIndexNumber)) {
+      $("#importName").text(altIndexValueDictionary[altIndexNumber]);
       return;
     }
     $("#importName").text("-");

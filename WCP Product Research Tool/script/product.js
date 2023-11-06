@@ -5,7 +5,7 @@ $(function () {
   var formSelected = "";
   var isEmptyData = true;
   var productSelected = new Product();
-  var productList = [];
+  var productObjectList = [];
   // Temporary variables for the new product form
   var prevMake = "";
   var prevModel = "";
@@ -23,37 +23,42 @@ $(function () {
   if (isEmptyData) {
     $(TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
   } else {
-    let productData = JSON_ARRAY.map((object) =>
+    let productDtoArray = JSON_ARRAY.map((object) =>
       Object.assign(new ProductRequestHistoryDto(), object)
     );
 
-    productData.forEach(function (data) {
-      var i = data.productStockNumber
-        ? productList.findIndex((x) => x.Sku == data.productStockNumber)
+    productDtoArray.forEach(function (currentDto) {
+      var i = currentDto.productStockNumber
+        ? productObjectList.findIndex(
+            (x) => x.Sku == currentDto.productStockNumber
+          )
         : -1;
       if (i <= -1) {
         // researchIdentifier will be used to place Generated Research ID
-        if (!data.productStockNumber && !data.researchIdentifier) {
-          data.researchIdentifier = generateProductID(
-            data.vehicleManufacturers.split("\r"),
-            data.vehicleModels.split("\r"),
-            data.partTypeFriendlyName.split(" ")
+        if (!currentDto.productStockNumber && !currentDto.researchIdentifier) {
+          currentDto.researchIdentifier = generateProductID(
+            currentDto.vehicleManufacturers.split("\r"),
+            currentDto.vehicleModels.split("\r"),
+            currentDto.partTypeFriendlyName.split(" ")
           );
         }
-        productList.push(
+        productObjectList.push(
           new Product(
-            data.researchIdentifier,
-            data.productStockNumber ?? "",
-            data.vehicleManufacturers.split("\r").join("; "),
-            data.vehicleModels.split("\r").join("; "),
-            data.partTypeFriendlyName,
-            data.interchangeVersion
-              ? `${data.interchangeNumber.trim()} ${data.interchangeVersion}`
-              : data.interchangeNumber.trim(),
-            data.interchangeDescriptions
-              ? data.interchangeDescriptions.split("\r").join("; ")
+            currentDto.researchIdentifier,
+            currentDto.productStockNumber ?? "",
+            currentDto.vehicleManufacturers.split("\r").join("; "),
+            currentDto.vehicleModels.split("\r").join("; "),
+            currentDto.partTypeFriendlyName,
+            currentDto.interchangeVersion
+              ? `${currentDto.interchangeNumber.trim()} ${
+                  currentDto.interchangeVersion
+                }`
+              : currentDto.interchangeNumber.trim(),
+            currentDto.interchangeDescriptions
+              ? currentDto.interchangeDescriptions.split("\r").join("; ")
               : "",
-            data.productStockNumber && data.productStockNumber.includes("P-")
+            currentDto.productStockNumber &&
+            currentDto.productStockNumber.includes("P-")
               ? "catalogue"
               : "research",
             ""
@@ -62,12 +67,22 @@ $(function () {
       }
     });
     console.log("Product Data:");
-    console.log(productData);
+    console.log(productDtoArray);
     // Update product with new Generated Research ID
     sessionStorage.setItem(
       "productRequestHistory",
-      JSON.stringify(productData)
+      JSON.stringify(productDtoArray)
     );
+
+    // Fill in Search by Bars
+    let altIndexValueDictionary = getAltIndexValueDictionary(productDtoArray);
+    $.each(Object.keys(altIndexValueDictionary), function (i, item) {
+      $("#supplierList").append(
+        $("<option>")
+          .attr("value", item)
+          .text(`${item} : ${altIndexValueDictionary[item]}`)
+      );
+    });
   }
   var tableOptions = {
     orderCellsTop: true,
@@ -148,7 +163,7 @@ $(function () {
   $(`${TABLE_NAME}_filter`).remove();
   $(".dataTables_length").css("padding-bottom", "1%");
 
-  table.rows.add(productList).draw();
+  table.rows.add(productObjectList).draw();
 
   //#endregion
 

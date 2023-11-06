@@ -14,30 +14,48 @@ $(function () {
   var oemSelected = "";
   var estSalesChanges = false;
   var notesChanges = false;
-  var productData = [];
+  var productDtoArray = JSON.parse(
+    sessionStorage.getItem("productRequestHistory")
+  );
+  var productIdList = getProductIdentifier(productDtoArray);
   // Temporary previous values variables
   var prevEstSales = "";
   var prevNote = "";
+  // Get list of Product from API
 
-  //Load table from API
+  //#region Initialization
+
+  // Fill in ID search box
+  $.each(productIdList, function (i, item) {
+    $("#productList").append(
+      $("<option>").attr("value", item).text(`${item}  \t`)
+    );
+  });
+
+  //Load table from ProductList
   var vinList = [];
   var oemList = [];
-  if (productIdSelected) {
+  if (
+    productIdSelected &&
+    productIdSelected != "undefined" &&
+    productIdSelected != "null"
+  ) {
+    let productSelectedDto = [];
     if (productIdSelected.slice(0, 2) == "R-") {
       // Filter existing ones with interchangeNumber, interchangeNumber and partTypeFriendlyName/partTypeCode
-      productData = JSON.parse(
-        sessionStorage.getItem("productRequestHistory")
-      ).filter((x) => x.researchIdentifier == productIdSelected);
+      productSelectedDto = productDtoArray.filter(
+        (x) => x.researchIdentifier == productIdSelected
+      );
     } else {
-      productData = JSON.parse(
-        sessionStorage.getItem("productRequestHistory")
-      ).filter((x) => x.productStockNumber == productIdSelected);
+      productSelectedDto = productDtoArray.filter(
+        (x) => x.productStockNumber == productIdSelected
+      );
     }
 
     vinList = [
       // Remove duplicates
       ...new Set(
-        productData
+        productSelectedDto
           .map((obj) => obj.vehicleIdentificationNumbers)
           .map((str) => str.split("\r"))
           .flat()
@@ -51,43 +69,36 @@ $(function () {
     console.log(vinList);
 
     // Fill in text fields
-    $("#requestValue").val(productData[0].totalNumberOfRequests);
-    $("#nfValue").val(productData[0].totalNumberOfNotFoundRequests);
-    $("#stdValue").val(productData[0].averageConditionPrice);
-    $("#salesValue").val(productData[0].totalNumberOfRequests);
-    $("#estSalesVolValue").val(productData[0].totalNumberOfRequests);
+    $("#requestValue").val(productSelectedDto[0].totalNumberOfRequests);
+    $("#nfValue").val(productSelectedDto[0].totalNumberOfNotFoundRequests);
+    $("#stdValue").val(productSelectedDto[0].averageConditionPrice);
+    $("#salesValue").val(productSelectedDto[0].totalNumberOfRequests);
+    $("#estSalesVolValue").val(productSelectedDto[0].totalNumberOfRequests);
   }
+
   isVinEmpty = vinList.length == 0;
   isOemEmpty = oemList.length == 0;
-  // if loading from API empty
+  // Fill in Table if loading from API empty
   if (isVinEmpty)
     $(VIN_TABLE_NAME).append(getEmptyRow(ROW_AMOUNT_VIN, COLUMN_AMOUNT));
   if (isOemEmpty)
     $(OEM_TABLE_NAME).append(getEmptyRow(ROW_AMOUNT_OEM, COLUMN_AMOUNT));
 
+  // initialize DataTable
   var tableOptions = {
     columns: [{ data: "data" }],
     orderCellsTop: true,
     stateSave: true,
   };
-
-  // initialize DataTable
   var vinTable = new DataTable(VIN_TABLE_NAME, tableOptions);
   var oemTable = new DataTable(OEM_TABLE_NAME, tableOptions);
 
   $(".dataTables_length").css("padding-bottom", "2%");
 
-  //  TO DO: Get List of all products in an array
-  //  Details:
-  //  Add options to the datalist:
-  // - "attr" helps if you need an i.d to identify each option.
-  // - "text" is the content to be displayed.
-  // productList = get_list
-  // $.each(productList, function (i, item) {
-  //   $("#productList").append($("<option>").attr("value", i).text(item));
-  // });
   vinTable.rows.add(vinList).draw();
   $("#productSelected").val(productIdSelected);
+
+  //#endregion
 
   //#region textbox event
 
@@ -101,6 +112,25 @@ $(function () {
     if ($("#note").val() != prevNote) notesChanges = true;
     else notesChanges = false;
     updateHasChanges(estSalesChanges || notesChanges);
+  });
+
+  $("#productSelected").on("keydown", function (event) {
+    if (event.key === "Enter")
+      productSelectedChanged(
+        $(this).val(),
+        productIdList,
+        productIdSelected,
+        sessionStorage.getItem("currentTab"),
+        true
+      );
+  });
+  $("#productSelected").on("input", function () {
+    productSelectedChanged(
+      $(this).val(),
+      productIdList,
+      productIdSelected,
+      sessionStorage.getItem("currentTab")
+    );
   });
 
   //#endregion
@@ -138,8 +168,8 @@ $(function () {
       "table",
       tableOptions,
       `${productIdSelected} - Stats Table`,
-      isOemEmpty || isVinEmpty,
-      ["VINs", "OEMs"]
+      isOemEmpty && isVinEmpty,
+      ["VIN", "OEM"]
     );
   });
 
