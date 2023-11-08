@@ -240,7 +240,15 @@ $(function () {
         .search(filterRegex, true, false, false)
         .draw(false);
     },
+    onUncheckAll: function () {
+      table.column($(this).attr("column")).search("").draw(false);
+    },
+    onCheckAll: function () {
+      table.column($(this).attr("column")).search("").draw(false);
+    },
   });
+  // On Default Exclude In Pinnacle Catalogue
+  
 
   //#endregion
 

@@ -32,7 +32,7 @@ $(async function () {
     Object.assign(new ProductRequestHistoryDto(), object)
   );
 
-  selectTab("tab1");
+  selectTab("tab4");
   sessionStorage.setItem("hasChanges", false);
 
   $("#menu").on("click", function () {

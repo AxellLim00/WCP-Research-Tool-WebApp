@@ -76,8 +76,12 @@
                   data-column="4"
                 />
               </td>
-              <td>
-                <input type="date" class="filter" data-column="5" />
+              <td style="inline-size: min-content">
+                From:
+                <input type="date" class="filter" name="from" data-column="5" />
+                <br />
+                To:&emsp;&nbsp;
+                <input type="date" class="filter" name="to" data-column="5" />
               </td>
               <td>
                 <select
@@ -94,7 +98,7 @@
               <td>
                 <input
                   type="text"
-                  placeholder="Search ssupplier's part type"
+                  placeholder="Search supplier's part type"
                   class="filter"
                   data-column="7"
                 />
@@ -216,7 +220,9 @@
             Quality:
             <br />
             <select id="editQuality">
-              <option value="" style="display: none" disabled selected>Select quality</option>
+              <option value="" style="display: none" disabled selected>
+                Select quality
+              </option>
               <option value="good">Good</option>
               <option value="normal">Normal</option>
               <option value="bad">Bad</option>

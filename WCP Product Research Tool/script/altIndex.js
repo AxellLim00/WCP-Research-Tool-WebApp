@@ -38,7 +38,7 @@ $(function () {
       (product) =>
         new AlternateIndex(
           String(product.vendorName),
-          String(product.altIndexNumber),
+          String(product.altIndexNumber)
         )
     );
 
@@ -127,17 +127,11 @@ $(function () {
 
   //#region Searchbar Logic
 
-  // https://live.datatables.net/vipifute/1/edit
-  // https://datatables.net/extensions/fixedcolumns/examples/styling/col_filter.html
-  // https://datatables.net/examples/api/multi_filter_select.html
-  // https://datatables.net/extensions/searchpanes/examples/customFiltering/customOptionConditions.html
-
   $('input.filter[type="text"]').on("input", function () {
     table.column($(this).data("column")).search($(this).val()).draw();
   });
-  // multi select can also be possible to replace some search bars
 
-  // https://multiple-select.wenzhixin.net.cn/examples#getData.html#view-source
+  // multi select can also be possible to replace some search bars
   $(".multiple-select").multipleSelect({
     onClick: function () {
       let values = $(this)
@@ -154,6 +148,12 @@ $(function () {
         .column($(this).attr("column"))
         .search(filterRegex, true, false, false)
         .draw(false);
+    },
+    onUncheckAll: function () {
+      table.column($(this).attr("column")).search("").draw(false);
+    },
+    onCheckAll: function () {
+      table.column($(this).attr("column")).search("").draw(false);
     },
   });
 

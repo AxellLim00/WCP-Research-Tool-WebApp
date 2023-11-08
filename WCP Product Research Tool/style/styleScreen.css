@@ -156,6 +156,14 @@ input[readonly="readonly"]:hover {
   width: auto;
 }
 
+input[type="date"].filter {
+  width: auto;
+}
+
+input[type="text"].filter {
+  overflow-wrap: break-word;
+}
+
 /* Buttons */
 
 button {
