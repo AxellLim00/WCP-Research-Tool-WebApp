@@ -4,8 +4,12 @@ $(function () {
   const K_TYPE_TABLE_NAME = "#kTypeTable";
   const EPID_TABLE_NAME = "#epIDTable";
   var isEmptyData = true;
-  var productIdSelected = sessionStorage.getItem("productIDSelected");
   var itemSelected = { table: "", value: "" };
+  var productIdSelected = sessionStorage.getItem("productIDSelected");
+  var productDtoArray = JSON.parse(
+    sessionStorage.getItem("productRequestHistory")
+  );
+  var productIdArray = getProductIdentifier(productDtoArray);
   //Load table from API/Server-side
 
   // if loading is empty
@@ -24,7 +28,16 @@ $(function () {
     // );
   }
 
-  var tableOptions = {
+  //#region Fill in textbox Datalist
+
+  // Fill in ID search box
+  $.each(productIdArray, function (_, item) {
+    $("#productList").append($("<option>").attr("value", item).text(item));
+  });
+
+  //#endregion
+
+  let tableOptions = {
     orderCellsTop: true,
     columns: [{ data: "item" }],
     stateSave: true,
@@ -47,6 +60,30 @@ $(function () {
   // });
   $("#productSelected").val(productIdSelected);
 
+  //#region textbox event
+
+  // Search Product ID events
+  $("#productSelected").on("keydown", function (event) {
+    if (event.key === "Enter")
+      productSelectedChanged(
+        $(this).val(),
+        productIdArray,
+        productIdSelected,
+        $(".tab-selected").attr("id"),
+        true
+      );
+  });
+  $("#productSelected").on("input", function () {
+    productSelectedChanged(
+      $(this).val(),
+      productIdArray,
+      productIdSelected,
+      $(".tab-selected").attr("id")
+    );
+  });
+
+  //#endregion
+
   //#region Screen Button
 
   // Save changes Button
@@ -61,7 +98,6 @@ $(function () {
   $('button[name="exportBtn"]').on("click", function () {
     exportDataTable(
       "table",
-      tableOptions,
       `${productIdSelected} - eBay Compatibility Table`,
       isEmptyData,
       ["K-Types", "EPIDs"]

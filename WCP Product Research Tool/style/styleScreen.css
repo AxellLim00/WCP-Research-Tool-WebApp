@@ -152,6 +152,10 @@ input[readonly="readonly"]:hover {
   width: 100%;
 }
 
+.multiple-select input[type="checkbox"] {
+  width: auto;
+}
+
 /* Buttons */
 
 button {

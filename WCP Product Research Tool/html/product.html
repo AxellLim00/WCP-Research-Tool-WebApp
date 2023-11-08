@@ -14,16 +14,16 @@
       <label>OEM Number</label>
       <input
         type="text"
-        name="suppName"
         list="supplierList"
-        class="filter-text-input"
+        class="filter-text-input filter"
+        data-column="9"
       />
       <datalist id="supplierList"> </datalist>
       <input
         type="text"
-        name="oemNum"
         list="oemList"
-        class="filter-text-input"
+        class="filter-text-input filter"
+        data-column="10"
       />
       <datalist id="oemList"> </datalist>
     </section>
@@ -40,59 +40,95 @@
             <th>IC Description</th>
             <th>Status</th>
             <th>Aftermarket/Genuine OEM</th>
+            <th></th>
+            <th></th>
           </tr>
           <tr class="searchbar-Table" data-tableexport-display="none">
             <td>
               <input
                 type="text"
-                id="idSearch"
                 placeholder="Search research ID"
+                class="filter"
+                data-column="0"
               />
-            </td>
-            <td>
-              <input type="text" id="skuSearch" placeholder="Search SKU" />
-            </td>
-            <td>
-              <input type="text" id="makeSearch" placeholder="Search make" />
-            </td>
-            <td>
-              <input type="text" id="modelSearch" placeholder="Search model" />
             </td>
             <td>
               <input
                 type="text"
-                id="partSearch"
+                placeholder="Search SKU"
+                class="filter"
+                data-column="1"
+              />
+            </td>
+            <td>
+              <input
+                type="text"
+                placeholder="Search make"
+                class="filter"
+                data-column="2"
+              />
+            </td>
+            <td>
+              <input
+                type="text"
+                placeholder="Search model"
+                class="filter"
+                data-column="3"
+              />
+            </td>
+            <td>
+              <input
+                type="text"
                 placeholder="Search part type"
+                class="filter"
+                data-column="4"
               />
-            </td>
-            <td>
-              <input type="text" id="icNumSearch" placeholder="Search IC no." />
             </td>
             <td>
               <input
                 type="text"
-                id="icDescSearch"
-                placeholder="Search description"
+                placeholder="Search IC no."
+                class="filter"
+                data-column="5"
               />
             </td>
             <td>
-              <select id="statusSearch">
-                <option value="">Search status</option>
+              <input
+                type="text"
+                placeholder="Search description"
+                class="filter"
+                data-column="6"
+              />
+            </td>
+            <td>
+              <select
+                class="filter multiple-select"
+                data-column="7"
+                multiple="multiple"
+                placeholder="Select status"
+              >
                 <option value="research">Research OEM</option>
                 <option value="waiting">Waiting on Vendor Quote</option>
                 <option value="costDone">Costing Completed</option>
                 <option value="approval">Waiting Approval</option>
                 <option value="pinnacle">Added to Pinnacle</option>
                 <option value="peach">Added to Peach</option>
+                <option value="peach">In Pinnacle Catalogue</option>
               </select>
             </td>
             <td>
-              <select id="oemSearch">
-                <option value="">Search OEM</option>
+              <select
+                class="filter multiple-select"
+                data-column="8"
+                multiple="multiple"
+                placeholder="Select OEM type"
+              >
                 <option value="aftermarket">Aftermarket</option>
                 <option value="genuine">Genuine</option>
               </select>
             </td>
+            <td></td>
+            <td></td>
           </tr>
         </thead>
         <tbody></tbody>

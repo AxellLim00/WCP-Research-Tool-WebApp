@@ -265,7 +265,7 @@ async function readFileToJson(
       if (!worksheetSeperated) {
         const SHEET_NAME = WORKBOOK.SheetNames[0];
         const SHEET = WORKBOOK.Sheets[SHEET_NAME];
-
+        debugger;
         // Get all header cell location
         let headerCell = [];
         // const SHEET_ARRAY = XLSX.utils.sheet_to_json(SHEET);
@@ -415,7 +415,6 @@ function updateObject(object, updates) {
  */
 function exportDataTable(
   tableID,
-  dataTableOptions,
   fileName,
   isEmptyData = false,
   worksheetNames = []
@@ -423,9 +422,9 @@ function exportDataTable(
   if (isEmptyData) {
     showAlert("<strong>Error!</strong> No data found in table.");
   } else {
-    $(tableID).DataTable().destroy();
-    dataTableOptions.paging = false;
-    $(tableID).DataTable(dataTableOptions);
+    let previousPageLength = $(tableID).DataTable().page.len();
+    // redraw table with all row showm
+    $(tableID).DataTable().page.len(-1).draw(false);
     let exportData = {
       type: "excel",
       fileName: fileName,
@@ -436,11 +435,9 @@ function exportDataTable(
     };
     if (worksheetNames.length > 0)
       exportData.mso["worksheetName"] = worksheetNames;
-
+    // Export HTML table not Datatable
     $(tableID).tableExport(exportData);
-    $(tableID).DataTable().destroy();
-    dataTableOptions.paging = true;
-    $(tableID).DataTable(dataTableOptions);
+    $(tableID).DataTable().page.len(previousPageLength).draw(false);
   }
 }
 
@@ -491,12 +488,24 @@ function productSelectedChanged(
   tabId,
   showError = false
 ) {
-  if (idList.includes(newId) && $(newId != currentId)) {
-    sessionStorage.setItem("productIDSelected", newId);
-    selectTab(tabId);
-  } else if (showError) {
+  var hasChanges = sessionStorage.getItem("hasChanges") == "true";
+  $("#productSelected").attr("oldvalue", currentId);
+  if (!idList.includes(newId) || newId == currentId) {
+    if (!showError) return;
     showAlert(`Error: Product ID ${newId} not found`);
+    $("#productSelected").val($("#productSelected").attr("oldvalue"));
+    // $("#productSelected").attr("oldvalue", "");
+    return;
   }
+  if (hasChanges) {
+    $("#searchConfirmation.confirmation").show();
+    $("#darkLayer").show();
+    $("#darkLayer").css("position", "fixed");
+    return;
+  }
+  sessionStorage.setItem("productIDSelected", newId);
+  selectTab(tabId);
+  // $("#productSelected").attr("oldvalue", "");
 }
 
 //#region variable tool methods
@@ -548,17 +557,31 @@ function toTitleCase(str) {
 class Product {
   /**
    *
-   * @param {String} id
-   * @param {String} sku
-   * @param {String} make
-   * @param {String} model
-   * @param {String} type
-   * @param {String} num
-   * @param {String} desc
-   * @param {String} status
-   * @param {String} oem
+   * @param {String} id Research ID
+   * @param {String} sku SKU
+   * @param {String} make Product's Make
+   * @param {String} model Product's Model
+   * @param {String} type Product's Part type
+   * @param {String} num IC Number
+   * @param {String} desc IC Description
+   * @param {String} status Product Research Status
+   * @param {String} oem OEM Type
+   * @param {String[]} suppList Supplier Number List
+   * @param {String[]} oemList OEM Number List
    */
-  constructor(id, sku, make, model, type, num, desc, status, oem) {
+  constructor(
+    id,
+    sku,
+    make,
+    model,
+    type,
+    num,
+    desc,
+    status,
+    oem,
+    suppList,
+    oemList
+  ) {
     this.Id = id;
     this.Sku = sku;
     this.Make = make;
@@ -615,6 +638,9 @@ class Product {
       default:
         this.Oem = null;
     }
+
+    this.SuppList = suppList ?? [];
+    this.OemList = oemList ?? [];
   }
 }
 

@@ -32,7 +32,7 @@ $(async function () {
     Object.assign(new ProductRequestHistoryDto(), object)
   );
 
-  selectTab("tab0");
+  selectTab("tab1");
   sessionStorage.setItem("hasChanges", false);
 
   $("#menu").on("click", function () {
@@ -59,6 +59,9 @@ $(async function () {
     }
   });
 
+  //#region Comfirmation Button Events
+
+  // Switch Tab confirmation
   $('#switchConfirmation button[name="yes"]').on("click", function () {
     sessionStorage.setItem("hasChanges", false);
     $("#switchConfirmation.confirmation").hide();
@@ -73,6 +76,26 @@ $(async function () {
     $("#darkLayer").hide();
     $("#darkLayer").css("position", "absolute");
   });
+
+  //Switch Product Confirmation
+  $('#searchConfirmation button[name="yes"]').on("click", function () {
+    sessionStorage.setItem("hasChanges", false);
+    $("#searchConfirmation.confirmation").hide();
+    $("#darkLayer").hide();
+    $("#darkLayer").css("position", "absolute");
+    selectTab($(".tab-selected").attr("id"));
+    sessionStorage.setItem("productIDSelected", $("#productSelected").val());
+  });
+
+  $('#searchConfirmation button[name="no"]').on("click", function () {
+    $("#searchConfirmation.confirmation").hide();
+    $("#darkLayer").hide();
+    $("#darkLayer").css("position", "absolute");
+    $("#productSelected").val($("#productSelected").attr("oldvalue"));
+    // $("#productSelected").attr("oldvalue", "");
+  });
+
+  //#endregion
 });
 
 /**

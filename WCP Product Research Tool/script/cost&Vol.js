@@ -4,6 +4,10 @@ $(function () {
   var formSelected = "";
   var isTableEmpty = true;
   var productIdSelected = sessionStorage.getItem("productIDSelected");
+  var productDtoArray = JSON.parse(
+    sessionStorage.getItem("productRequestHistory")
+  );
+  var productIdArray = getProductIdentifier(productDtoArray);
   var costVolSelected = new CostVolume();
   var productData = null;
 
@@ -23,6 +27,16 @@ $(function () {
       ? productData[0].researchIdentifier
       : "No Research ID Assigned";
   }
+
+  //#region Fill in textbox Datalist
+
+  // Fill in ID search box
+  $.each(productIdArray, function (_, item) {
+    $("#productList").append($("<option>").attr("value", item).text(item));
+  });
+
+  //#endregion
+
   // TO-DO: Load Data from Server-side
 
   // if loading from API/Server-side empty
@@ -46,6 +60,30 @@ $(function () {
   //   $("#productList").append($("<option>").attr("value", i).text(item));
   // });
   $("#productSelected").val(productIdSelected);
+
+  //#region textbox event
+
+  // Search Product ID events
+  $("#productSelected").on("keydown", function (event) {
+    if (event.key === "Enter")
+      productSelectedChanged(
+        $(this).val(),
+        productIdArray,
+        productIdSelected,
+        $(".tab-selected").attr("id"),
+        true
+      );
+  });
+  $("#productSelected").on("input", function () {
+    productSelectedChanged(
+      $(this).val(),
+      productIdArray,
+      productIdSelected,
+      $(".tab-selected").attr("id")
+    );
+  });
+
+  //#endregion
 
   //#region Screen Button
 
@@ -126,8 +164,16 @@ $(function () {
       let isEstSellEmtpy = EST_SELL_VALUE.trim().length == 0;
       let isPostageEmtpy = POSTAGE_VALUE.trim().length == 0;
       let isExtGpEmtpy = EXT_GP_VALUE.trim().length == 0;
-
-      const SHEET_JSON = await readFileToJson("#importFile");
+      let columnHeader = [
+        ID_VALUE,
+        COST_USD_VALUE,
+        EST_COST_AUD_VALUE,
+        EST_SELL_VALUE,
+        POSTAGE_VALUE,
+        EXT_GP_VALUE,
+      ];
+      columnHeaders.filter((n) => n);
+      const SHEET_JSON = await readFileToJson("#importFile", columnHeader);
 
       // Check if file is empty or blank
       if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {

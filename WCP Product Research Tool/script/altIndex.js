@@ -2,32 +2,26 @@ $(function () {
   const COLUMN_AMOUNT = 10;
   const ROW_AMOUNT = 10;
   const TABLE_NAME = "#altIndexTable";
+
   var isTableEmpty = true;
   var formSelected = "";
   var currencyRate = new Object();
   var currencySupplierMap = new Map();
-  var productIdSelected = sessionStorage.getItem("productIDSelected");
   var altIndexSelected = new AlternateIndex();
   var altIndexValueDictionary = [];
   var mainSupplier = null;
+  var productIdSelected = sessionStorage.getItem("productIDSelected");
   var productDtoArray = JSON.parse(
     sessionStorage.getItem("productRequestHistory")
   );
-  var productIdList = getProductIdentifier(productDtoArray);
+  var productIdArray = getProductIdentifier(productDtoArray);
+  var altIndexObjectArray = [];
   // temporary variable to store previous values
   var prevMainSupplier = null;
 
   //#region Initialization
 
-  // Fill in ID search box
-  $.each(productIdList, function (i, item) {
-    $("#productList").append(
-      $("<option>").attr("value", item).text(`${item}  \t`)
-    );
-  });
-
   // Load table from API and TO DO: Server-side?
-  var altIndexObjectList = [];
   if (productIdSelected) {
     let selectedProductData = [];
     if (productIdSelected.slice(0, 2) == "R-") {
@@ -40,16 +34,30 @@ $(function () {
         (x) => x.productStockNumber == productIdSelected && x.altIndexNumber
       );
     }
-    altIndexObjectList = selectedProductData.map(
+    altIndexObjectArray = selectedProductData.map(
       (product) =>
         new AlternateIndex(
           String(product.vendorName),
-          String(product.altIndexNumber)
+          String(product.altIndexNumber),
         )
     );
 
     altIndexValueDictionary = getAltIndexValueDictionary(productDtoArray);
   }
+
+  //#region Fill in textbox Datalist
+
+  // Fill in ID search box
+  $.each(productIdArray, function (_, item) {
+    $("#productList").append($("<option>").attr("value", item).text(item));
+  });
+
+  // Fill in options for alternative index Name and ID
+  $.each(Object.keys(altIndexValueDictionary), function (i, item) {
+    $("#altIndexNumList").append($("<option>").attr("value", item).text(item));
+  });
+
+  //#endregion
 
   // TO DO: get all currency and supplier pair from Server-side
   // currencySupplierMap =
@@ -58,12 +66,12 @@ $(function () {
   currencyRate = getCurrencyRates();
 
   // Check if alternative index list is empty
-  isTableEmpty = altIndexObjectList.length == 0;
+  isTableEmpty = altIndexObjectArray.length == 0;
   // Scenario of when data loaded is empty
   if (isTableEmpty)
     $(TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
 
-  var tableOptions = {
+  let tableOptions = {
     orderCellsTop: true,
     columns: [
       { data: "Name" },
@@ -99,8 +107,9 @@ $(function () {
   $(`${TABLE_NAME}_filter`).remove();
   $(".dataTables_length").css("padding-bottom", "1%");
 
-  console.log(altIndexObjectList);
-  table.rows.add(altIndexObjectList).draw();
+  console.log(altIndexObjectArray);
+  table.rows.add(altIndexObjectArray).draw(false);
+  table.columns().search("").draw(false);
 
   //  TO DO: Get List of all products in an array
   //  Details:
@@ -114,9 +123,62 @@ $(function () {
 
   $("#productSelected").val(productIdSelected);
 
-  // Fill in options for alternative index Name and ID
-  $.each(Object.keys(altIndexValueDictionary), function (i, item) {
-    $("#altIndexNumList").append($("<option>").attr("value", item).text(item));
+  //#endregion
+
+  //#region Searchbar Logic
+
+  // https://live.datatables.net/vipifute/1/edit
+  // https://datatables.net/extensions/fixedcolumns/examples/styling/col_filter.html
+  // https://datatables.net/examples/api/multi_filter_select.html
+  // https://datatables.net/extensions/searchpanes/examples/customFiltering/customOptionConditions.html
+
+  $('input.filter[type="text"]').on("input", function () {
+    table.column($(this).data("column")).search($(this).val()).draw();
+  });
+  // multi select can also be possible to replace some search bars
+
+  // https://multiple-select.wenzhixin.net.cn/examples#getData.html#view-source
+  $(".multiple-select").multipleSelect({
+    onClick: function () {
+      let values = $(this)
+        .multipleSelect("getData")[0]
+        ["data"].filter((json) => json.selected)
+        .map((json) => json.text);
+      let filterRegex = values
+        .map(function (value) {
+          return "^" + value + "$";
+        })
+        .join("|");
+      //filter with an regex, no smart filtering, not case sensitive
+      table
+        .column($(this).attr("column"))
+        .search(filterRegex, true, false, false)
+        .draw(false);
+    },
+  });
+
+  //#endregion
+
+  //#region textbox event
+
+  // Search Product ID events
+  $("#productSelected").on("keydown", function (event) {
+    if (event.key === "Enter")
+      productSelectedChanged(
+        $(this).val(),
+        productIdArray,
+        productIdSelected,
+        $(".tab-selected").attr("id"),
+        true
+      );
+  });
+  $("#productSelected").on("input", function () {
+    productSelectedChanged(
+      $(this).val(),
+      productIdArray,
+      productIdSelected,
+      $(".tab-selected").attr("id")
+    );
   });
 
   //#endregion
@@ -135,7 +197,6 @@ $(function () {
   $('button[name="exportBtn"]').on("click", function () {
     exportDataTable(
       TABLE_NAME,
-      tableOptions,
       `${productIdSelected} - Alternate Index Table`,
       isTableEmpty
     );

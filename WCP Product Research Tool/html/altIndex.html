@@ -10,7 +10,12 @@
       <label>
         Product:
         <br />
-        <input type="text" id="productSelected" list="productList" />
+        <input
+          type="text"
+          id="productSelected"
+          list="productList"
+          data-oldvalue=""
+        />
         <datalist id="productList"> </datalist>
       </label>
     </section>
@@ -34,40 +39,53 @@
               <td>
                 <input
                   type="text"
-                  id="nameSearch"
-                  placeholder="Search Supplier Name"
+                  placeholder="Search supplier name"
+                  class="filter"
+                  data-column="0"
                 />
               </td>
               <td>
                 <input
                   type="text"
-                  id="numberSearch"
-                  placeholder="Search Supplier Number"
-                />
-              </td>
-              <td>
-                <input type="text" id="moqSearch" placeholder="Search MOQ" />
-              </td>
-              <td>
-                <input
-                  type="text"
-                  id="costCurrSearch"
-                  placeholder="Search Cost Currency"
+                  placeholder="Search supplier number"
+                  class="filter"
+                  data-column="1"
                 />
               </td>
               <td>
                 <input
                   type="text"
-                  id="costAUDSearch"
-                  placeholder="Search Cost AUD"
+                  placeholder="Search MOQ"
+                  class="filter"
+                  data-column="2"
                 />
               </td>
               <td>
-                <input type="date" id="dateSearch" />
+                <input
+                  type="text"
+                  placeholder="Search ccost currency"
+                  class="filter"
+                  data-column="3"
+                />
               </td>
               <td>
-                <select id="qualitySearch">
-                  <option value="">Search Quality</option>
+                <input
+                  type="text"
+                  placeholder="Search cost AUD"
+                  class="filter"
+                  data-column="4"
+                />
+              </td>
+              <td>
+                <input type="date" class="filter" data-column="5" />
+              </td>
+              <td>
+                <select
+                  class="filter multiple-select"
+                  data-column="6"
+                  multiple="multiple"
+                  placeholder="Select quality"
+                >
                   <option value="good">Good</option>
                   <option value="normal">Normal</option>
                   <option value="bad">Bad</option>
@@ -76,15 +94,17 @@
               <td>
                 <input
                   type="text"
-                  id="SupPTSearch"
-                  placeholder="Search Supplier's Part Type"
+                  placeholder="Search ssupplier's part type"
+                  class="filter"
+                  data-column="7"
                 />
               </td>
               <td>
                 <input
                   type="text"
-                  id="wcpPTSearch"
-                  placeholder="Search WCP's Part Type"
+                  placeholder="Search WCP's part type"
+                  class="filter"
+                  data-column="8"
                 />
               </td>
               <td></td>
@@ -196,6 +216,7 @@
             Quality:
             <br />
             <select id="editQuality">
+              <option value="" style="display: none" disabled selected>Select quality</option>
               <option value="good">Good</option>
               <option value="normal">Normal</option>
               <option value="bad">Bad</option>

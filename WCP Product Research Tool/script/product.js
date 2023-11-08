@@ -33,38 +33,49 @@ $(function () {
             (x) => x.Sku == currentDto.productStockNumber
           )
         : -1;
-      if (i <= -1) {
-        // researchIdentifier will be used to place Generated Research ID
-        if (!currentDto.productStockNumber && !currentDto.researchIdentifier) {
-          currentDto.researchIdentifier = generateProductID(
-            currentDto.vehicleManufacturers.split("\r"),
-            currentDto.vehicleModels.split("\r"),
-            currentDto.partTypeFriendlyName.split(" ")
-          );
-        }
-        productObjectList.push(
-          new Product(
-            currentDto.researchIdentifier,
-            currentDto.productStockNumber ?? "",
-            currentDto.vehicleManufacturers.split("\r").join("; "),
-            currentDto.vehicleModels.split("\r").join("; "),
-            currentDto.partTypeFriendlyName,
-            currentDto.interchangeVersion
-              ? `${currentDto.interchangeNumber.trim()} ${
-                  currentDto.interchangeVersion
-                }`
-              : currentDto.interchangeNumber.trim(),
-            currentDto.interchangeDescriptions
-              ? currentDto.interchangeDescriptions.split("\r").join("; ")
-              : "",
-            currentDto.productStockNumber &&
-            currentDto.productStockNumber.includes("P-")
-              ? "catalogue"
-              : "research",
-            ""
-          )
+      if (i != -1) {
+        // Skip null altIndexes
+        if (!currentDto.altIndexNumber) return;
+        productObjectList[i].SuppList.push(
+          currentDto.altIndexNumber.toLowerCase()
+        );
+        return;
+      }
+
+      // researchIdentifier will be used to place Generated Research ID
+      if (!currentDto.productStockNumber && !currentDto.researchIdentifier) {
+        currentDto.researchIdentifier = generateProductID(
+          currentDto.vehicleManufacturers.split("\r"),
+          currentDto.vehicleModels.split("\r"),
+          currentDto.partTypeFriendlyName.split(" ")
         );
       }
+      // Insert new Product to List
+      productObjectList.push(
+        new Product(
+          currentDto.researchIdentifier,
+          currentDto.productStockNumber ?? "",
+          currentDto.vehicleManufacturers.split("\r").join("; "),
+          currentDto.vehicleModels.split("\r").join("; "),
+          currentDto.partTypeFriendlyName,
+          currentDto.interchangeVersion
+            ? `${currentDto.interchangeNumber.trim()} ${
+                currentDto.interchangeVersion
+              }`
+            : currentDto.interchangeNumber.trim(),
+          currentDto.interchangeDescriptions
+            ? currentDto.interchangeDescriptions.split("\r").join("; ")
+            : "",
+          currentDto.productStockNumber &&
+          currentDto.productStockNumber.includes("P-")
+            ? "catalogue"
+            : "research",
+          "",
+          currentDto.altIndexNumber
+            ? [currentDto.altIndexNumber.toLowerCase()]
+            : []
+        )
+      );
     });
     console.log("Product Data:");
     console.log(productDtoArray);
@@ -82,6 +93,12 @@ $(function () {
           .attr("value", item)
           .text(`${item} : ${altIndexValueDictionary[item]}`)
       );
+    });
+
+    // TO DO: Get list of unique OEM after symbols have been removed
+    let oemUniqueArray = [];
+    $.each(oemUniqueArray, function (i, item) {
+      $("#supplierList").append($("<option>").attr("value", item).text(item));
     });
   }
   var tableOptions = {
@@ -153,29 +170,78 @@ $(function () {
         },
         orderable: true,
       },
+      {
+        data: "SuppList",
+        /**
+         * @param {String[] | String} data
+         * @returns {String}
+         */
+        render: function (data) {
+          if (typeof data === "string") return data; // Only used when Redrawing table
+          return data ? data.join("; ") : "";
+        },
+      },
+      {
+        data: "OemList",
+        /**
+         * @param {String[] | String} data
+         * @returns {String}
+         */
+        render: function (data) {
+          if (typeof data === "string") return data; // Only used when Redrawing table
+          return data ? data.join("; ") : "";
+        },
+      },
     ],
     stateSave: true,
     paging: true,
   };
 
   var table = new DataTable(TABLE_NAME, tableOptions);
+  // Hide Supplier and OEM List Column
+  for (var i = 9; i <= 10; i++) table.column(i).visible(false, false);
+  table.columns.adjust().draw(false);
 
   $(`${TABLE_NAME}_filter`).remove();
   $(".dataTables_length").css("padding-bottom", "1%");
 
-  table.rows.add(productObjectList).draw();
+  table.rows.add(productObjectList).draw(false);
+  table.columns().search("").draw(false);
 
   //#endregion
 
   //#region Searchbar Logic
-  const rows = $(`${TABLE_NAME} tr`);
-  // TO DO: Search logic (find how to filter DataTable)
-  $("#idSearch").on("keyup", function () {
-    var value = $(this).val().toLowerCase();
-    // filter data
-    // remove rows from table
-    // insert new filter data into table
+
+  // https://live.datatables.net/vipifute/1/edit
+  // https://datatables.net/extensions/fixedcolumns/examples/styling/col_filter.html
+  // https://datatables.net/examples/api/multi_filter_select.html
+  // https://datatables.net/extensions/searchpanes/examples/customFiltering/customOptionConditions.html
+
+  $('input.filter[type="text"]').on("input", function () {
+    table.column($(this).data("column")).search($(this).val()).draw(false);
   });
+  // multi select can also be possible to replace some search bars
+
+  // https://multiple-select.wenzhixin.net.cn/examples#getData.html#view-source
+  $(".multiple-select").multipleSelect({
+    onClick: function () {
+      let values = $(this)
+        .multipleSelect("getData")[0]
+        ["data"].filter((json) => json.selected)
+        .map((json) => json.text);
+      let filterRegex = values
+        .map(function (value) {
+          return "^" + value + "$";
+        })
+        .join("|");
+      //filter with an regex, no smart filtering, not case sensitive
+      table
+        .column($(this).attr("column"))
+        .search(filterRegex, true, false, false)
+        .draw(false);
+    },
+  });
+
   //#endregion
 
   //#region Screen Button
@@ -204,9 +270,9 @@ $(function () {
   $('button[name="exportBtn"]').on("click", function () {
     exportDataTable(
       TABLE_NAME,
-      tableOptions,
       "Research Product Table",
-      isEmptyData
+      isEmptyData,
+      productObjectList
     );
   });
 

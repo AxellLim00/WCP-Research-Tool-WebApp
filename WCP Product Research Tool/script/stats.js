@@ -7,6 +7,7 @@ $(function () {
   const IS_PRODUCT_EDITABLE = Boolean(
     sessionStorage.getItem("productIDSelected")
   );
+
   var formSelected = "";
   var isOemEmpty = true;
   var isVinEmpty = true;
@@ -17,19 +18,16 @@ $(function () {
   var productDtoArray = JSON.parse(
     sessionStorage.getItem("productRequestHistory")
   );
-  var productIdList = getProductIdentifier(productDtoArray);
+  var productIdArray = getProductIdentifier(productDtoArray);
   // Temporary previous values variables
   var prevEstSales = "";
   var prevNote = "";
-  // Get list of Product from API
 
   //#region Initialization
 
   // Fill in ID search box
-  $.each(productIdList, function (i, item) {
-    $("#productList").append(
-      $("<option>").attr("value", item).text(`${item}  \t`)
-    );
+  $.each(productIdArray, function (_, item) {
+    $("#productList").append($("<option>").attr("value", item).text(item));
   });
 
   //Load table from ProductList
@@ -85,7 +83,7 @@ $(function () {
     $(OEM_TABLE_NAME).append(getEmptyRow(ROW_AMOUNT_OEM, COLUMN_AMOUNT));
 
   // initialize DataTable
-  var tableOptions = {
+  let tableOptions = {
     columns: [{ data: "data" }],
     orderCellsTop: true,
     stateSave: true,
@@ -114,22 +112,23 @@ $(function () {
     updateHasChanges(estSalesChanges || notesChanges);
   });
 
+  // Search Product ID events
   $("#productSelected").on("keydown", function (event) {
     if (event.key === "Enter")
       productSelectedChanged(
         $(this).val(),
-        productIdList,
+        productIdArray,
         productIdSelected,
-        sessionStorage.getItem("currentTab"),
+        $(".tab-selected").attr("id"),
         true
       );
   });
   $("#productSelected").on("input", function () {
     productSelectedChanged(
       $(this).val(),
-      productIdList,
+      productIdArray,
       productIdSelected,
-      sessionStorage.getItem("currentTab")
+      $(".tab-selected").attr("id")
     );
   });
 
@@ -166,7 +165,6 @@ $(function () {
   $('button[name="exportBtn"]').on("click", function () {
     exportDataTable(
       "table",
-      tableOptions,
       `${productIdSelected} - Stats Table`,
       isOemEmpty && isVinEmpty,
       ["VIN", "OEM"]
@@ -218,7 +216,7 @@ $(function () {
     // Import Form Save
     if (formSelected == "import") {
       let sheetJson;
-      sheetJson = await readFileToJson("#importFile");
+      sheetJson = await readFileToJson("#importFile", [OEM_VALUE]);
 
       let missingHeader = "";
       // If has erros from reading
