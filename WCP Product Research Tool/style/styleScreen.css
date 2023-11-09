@@ -162,6 +162,7 @@ input[type="date"].filter {
 
 input[type="text"].filter {
   overflow-wrap: break-word;
+  /* height: 100%; */
 }
 
 /* Buttons */

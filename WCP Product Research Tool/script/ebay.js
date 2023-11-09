@@ -49,15 +49,6 @@ $(function () {
 
   $(".dataTables_length").css("padding-bottom", "1%");
 
-  //  TO DO: Get List of all products in an array
-  //  Details:
-  //  Add options to the datalist:
-  // - "attr" helps if you need an i.d to identify each option.
-  // - "text" is the content to be displayed.
-  // productList = get_list
-  // $.each(productList, function (i, item) {
-  //   $("#productList").append($("<option>").attr("value", i).text(item));
-  // });
   $("#productSelected").val(productIdSelected);
 
   //#region textbox event

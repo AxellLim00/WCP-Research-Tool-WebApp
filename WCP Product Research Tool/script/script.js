@@ -23,7 +23,6 @@ $(async function () {
     showLoadingScreen("Loading Products from system");
     const WORKFLOW_API = new WorkFlowAPI();
 
-    // TO DO: make sure system waits for this to finish before anything else
     jsonArray = await WORKFLOW_API.searchProductRequestHistory();
     sessionStorage.setItem("productRequestHistory", JSON.stringify(jsonArray));
     hideLoadingScreen();
@@ -32,7 +31,7 @@ $(async function () {
     Object.assign(new ProductRequestHistoryDto(), object)
   );
 
-  selectTab("tab4");
+  selectTab("tab0");
   sessionStorage.setItem("hasChanges", false);
 
   $("#menu").on("click", function () {

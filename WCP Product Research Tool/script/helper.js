@@ -17,6 +17,9 @@ function selectTab(tabIdSelected) {
   // remove any saved changes on Session Storage
   sessionStorage.removeItem("savedChanges");
 
+  // Clear all search function in DataTable
+  $.fn.dataTable.ext.search.length = 0;
+
   const content = $("#content");
   switch (tabIdSelected) {
     case "tab0":
@@ -250,8 +253,6 @@ async function readFileToJson(
   worksheetSeperated = false,
   worksheetName = []
 ) {
-  // TO DO: solve when excel file is not formatted correctly (i.e. it has headers and not centered)
-  // https://stackoverflow.com/questions/55805851/while-using-header-option-with-xlsx-utils-json-to-sheet-headers-not-overriding
   // Read file
   const FILE = $(filenameInput).prop("files");
   const READER = new FileReader();

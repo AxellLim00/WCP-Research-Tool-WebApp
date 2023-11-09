@@ -206,7 +206,7 @@ $(function () {
   $(".dataTables_length").css("padding-bottom", "1%");
 
   table.rows.add(productObjectList).draw(false);
-  table.columns().search("").draw(false);
+  table.search("").draw(false);
 
   //#endregion
 
@@ -248,7 +248,6 @@ $(function () {
     },
   });
   // On Default Exclude In Pinnacle Catalogue
-  
 
   //#endregion
 
@@ -448,8 +447,6 @@ $(function () {
           );
           return null;
         }
-
-        // TO DO: Check if the status and oem is valid, by checkling if it is null
 
         let newObject = new Product(
           generateProductID(

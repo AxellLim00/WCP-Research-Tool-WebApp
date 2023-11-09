@@ -2,6 +2,8 @@ $(function () {
   const COLUMN_AMOUNT = 10;
   const ROW_AMOUNT = 10;
   const TABLE_NAME = "#altIndexTable";
+  const DATE_FROM_FILTER = $('input[type="date"][name="from"]');
+  const DATE_TO_FILTER = $('input[type="date"][name="to"]');
 
   var isTableEmpty = true;
   var formSelected = "";
@@ -45,6 +47,23 @@ $(function () {
     altIndexValueDictionary = getAltIndexValueDictionary(productDtoArray);
   }
 
+  // Custom range date filtering function
+  DataTable.ext.search.push(function (_, data, _) {
+    let columnIndex = DATE_FROM_FILTER.data("column");
+    let start = new Date(
+      DATE_FROM_FILTER.val() ? DATE_FROM_FILTER.val() : -8640000000000000
+    );
+    let end = new Date(
+      DATE_TO_FILTER.val() ? DATE_TO_FILTER.val() : -8640000000000000
+    );
+    let date = new Date(
+      data[columnIndex] ? data[columnIndex] : -8640000000000000
+    );
+
+    if (date >= start && date <= end) return true;
+    return false;
+  });
+
   //#region Fill in textbox Datalist
 
   // Fill in ID search box
@@ -68,8 +87,13 @@ $(function () {
   // Check if alternative index list is empty
   isTableEmpty = altIndexObjectArray.length == 0;
   // Scenario of when data loaded is empty
-  if (isTableEmpty)
+  if (isTableEmpty) {
     $(TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
+  }
+
+  // Disable/Enable date picker
+  DATE_FROM_FILTER.attr("disabled", isTableEmpty);
+  DATE_TO_FILTER.attr("disabled", isTableEmpty);
 
   let tableOptions = {
     orderCellsTop: true,
@@ -111,16 +135,6 @@ $(function () {
   table.rows.add(altIndexObjectArray).draw(false);
   table.columns().search("").draw(false);
 
-  //  TO DO: Get List of all products in an array
-  //  Details:
-  //  Add options to the datalist:
-  // - "attr" helps if you need an i.d to identify each option.
-  // - "text" is the content to be displayed.
-  // productList = get_list
-  // $.each(productList, function (i, item) {
-  //   $("#productList").append($("<option>").attr("value", i).text(item));
-  // });
-
   $("#productSelected").val(productIdSelected);
 
   //#endregion
@@ -144,8 +158,7 @@ $(function () {
         })
         .join("|");
       //filter with an regex, no smart filtering, not case sensitive
-      table
-        .column($(this).attr("column"))
+      table.column($(this).attr("column"))
         .search(filterRegex, true, false, false)
         .draw(false);
     },
@@ -155,6 +168,16 @@ $(function () {
     onCheckAll: function () {
       table.column($(this).attr("column")).search("").draw(false);
     },
+  });
+
+  DATE_FROM_FILTER.on("input", function () {
+    if (DATE_TO_FILTER.val() == "") DATE_TO_FILTER.val($(this).val());
+    table.draw();
+  });
+
+  DATE_TO_FILTER.on("input", function () {
+    if (DATE_FROM_FILTER.val() == "") DATE_FROM_FILTER.val($(this).val());
+    table.draw();
   });
 
   //#endregion
