@@ -2,7 +2,7 @@ $(function () {
   const COLUMN_AMOUNT = 1;
   const ROW_AMOUNT = 10;
   const K_TYPE_TABLE_NAME = "#kTypeTable";
-  const EPID_TABLE_NAME = "#epIDTable";
+  const EPID_TABLE_NAME = "#ePIDTable";
   var isEmptyData = true;
   var itemSelected = { table: "", value: "" };
   var productIdSelected = sessionStorage.getItem("productIDSelected");
@@ -17,13 +17,13 @@ $(function () {
     $(K_TYPE_TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
     $(EPID_TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
   } else {
-    let kTypeTable_Data, epIDTable_Data;
+    let kTypeTable_Data, ePIDTable_Data;
     //fill in table with the data
 
     // $("#kTypeTable > tbody:last-child").append(
     // html here
     // );
-    // $("#epIDTable > tbody:last-child").append(
+    // $("#ePIDTable > tbody:last-child").append(
     // html here
     // );
   }
@@ -45,7 +45,7 @@ $(function () {
   };
 
   var kTypeTable = new DataTable(K_TYPE_TABLE_NAME, tableOptions);
-  var epIDTable = new DataTable(EPID_TABLE_NAME, tableOptions);
+  var ePIDTable = new DataTable(EPID_TABLE_NAME, tableOptions);
 
   $(".dataTables_length").css("padding-bottom", "1%");
 
@@ -91,7 +91,7 @@ $(function () {
       "table",
       `${productIdSelected} - eBay Compatibility Table`,
       isEmptyData,
-      ["K-Types", "EPIDs"]
+      ["K-Types", "ePIDs"]
     );
   });
 
@@ -100,7 +100,7 @@ $(function () {
     formSelected = "new";
     $("#default").prop("checked", true);
     $("#newKtypeField").show();
-    $("#newEpIdField").hide();
+    $("#newEPIDField").hide();
     showPopUpForm(formSelected, "New Item");
   });
 
@@ -130,7 +130,7 @@ $(function () {
     itemSelected.table = "K-Type";
     itemSelected.value = Object.values(kTypeTable.row(this).data())[0];
     kTypeTable.rows().nodes().to$().css("background-color", "");
-    epIDTable.rows().nodes().to$().css("background-color", "");
+    ePIDTable.rows().nodes().to$().css("background-color", "");
     // highlight clicked row
     $(this).css("background-color", "#D5F3FE");
     // Enable Edit button
@@ -142,9 +142,9 @@ $(function () {
     if (isEmptyData) return;
     // Clear highlight of all row in Datatable
     itemSelected.table = "EPID";
-    itemSelected.value = Object.values(epIDTable.row(this).data())[0];
+    itemSelected.value = Object.values(ePIDTable.row(this).data())[0];
     kTypeTable.rows().nodes().to$().css("background-color", "");
-    epIDTable.rows().nodes().to$().css("background-color", "");
+    ePIDTable.rows().nodes().to$().css("background-color", "");
     // highlight clicked row
     $(this).css("background-color", "#D5F3FE");
     // Enable Edit button
@@ -158,7 +158,7 @@ $(function () {
   $('button[name="saveForm"]').on("click", async function () {
     const ITEM_CHOSEN_VALUE = $('input[name="newItem"]:checked').val();
     const K_TYPE_VALUE = $(`#${formSelected}KType`).val();
-    const EPID_VALUE = $(`#${formSelected}EpId`).val();
+    const EPID_VALUE = $(`#${formSelected}EPID`).val();
     const EDIT_VALUE = $(`#${formSelected}Item`).val();
     var table;
     let changesMade = [];
@@ -171,7 +171,7 @@ $(function () {
           isFormFilled = Boolean(K_TYPE_VALUE);
           break;
         case "EPID":
-          table = epIDTable;
+          table = ePIDTable;
           isFormFilled = Boolean(EPID_VALUE);
           break;
       }
@@ -184,7 +184,7 @@ $(function () {
           table = kTypeTable;
           break;
         case "EPID":
-          table = epIDTable;
+          table = ePIDTable;
           break;
       }
     }
@@ -214,7 +214,7 @@ $(function () {
       if (isEmptyData) {
         isEmptyData = false;
         kTypeTable.clear().draw();
-        epIDTable.clear().draw();
+        ePIDTable.clear().draw();
       }
 
       changesMade.push(
@@ -246,7 +246,7 @@ $(function () {
             rowData.item = newUpdate.KType = EDIT_VALUE;
             break;
           case "EPID":
-            rowData.item = newUpdate.EpId = EDIT_VALUE;
+            rowData.item = newUpdate.EPID = EDIT_VALUE;
             break;
         }
 
@@ -284,11 +284,11 @@ $(function () {
     switch ($(this).val()) {
       case "K-Type":
         $("#newKtypeField").show();
-        $("#newEpIdField").hide();
+        $("#newEPIDField").hide();
         break;
       case "EPID":
         $("#newKtypeField").hide();
-        $("#newEpIdField").show();
+        $("#newEPIDField").show();
         break;
     }
   });
