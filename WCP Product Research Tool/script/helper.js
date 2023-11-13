@@ -841,34 +841,7 @@ class WorkFlowAPI {
               },
             }
           );
-          let jsonArray = response.data.records;
-          // Get all products
-          if (
-            isGetAll &&
-            response.data.currentPage === 1 &&
-            response.data.pageSize < response.data.recordCount
-          ) {
-            let loopsToGetTotal = Math.ceil(
-              response.data.recordCount / response.data.pageSize
-            );
-            //TO DO PUT THIS OUTSIDE
-            // skip first iteration
-            for (let i = 1; i < loopsToGetTotal; i++) {
-              console.log(jsonArray);
-              await new Promise((resolve) => setTimeout(resolve, 25000)); // Simulate a 1-second delay
-              let toAdd = searchProductRequestHistory(
-                interchangeNumber,
-                interchangeVersion,
-                partTypeCode,
-                pageNo + i,
-                pageSize
-              );
-              jsonArray.push(...toAdd);
-            }
-            console.log(jsonArray);
-          }
-          // return list of
-          resolve(jsonArray);
+          resolve(response);
         } catch (error) {
           if (error.response && error.response.status === 401) {
             console.log(
@@ -888,6 +861,58 @@ class WorkFlowAPI {
         }
       }, 25000); // Simulate a 25-second delay
     });
+  }
+  async getAllProductRequestHistory(
+    partTypeCode = null,
+    interchangeNumber = null,
+    interchangeVersion = null,
+    isGetAll = true
+  ) {
+    track = new TimeTracker();
+    track.start();
+    // Get first page
+    let response = await this.searchProductRequestHistory(
+      1,
+      500,
+      partTypeCode,
+      interchangeNumber,
+      interchangeVersion
+    );
+    var jsonArray = response.data.records;
+    // Get all products
+    if (
+      isGetAll &&
+      response.data.currentPage === 1 &&
+      response.data.pageSize < response.data.recordCount
+    ) {
+      let loopsToGetTotal = Math.ceil(
+        response.data.recordCount / response.data.pageSize
+      );
+      let loadingMessage = $(".loading p").text();
+      // Update Loading screen message
+      $(".loading p").text(`${loadingMessage} ${1}/${loopsToGetTotal}`);
+      console.log(1);
+      // skip first iteration
+      for (let i = 2; i <= loopsToGetTotal; i++) {
+        // await new Promise((resolve) => setTimeout(resolve, 25000));
+        let response = await this.searchProductRequestHistory(
+          i,
+          500,
+          partTypeCode,
+          interchangeNumber,
+          interchangeVersion
+        );
+        let toAdd = response.data.records;
+        jsonArray.push(...toAdd);
+        $(".loading p").text(`${loadingMessage} ${i}/${loopsToGetTotal}`);
+        console.log(i);
+      }
+      // Return loading screen text
+      $(".loading p").text(loadingMessage);
+    }
+    track.end();
+    // return list of
+    return jsonArray;
   }
 }
 
@@ -949,6 +974,28 @@ class ProductRequestHistoryDto {
     this.averageConditionPrice = averageConditionPrice;
     this.costPrice = costPrice;
     this.researchIdentifier = "";
+  }
+}
+
+class TimeTracker {
+  constructor() {
+    this.startTime = null;
+    this.endTime = null;
+  }
+
+  start() {
+    this.startTime = performance.now();
+  }
+
+  end() {
+    this.endTime = performance.now();
+    var timeDiff = this.endTime - this.startTime; //in ms
+    // strip the ms
+    timeDiff /= 1000;
+
+    // get seconds
+    var seconds = Math.round(timeDiff);
+    console.log(seconds + " seconds");
   }
 }
 

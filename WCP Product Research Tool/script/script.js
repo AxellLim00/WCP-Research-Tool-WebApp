@@ -23,7 +23,7 @@ $(async function () {
     showLoadingScreen("Loading Products from system");
     const WORKFLOW_API = new WorkFlowAPI();
 
-    jsonArray = await WORKFLOW_API.searchProductRequestHistory();
+    jsonArray = await WORKFLOW_API.getAllProductRequestHistory();
     sessionStorage.setItem("productRequestHistory", JSON.stringify(jsonArray));
     hideLoadingScreen();
   }
