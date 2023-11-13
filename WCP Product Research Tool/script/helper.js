@@ -814,7 +814,7 @@ class WorkFlowAPI {
    */
   async searchProductRequestHistory(
     pageNo = 1,
-    pageSize = 5000,
+    pageSize = 500,
     partTypeCode = null,
     interchangeNumber = null,
     interchangeVersion = null,
@@ -851,18 +851,21 @@ class WorkFlowAPI {
             let loopsToGetTotal = Math.ceil(
               response.data.recordCount / response.data.pageSize
             );
+            //TO DO PUT THIS OUTSIDE
             // skip first iteration
             for (let i = 1; i < loopsToGetTotal; i++) {
+              console.log(jsonArray);
               await new Promise((resolve) => setTimeout(resolve, 25000)); // Simulate a 1-second delay
               let toAdd = searchProductRequestHistory(
                 interchangeNumber,
                 interchangeVersion,
                 partTypeCode,
-                pageNo,
+                pageNo + i,
                 pageSize
               );
               jsonArray.push(...toAdd);
             }
+            console.log(jsonArray);
           }
           // return list of
           resolve(jsonArray);
@@ -877,7 +880,10 @@ class WorkFlowAPI {
             "Error searching product request history:",
             error.message
           );
-          showAlert("Error searching product request history:", error);
+          showAlert(
+            `Error searching product request history: ${error.response.status} ${error.response.data.Message} `
+          );
+          console.error(error);
           reject(error);
         }
       }, 25000); // Simulate a 25-second delay
