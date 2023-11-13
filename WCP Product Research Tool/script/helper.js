@@ -868,7 +868,7 @@ class WorkFlowAPI {
     interchangeVersion = null,
     isGetAll = true
   ) {
-    track = new TimeTracker();
+    let track = new TimeTracker();
     track.start();
     // Get first page
     let response = await this.searchProductRequestHistory(
