@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<dt-example table-type="html" table-class="display nowrap" order="5">
+
+<css lib="datetime"/>
+
+<js lib="jquery datetime">
+<![CDATA[
+
+$('#test').dtDateTime();
+
+]]>
+</js>
+
+<js-vanilla>
+<![CDATA[
+
+new DateTime(document.getElementById('test'));
+
+]]>
+</js-vanilla>
+
+<title lib="DateTime">Hidden input</title>
+
+<info><![CDATA[
+
+This example demonstrates DateTime being used with a hidden `-tag input`. The picker is shown on the page rather than being toggled by the click on an `-tag input` element.
+
+]]></info>
+
+<custom-table>
+    <input id="test" type="hidden" value="2020-01-17" />
+</custom-table>
+
+</dt-example>

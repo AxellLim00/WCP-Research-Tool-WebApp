@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<dt-example order="0">
+
+<title lib="DateTime">DateTime Picker</title>
+
+<js lib="jquery" />
+<info><![CDATA[
+
+This is the section that shows the key configuration options for the DateTime Picker.
+
+]]></info>
+
+</dt-example>
