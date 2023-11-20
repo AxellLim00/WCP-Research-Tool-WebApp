@@ -1,12 +1,12 @@
-const $ = require("jquery");
-const DataTable = require("datatables.net-dt");
+import $ from "jquery";
+import _ from "datatables.net-dt";
 
 /**
  * Shows Alert message by appending or unhiding div with alert class
  * @param {String} message Alert message shown (can have html inside)
  * @returns {void}
  */
-module.exports.showAlert = function (message) {
+export function showAlert(message) {
   // Check if alert has been made before
   if (!$(".alert").length) {
     $("body").append(`
@@ -22,7 +22,7 @@ module.exports.showAlert = function (message) {
   } else {
     $("#AlertMessage").html(message);
   }
-};
+}
 
 /**
  * Shows or unhides Pop-up form, disable screen besides form
@@ -30,69 +30,69 @@ module.exports.showAlert = function (message) {
  * @param {String} title Title of the form
  * @returns {void}
  */
-module.exports.showPopUpForm = function (type, title) {
+export function showPopUpForm(type, title) {
   $('h2[name="formTitle"]').text(title);
   $("#popupForm").show();
   $(`#${type}Form`).show();
   $("#darkLayer").css("position", "fixed");
   $("#darkLayer").show();
-};
+}
 
 /**
  * Hides Pop-up form, enable screen besides form
  * @param {String} type Type of form to show
  * @returns
  */
-module.exports.hidePopUpForm = function (type) {
+export function hidePopUpForm(type) {
   // Finally hide Form from user
   $("#popupForm").hide();
   $(`#${type}Form`).hide();
   $(".alert").hide();
   $("#darkLayer").hide();
   $("#darkLayer").css("position", "absolute");
-};
+}
 
 /**
  * Exits pop-up form and resets all input in form
  * @param {String} type Type of form to exit
  * @returns
  */
-module.exports.exitPopUpForm = function (type) {
+export function exitPopUpForm(type) {
   hidePopUpForm(type);
 
   // Reset textboxes' and selectboxes' values
   $(`#${type}Form input[type="text"]`).val("");
   $(`#${type}Form select`).val("");
   $(`#${type}Form input[type="checkbox"]`).prop("checked", false);
-};
+}
 
 /**
  * Show loading screen when method is called
  * @param {String} loadingMessage Message to display when loading
  */
-module.exports.showLoadingScreen = function (loadingMessage) {
+export function showLoadingScreen(loadingMessage) {
   $("#darkLayer").css("position", "fixed");
   $("#darkLayer").show();
   $(".loading").show();
   $(".loading p").text(loadingMessage);
-};
+}
 
 /**
  * Hides loading screen, use this after showLoadingScreen is called
  */
-module.exports.hideLoadingScreen = function () {
+export function hideLoadingScreen() {
   $("#darkLayer").hide();
   $("#darkLayer").css("position", "absolute");
   $(".loading").hide();
-};
+}
 
 /**
  * Swithces tab on the layout.html level by loading HTML into #content
  * @param {String} tabIdSelected Tab's ID to switch to
  * @returns {void}
  */
-module.exports.selectTab = function (tabIdSelected) {
-  currentTab = $(".tab-selected").attr("id");
+export function selectTab(tabIdSelected) {
+  const currentTab = $(".tab-selected").attr("id");
   if (currentTab) {
     $("#" + currentTab + "-name").removeClass("tab-name-selected");
     $("#" + currentTab + "-icon").removeClass("tab-icon-selected");
@@ -135,4 +135,4 @@ module.exports.selectTab = function (tabIdSelected) {
           `);
       break;
   }
-};
+}

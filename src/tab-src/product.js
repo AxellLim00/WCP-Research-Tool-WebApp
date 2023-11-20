@@ -8,6 +8,7 @@ import {
   hidePopUpForm,
   exitPopUpForm,
 } from "../utils/html-utils.js";
+import { Product } from "../utils/class/table.js";
 
 $(function () {
   const defaultColumnAmount = 9;
@@ -88,8 +89,6 @@ $(function () {
         )
       );
     });
-    console.log("Product Data:");
-    console.log(productDtoArray);
     // Update product with new Generated Research ID
     sessionStorage.setItem(
       "productRequestHistory",

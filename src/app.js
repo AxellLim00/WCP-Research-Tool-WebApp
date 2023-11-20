@@ -6,8 +6,8 @@ const { Server } = require("socket.io");
 const io = new Server(server);
 const PORT = process.env.PORT || 5000;
 const { join } = require("path");
-const { authenticate, getAllProduct } = require("./utils/workflow");
-const { FreeCurrencyAPI } = require("./utils/class/freeCurrencyAPI");
+const { authenticate, getAllProduct } = require("./utils/workflow.js");
+const { FreeCurrencyAPI } = require("./utils/class/freeCurrencyAPI.js");
 const freeCurrencyAPI = new FreeCurrencyAPI();
 // run server using "npm run dev"
 app.use(express.static(join(__dirname + "/../public")));

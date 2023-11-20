@@ -4,6 +4,8 @@ require("datatables.net-datetime");
 import dt_css from "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
 import io from "socket.io-client";
 const socket = io();
+import { AlternateIndex } from "../utils/class/table.js";
+import { productSelectedChanged } from "../utils/tab-utils.js";
 
 import {
   showAlert,
@@ -96,7 +98,6 @@ $(function () {
   // currencySupplierMap =
 
   // Check if all currency is in currencyRates
-  debugger;
   currencyRate = getCurrencyRates();
 
   // Check if alternative index list is empty
@@ -146,7 +147,6 @@ $(function () {
   $(`${tableName}_filter`).remove();
   $(".dataTables_length").css("padding-bottom", "1%");
 
-  console.log(altIndexObjectArray);
   table.rows.add(altIndexObjectArray).draw(false);
   table.columns().search("").draw(false);
 

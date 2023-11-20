@@ -1,9 +1,13 @@
-const {
+import {
   showAlert,
   showPopUpForm,
   hidePopUpForm,
   exitPopUpForm,
-} = require("../utils/html-utils.js");
+} from "../utils/html-utils.js";
+
+import { CostVolume } from "../utils/class/table.js";
+import { productSelectedChanged } from "../utils/tab-utils.js";
+
 
 $(function () {
   const tableName = "#costVolTable";

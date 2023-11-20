@@ -1,6 +1,12 @@
 import DataTable from "datatables.net-dt";
 import dt_css from "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
-import { showAlert, showPopUpForm, hidePopUpForm, exitPopUpForm } from "../utils/html-utils.js";
+import {
+  showAlert,
+  showPopUpForm,
+  hidePopUpForm,
+  exitPopUpForm,
+} from "../utils/html-utils.js";
+import { productSelectedChanged } from "../utils/tab-utils.js";
 
 $(function () {
   const defaultColumnAmount = 1;
@@ -18,7 +24,9 @@ $(function () {
 
   // if loading is empty
   if (isEmptyData) {
-    $(kTypeTableName).append(getEmptyRow(defaultRowAmount, defaultColumnAmount));
+    $(kTypeTableName).append(
+      getEmptyRow(defaultRowAmount, defaultColumnAmount)
+    );
     $(epidTableName).append(getEmptyRow(defaultRowAmount, defaultColumnAmount));
   } else {
     let kTypeTable_Data, ePIDTable_Data;

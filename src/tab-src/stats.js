@@ -6,6 +6,7 @@ import {
   hidePopUpForm,
   exitPopUpForm,
 } from "../utils/html-utils.js";
+import { productSelectedChanged } from "../utils/tab-utils.js";
 
 $(function () {
   const defaultColumnAmount = 1;
@@ -70,9 +71,6 @@ $(function () {
     ].map((vin) => {
       return { data: vin };
     });
-
-    console.log("VIN Table Data");
-    console.log(vinList);
 
     // Fill in text fields
     $("#requestValue").val(productSelectedDto[0].totalNumberOfRequests);
