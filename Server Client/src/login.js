@@ -5,15 +5,15 @@ import { showAlert } from "./utils/html-utils.js";
 $(function () {
   console.log("Starting");
   const socket = io();
-  const login_button = $("#loginBtn");
-  const username_input = $(".login_form input[name=user]");
-  const password_input = $(".login_form input[name=password]");
+  const $loginButton = $("#loginBtn");
+  const $usernameInput = $(".login_form input[name=user]");
+  const $passwordInput = $(".login_form input[name=password]");
 
-  login_button.on("click", async function () {
+  $loginButton.on("click", async function () {
     $("#no-username").hide();
     $("#no-password").hide();
-    let username = username_input.val();
-    let password = password_input.val();
+    let username = $usernameInput.val();
+    let password = $passwordInput.val();
     if (!username || !password) {
       if (username.length == 0) $("#no-username").show();
       if (password.length == 0) $("#no-password").show();
@@ -23,9 +23,9 @@ $(function () {
       socket.auth = { username, password };
       socket.disconnect();
       socket.connect();
-      login_button.prop("disabled", true);
-      username_input.prop("disabled", true);
-      password_input.prop("disabled", true);
+      $loginButton.prop("disabled", true);
+      $usernameInput.prop("disabled", true);
+      $passwordInput.prop("disabled", true);
     } catch (error) {
       showAlert(`<b>ERROR!</b> ${error}`);
       console.error("Authentication error:", error);
@@ -33,9 +33,9 @@ $(function () {
   });
 
   socket.on("authenticated", (token) => {
-    login_button.prop("disabled", false);
-    username_input.prop("disabled", false);
-    password_input.prop("disabled", false);
+    $loginButton.prop("disabled", false);
+    $usernameInput.prop("disabled", false);
+    $passwordInput.prop("disabled", false);
 
     sessionStorage.setItem("token", token);
     location.href += "research-tool";
@@ -51,8 +51,8 @@ $(function () {
       showAlert(
         `<b>Authentication error:</b> ${error.status}, ${error.message}`
       );
-    login_button.prop("disabled", false);
-    username_input.prop("disabled", false);
-    password_input.prop("disabled", false);
+    $loginButton.prop("disabled", false);
+    $usernameInput.prop("disabled", false);
+    $passwordInput.prop("disabled", false);
   });
 });

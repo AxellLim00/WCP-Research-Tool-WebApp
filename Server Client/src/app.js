@@ -7,7 +7,8 @@ const io = new Server(server);
 const PORT = process.env.PORT || 5000;
 const { join } = require("path");
 const { authenticate, getAllProduct } = require("./utils/workflow");
-
+const { FreeCurrencyAPI } = require("./utils/class/freeCurrencyAPI");
+const freeCurrencyAPI = new FreeCurrencyAPI();
 // run server using "npm run dev"
 app.use(express.static(join(__dirname + "/../public")));
 
@@ -33,49 +34,11 @@ io.on("connect", async function (socket) {
       socket.emit("fail authenticated", response.error);
     }
   }
+
   socket.on("disconnect", () => {
     console.log("A user disconnected.");
   });
 
-  // socket.on("get all products", async (token, callback) => {
-  //   console.log("Fetching products...");
-  //   let promise = await getAllProduct(token);
-  //   const fetchData = () => {
-  //     promise.then(
-  //       (result) => {
-  //         console.log("Fetching successful");
-  //         return {
-  //           status: 200,
-  //           data: result,
-  //         };
-  //       },
-  //       (error) => {
-  //         console.log("Fetching Failed", error.response.status);
-  //         if (error.response && error.response.status === 401)
-  //           return {
-  //             status: 401,
-  //             message:
-  //               "Token has expired or invalidated. Bring user back to login page.",
-  //           };
-  //         console.error(
-  //           "Error searching product request history:",
-  //           error.message
-  //         );
-  //         // console.error(error);
-  //         return {
-  //           status: "error.response.status",
-  //           message: `Error searching product request history: ${error.message}`,
-  //           error: error,
-  //         };
-  //       }
-  //     );
-  //   };
-  //   const fetch_Data_Promise = fetchData();
-  //   fetch_Data_Promise.then((data) => {
-  //     // Use the provided callback to send data back to the client
-  //     callback(data);
-  //   });
-  // });
   socket.on("get all products", async (token, callback) => {
     console.log("Fetching products...");
     try {
@@ -109,6 +72,18 @@ io.on("connect", async function (socket) {
       }
       callback(errorData);
     }
+  });
+
+  socket.on("get all currency", async (callback) => {
+    var responseJSON;
+    await freeCurrencyAPI
+      .latest({
+        base_currency: "AUD",
+      })
+      .then((response) => {
+        responseJSON = response;
+      });
+    callback(responseJSON);
   });
 });
 

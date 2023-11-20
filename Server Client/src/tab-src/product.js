@@ -1,5 +1,6 @@
 import DataTable from "datatables.net-dt";
 import dt_css from "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
+import { ProductRequestHistoryDto } from "../utils/class/ProductRequestHistoryDto.js";
 import {
   selectTab,
   showAlert,
@@ -9,9 +10,9 @@ import {
 } from "../utils/html-utils.js";
 
 $(function () {
-  const COLUMN_AMOUNT = 9;
-  const ROW_AMOUNT = 10;
-  const TABLE_NAME = "#productTable";
+  const defaultColumnAmount = 9;
+  const defaultRowAmount = 10;
+  const tableName = "#productTable";
   var formSelected = "";
   var isEmptyData = true;
   var productSelected = new Product();
@@ -31,7 +32,7 @@ $(function () {
   isEmptyData = JSON_ARRAY === null;
   // if loading from API empty
   if (isEmptyData) {
-    $(TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
+    $(tableName).append(getEmptyRow(defaultRowAmount, defaultColumnAmount));
   } else {
     let productDtoArray = JSON_ARRAY.map((object) =>
       Object.assign(new ProductRequestHistoryDto(), object)
@@ -207,12 +208,12 @@ $(function () {
     paging: true,
   };
 
-  var table = new DataTable(TABLE_NAME, tableOptions);
+  var table = new DataTable(tableName, tableOptions);
   // Hide Supplier and OEM List Column
   for (var i = 9; i <= 10; i++) table.column(i).visible(false, false);
   table.columns.adjust().draw(false);
 
-  $(`${TABLE_NAME}_filter`).remove();
+  $(`${tableName}_filter`).remove();
   $(".dataTables_length").css("padding-bottom", "1%");
 
   table.rows.add(productObjectList).draw(false);
@@ -286,7 +287,7 @@ $(function () {
   // Export table Button
   $('button[name="exportBtn"]').on("click", function () {
     exportDataTable(
-      TABLE_NAME,
+      tableName,
       "Research Product Table",
       isEmptyData,
       productObjectList
@@ -313,7 +314,7 @@ $(function () {
   //#region Row Click event
 
   // Single Click Row Event
-  $(`${TABLE_NAME} tbody`).on("click", "tr", function () {
+  $(`${tableName} tbody`).on("click", "tr", function () {
     if (isEmptyData) return;
     // Assign row to productSelected
     productSelected = new Product(...Object.values(table.row(this).data()));
@@ -332,7 +333,7 @@ $(function () {
   });
 
   // Double Click Row Event
-  $(`${TABLE_NAME} tbody`).on("dblclick", "tr", function () {
+  $(`${tableName} tbody`).on("dblclick", "tr", function () {
     // Find the ID cell in the clicked row and extract its text
     productSelected = new Product(...Object.values(table.row(this).data()));
     let id =

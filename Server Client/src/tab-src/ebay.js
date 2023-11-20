@@ -3,10 +3,10 @@ import dt_css from "../../node_modules/datatables.net-dt/css/jquery.dataTables.m
 import { showAlert, showPopUpForm, hidePopUpForm, exitPopUpForm } from "../utils/html-utils.js";
 
 $(function () {
-  const COLUMN_AMOUNT = 1;
-  const ROW_AMOUNT = 10;
-  const K_TYPE_TABLE_NAME = "#kTypeTable";
-  const EPID_TABLE_NAME = "#ePIDTable";
+  const defaultColumnAmount = 1;
+  const defaultRowAmount = 10;
+  const kTypeTableName = "#kTypeTable";
+  const epidTableName = "#ePIDTable";
   var isEmptyData = true;
   var itemSelected = { table: "", value: "" };
   var productIdSelected = sessionStorage.getItem("productIDSelected");
@@ -18,8 +18,8 @@ $(function () {
 
   // if loading is empty
   if (isEmptyData) {
-    $(K_TYPE_TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
-    $(EPID_TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
+    $(kTypeTableName).append(getEmptyRow(defaultRowAmount, defaultColumnAmount));
+    $(epidTableName).append(getEmptyRow(defaultRowAmount, defaultColumnAmount));
   } else {
     let kTypeTable_Data, ePIDTable_Data;
     //fill in table with the data
@@ -48,8 +48,8 @@ $(function () {
     paging: true,
   };
 
-  var kTypeTable = new DataTable(K_TYPE_TABLE_NAME, tableOptions);
-  var ePIDTable = new DataTable(EPID_TABLE_NAME, tableOptions);
+  var kTypeTable = new DataTable(kTypeTableName, tableOptions);
+  var ePIDTable = new DataTable(epidTableName, tableOptions);
 
   $(".dataTables_length").css("padding-bottom", "1%");
 
@@ -128,7 +128,7 @@ $(function () {
   //#region Row Click event
 
   // Click on K-Type table
-  $(`${K_TYPE_TABLE_NAME} tbody`).on("click", "tr", function () {
+  $(`${kTypeTableName} tbody`).on("click", "tr", function () {
     if (isEmptyData) return;
     // Clear highlight of all row in Datatable
     itemSelected.table = "K-Type";
@@ -142,7 +142,7 @@ $(function () {
   });
 
   // Click on EPID table
-  $(`${EPID_TABLE_NAME} tbody`).on("click", "tr", function () {
+  $(`${epidTableName} tbody`).on("click", "tr", function () {
     if (isEmptyData) return;
     // Clear highlight of all row in Datatable
     itemSelected.table = "EPID";

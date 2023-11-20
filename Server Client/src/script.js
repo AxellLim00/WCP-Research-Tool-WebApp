@@ -1,5 +1,6 @@
 import $ from "jquery";
 import io from "socket.io-client";
+const socket = io();
 
 import {
   showLoadingScreen,
@@ -9,12 +10,10 @@ import {
 } from "./utils/html-utils.js";
 
 $(async function () {
-  var tabChosen = "";
-  var menuToggle = true;
-
-  const socket = io();
   const token = sessionStorage.getItem("token");
   const productJsonString = sessionStorage.getItem("productRequestHistory");
+  var tabChosen = "";
+  var menuToggle = true;
 
   if (token === undefined || token === null) {
     location.href -= "research-tool";
@@ -38,7 +37,7 @@ $(async function () {
         case 200:
           sessionStorage.setItem(
             "productRequestHistory",
-            JSON.stringify(response)
+            JSON.stringify(response.data)
           );
           hideLoadingScreen();
           selectTab("tab0");
@@ -60,7 +59,7 @@ $(async function () {
         `Loaded page ${data.page} of ${data.totalPages} with ${data.productsLoaded} of ${data.totalProducts} products`
       );
       $(".loading p").html(
-        `Loading Products from system</br>Page ${data.page}/${data.totalPages} with ${data.productsLoaded}/${data.totalProducts} products`
+        `Loading Products from system</br>~~ ${data.productsLoaded}/${data.totalProducts} products loaded ~~`
       );
     });
   } else {

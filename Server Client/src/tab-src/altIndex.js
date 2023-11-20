@@ -2,6 +2,8 @@ import DataTable from "datatables.net-dt";
 require("datatables.net-datetime");
 // require("datatables.net-responsive-dt");
 import dt_css from "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
+import io from "socket.io-client";
+const socket = io();
 
 import {
   showAlert,
@@ -11,15 +13,15 @@ import {
 } from "../utils/html-utils.js";
 
 $(function () {
-  const COLUMN_AMOUNT = 10;
-  const ROW_AMOUNT = 10;
-  const TABLE_NAME = "#altIndexTable";
-  const DATE_FROM_FILTER = $('input[type="date"][name="from"]');
-  const DATE_TO_FILTER = $('input[type="date"][name="to"]');
+  const columnDefaultAmount = 10;
+  const rowDefaultAmount = 10;
+  const tableName = "#altIndexTable";
+  const $dateFromFilter = $('input[type="date"][name="from"]');
+  const $dateToFitler = $('input[type="date"][name="to"]');
 
   var isTableEmpty = true;
   var formSelected = "";
-  var currencyRate = new Object();
+  var currencyRate = new Map();
   var currencySupplierMap = new Map();
   var altIndexSelected = new AlternateIndex();
   var altIndexValueDictionary = [];
@@ -61,12 +63,12 @@ $(function () {
 
   // Custom range date filtering function
   DataTable.ext.search.push(function (_, data) {
-    let columnIndex = DATE_FROM_FILTER.data("column");
+    let columnIndex = $dateFromFilter.data("column");
     let start = new Date(
-      DATE_FROM_FILTER.val() ? DATE_FROM_FILTER.val() : -8640000000000000
+      $dateFromFilter.val() ? $dateFromFilter.val() : -8640000000000000
     );
     let end = new Date(
-      DATE_TO_FILTER.val() ? DATE_TO_FILTER.val() : -8640000000000000
+      $dateToFitler.val() ? $dateToFitler.val() : -8640000000000000
     );
     let date = new Date(
       data[columnIndex] ? data[columnIndex] : -8640000000000000
@@ -94,18 +96,19 @@ $(function () {
   // currencySupplierMap =
 
   // Check if all currency is in currencyRates
+  debugger;
   currencyRate = getCurrencyRates();
 
   // Check if alternative index list is empty
   isTableEmpty = altIndexObjectArray.length == 0;
   // Scenario of when data loaded is empty
   if (isTableEmpty) {
-    $(TABLE_NAME).append(getEmptyRow(ROW_AMOUNT, COLUMN_AMOUNT));
+    $(tableName).append(getEmptyRow(rowDefaultAmount, columnDefaultAmount));
   }
 
   // Disable/Enable date picker
-  DATE_FROM_FILTER.attr("disabled", isTableEmpty);
-  DATE_TO_FILTER.attr("disabled", isTableEmpty);
+  $dateFromFilter.attr("disabled", isTableEmpty);
+  $dateToFitler.attr("disabled", isTableEmpty);
 
   let tableOptions = {
     orderCellsTop: true,
@@ -138,9 +141,9 @@ $(function () {
     stateSave: true,
     paging: true,
   };
-  var table = new DataTable(TABLE_NAME, tableOptions);
+  var table = new DataTable(tableName, tableOptions);
 
-  $(`${TABLE_NAME}_filter`).remove();
+  $(`${tableName}_filter`).remove();
   $(".dataTables_length").css("padding-bottom", "1%");
 
   console.log(altIndexObjectArray);
@@ -183,13 +186,13 @@ $(function () {
     },
   });
 
-  DATE_FROM_FILTER.on("input", function () {
-    if (DATE_TO_FILTER.val() == "") DATE_TO_FILTER.val($(this).val());
+  $dateFromFilter.on("input", function () {
+    if ($dateToFitler.val() == "") $dateToFitler.val($(this).val());
     table.draw();
   });
 
-  DATE_TO_FILTER.on("input", function () {
-    if (DATE_FROM_FILTER.val() == "") DATE_FROM_FILTER.val($(this).val());
+  $dateToFitler.on("input", function () {
+    if ($dateFromFilter.val() == "") $dateFromFilter.val($(this).val());
     table.draw();
   });
 
@@ -232,7 +235,7 @@ $(function () {
   // Export table Button
   $('button[name="exportBtn"]').on("click", function () {
     exportDataTable(
-      TABLE_NAME,
+      tableName,
       `${productIdSelected} - Alternate Index Table`,
       isTableEmpty
     );
@@ -265,7 +268,7 @@ $(function () {
   //#endregion
 
   //#region Row Click event
-  $(`${TABLE_NAME} tbody`).on("click", "tr", function () {
+  $(`${tableName} tbody`).on("click", "tr", function () {
     if (isTableEmpty) return;
     // Clear highlight of all row in Datatable
     table.rows().nodes().to$().css("background-color", "");
@@ -545,25 +548,25 @@ $(function () {
  * @returns {Map} of currencies to its currency rates
  */
 async function getCurrencyRates() {
-  let currencyRate;
+  var currencyRate;
   if (localStorage["currencyRate"]) {
     currencyRate = JSON.parse(localStorage.getItem("currencyRate"));
-    lastUpdate = new Date(currencyRate["last_updated_at"]);
+    let lastUpdate = new Date(currencyRate["last_updated_at"]);
     // Check if currency Rate was updated within this week
     if (lastUpdate.getWeekNumber() == new Date().getWeekNumber()) {
       return currencyRate;
     }
   }
-  let responseJSON;
-  // Get the currency rates from API
-  const FREE_CURRENCY_API = new FreeCurrencyAPI();
-  await FREE_CURRENCY_API.latest({
-    base_currency: "AUD",
-  }).then((response) => {
-    responseJSON = response;
+  // Get the currency rates from System
+  // socket is constant from script.js
+  const socketPromise = new Promise((resolve) => {
+    console.log("Getting Currencies from system");
+    socket.emit("get all currency", resolve);
   });
-  currencyRate = responseJSON;
-  currentDate = new Date();
+  await socketPromise.then((response) => {
+    currencyRate = response.data;
+  });
+  let currentDate = new Date();
   currencyRate["last_updated_at"] = currentDate.toString();
 
   localStorage.setItem("currencyRate", JSON.stringify(currencyRate));

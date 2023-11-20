@@ -8,12 +8,11 @@ import {
 } from "../utils/html-utils.js";
 
 $(function () {
-  const COLUMN_AMOUNT = 1;
-  const ROW_AMOUNT_VIN = 10;
-  const ROW_AMOUNT_OEM = 10;
-  const VIN_TABLE_NAME = "#vinTable";
-  const OEM_TABLE_NAME = "#oemTable";
-  const IS_PRODUCT_EDITABLE = Boolean(
+  const defaultColumnAmount = 1;
+  const defaultRowAmount = 10;
+  const vinTableName = "#vinTable";
+  const oemTableName = "#oemTable";
+  const isProductEditable = Boolean(
     sessionStorage.getItem("productIDSelected")
   );
 
@@ -87,9 +86,9 @@ $(function () {
   isOemEmpty = oemList.length == 0;
   // Fill in Table if loading from API empty
   if (isVinEmpty)
-    $(VIN_TABLE_NAME).append(getEmptyRow(ROW_AMOUNT_VIN, COLUMN_AMOUNT));
+    $(vinTableName).append(getEmptyRow(defaultRowAmount, defaultColumnAmount));
   if (isOemEmpty)
-    $(OEM_TABLE_NAME).append(getEmptyRow(ROW_AMOUNT_OEM, COLUMN_AMOUNT));
+    $(oemTableName).append(getEmptyRow(defaultRowAmount, defaultColumnAmount));
 
   // initialize DataTable
   let tableOptions = {
@@ -97,8 +96,8 @@ $(function () {
     orderCellsTop: true,
     stateSave: true,
   };
-  var vinTable = new DataTable(VIN_TABLE_NAME, tableOptions);
-  var oemTable = new DataTable(OEM_TABLE_NAME, tableOptions);
+  var vinTable = new DataTable(vinTableName, tableOptions);
+  var oemTable = new DataTable(oemTableName, tableOptions);
 
   $(".dataTables_length").css("padding-bottom", "2%");
 
@@ -191,7 +190,7 @@ $(function () {
 
   //#region Row Click event
 
-  $(`${OEM_TABLE_NAME} tbody`).on("click", "tr", function () {
+  $(`${oemTableName} tbody`).on("click", "tr", function () {
     if (isOemEmpty) return;
     // Clear highlight of all row in Datatable
     oemTable.rows().nodes().to$().css("background-color", "");
@@ -199,7 +198,7 @@ $(function () {
     $(this).css("background-color", "#D5F3FE");
     // Assign row to productSelected
     oemSelected = Object.values(oemTable.row(this).data())[0];
-    if (IS_PRODUCT_EDITABLE)
+    if (isProductEditable)
       // Enable Edit button
       $('button[name="editBtn"]').prop("disabled", false);
   });

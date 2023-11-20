@@ -6,8 +6,8 @@ const {
 } = require("../utils/html-utils.js");
 
 $(function () {
-  const COST_VOLUME_TABLE_NAME = "#costVolTable";
-  const TABLE = $("#costVolTable");
+  const tableName = "#costVolTable";
+  const $table = $("#costVolTable");
   var formSelected = "";
   var isTableEmpty = true;
   var productIdSelected = sessionStorage.getItem("productIDSelected");
@@ -53,7 +53,7 @@ $(function () {
     $('button[name="editBtn"]').prop("disabled", true);
   } else {
     $.each(Object.keys(costVolSelected), function (i, val) {
-      TABLE.find("tr").find("td").eq(i).text(costVolSelected[val]);
+      $table.find("tr").find("td").eq(i).text(costVolSelected[val]);
     });
   }
 
@@ -98,7 +98,7 @@ $(function () {
     if (isTableEmpty) {
       showAlert("<strong>Error!</strong> No data found in table.");
     } else {
-      $(COST_VOLUME_TABLE_NAME).tableExport({
+      $(tableName).tableExport({
         type: "excel",
         fileName: `${productIdSelected} - Cost & Volume Table`,
         mso: {
@@ -254,7 +254,7 @@ $(function () {
       if (foundCostVol) {
         // Add data to table
         $.each(Object.keys(foundCostVol), function (i, val) {
-          TABLE.find("tr").find("td").eq(i).text(foundCostVol[val]);
+          $table.find("tr").find("td").eq(i).text(foundCostVol[val]);
         });
         isTableEmpty = false;
         costVolSelected = foundCostVol;
@@ -307,7 +307,7 @@ $(function () {
       );
       costVolSelected = updateObject(costVolSelected, newUpdate);
       $.each(Object.keys(costVolSelected), function (i, val) {
-        TABLE.find("tr").find("td").eq(i).text(costVolSelected[val]);
+        $table.find("tr").find("td").eq(i).text(costVolSelected[val]);
       });
     }
 
