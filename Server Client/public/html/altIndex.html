@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alternative Index Tab</title>
+  </head>
+  <body>
+    <section class="product-searchbar">
+      <label>
+        Product:
+        <br />
+        <input
+          type="text"
+          id="productSelected"
+          list="productList"
+          data-oldvalue=""
+        />
+        <datalist id="productList"> </datalist>
+      </label>
+    </section>
+    <section class="grid-section grid-wide-gap">
+      <div class="altIndex-Table-Section">
+        <table id="altIndexTable" class="compact hover order-column row-border">
+          <thead>
+            <tr>
+              <th>Supplier Name</th>
+              <th>Supplier Number</th>
+              <th>MOQ</th>
+              <th>Cost Currency</th>
+              <th>Cost AUD</th>
+              <th>Date Last Updated</th>
+              <th>Quality</th>
+              <th>Supplier's Part Type</th>
+              <th>WCP's Part Type</th>
+              <th>Main Supplier</th>
+            </tr>
+            <tr class="searchbar-Table" data-tableexport-display="none">
+              <td>
+                <input
+                  type="text"
+                  placeholder="Search supplier name"
+                  class="filter"
+                  data-column="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  placeholder="Search supplier number"
+                  class="filter"
+                  data-column="1"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  placeholder="Search MOQ"
+                  class="filter"
+                  data-column="2"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  placeholder="Search ccost currency"
+                  class="filter"
+                  data-column="3"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  placeholder="Search cost AUD"
+                  class="filter"
+                  data-column="4"
+                />
+              </td>
+              <td style="inline-size: min-content">
+                From:
+                <input type="date" class="filter" name="from" data-column="5" />
+                <br />
+                To:&emsp;&nbsp;
+                <input type="date" class="filter" name="to" data-column="5" />
+              </td>
+              <td>
+                <select
+                  class="filter multiple-select"
+                  data-column="6"
+                  multiple="multiple"
+                  placeholder="Select quality"
+                >
+                  <option value="good">Good</option>
+                  <option value="normal">Normal</option>
+                  <option value="bad">Bad</option>
+                </select>
+              </td>
+              <td>
+                <input
+                  type="text"
+                  placeholder="Search supplier's part type"
+                  class="filter"
+                  data-column="7"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  placeholder="Search WCP's part type"
+                  class="filter"
+                  data-column="8"
+                />
+              </td>
+              <td></td>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="flex-buttons">
+        <button name="saveBtn" class="save" disabled>Save</button>
+        <button name="editBtn" disabled>Edit</button>
+        <button name="importBtn">Import</button>
+        <button name="exportBtn">Export</button>
+      </div>
+    </section>
+    <div id="popupForm" class="popup-form" style="display: none">
+      <form class="flex-form" style="height: 100%">
+        <h2 name="formTitle">Title</h2>
+        <section
+          id="importForm"
+          class="flex-form form-information"
+          style="display: none"
+        >
+          <label>
+            File to import<b style="color: red">*</b>
+            <br />
+            <input id="importFile" type="file" accept=".xls, .xlsx, .csv" />
+          </label>
+          <label>
+            Supplier Number (From Pinnacle)<b style="color: red">*</b>
+            <br />
+            <input id="importNum" type="text" list="altIndexNumList" />
+            <datalist id="altIndexNumList"> </datalist>
+          </label>
+          <label>
+            Supplier Name<b style="color: red">*</b>
+            <br />
+            <p id="importName">-</p>
+          </label>
+          <label>
+            MOQ Header<b style="color: red">*</b>
+            <br />
+            <input id="importMoq" type="text" />
+          </label>
+          <label>
+            Cost Currency Header<b style="color: red">*</b>
+            <br />
+            <input id="importCostCur" type="text" />
+          </label>
+          <label>
+            Quality Header
+            <img
+              src="../icon/info.png"
+              alt="Info Icon"
+              class="info-icon"
+              title="Defaults to normal"
+            />
+            <br />
+            <input id="importQuality" type="text" />
+          </label>
+          <label>
+            Supplier's Part Type Header<b style="color: red">*</b>
+            <br />
+            <input id="importSupPartType" type="text" />
+          </label>
+          <label>
+            WCP's Part Type Header<b style="color: red">*</b>
+            <br />
+            <input id="importWcpPartType" type="text" />
+          </label>
+        </section>
+        <section
+          id="editForm"
+          class="flex-form form-information"
+          style="display: none"
+        >
+          <label>
+            Supplier Name:
+            <br />
+            <p id="editName">-</p>
+          </label>
+          <label>
+            Supplier Number:
+            <br />
+            <!-- <input id="editNum" type="text" /> -->
+            <p id="editNum">-</p>
+          </label>
+          <label>
+            MOQ:
+            <br />
+            <p id="editMoq">-</p>
+          </label>
+          <label>
+            Cost Currency:
+            <br />
+            <p id="editCurrency">-</p>
+          </label>
+          <label>
+            Cost AUD
+            <br />
+            <input id="editAud" type="text" />
+          </label>
+          <label>
+            Date Last Updated:
+            <br />
+            <p id="editDate">-</p>
+          </label>
+          <label>
+            Quality:
+            <br />
+            <select id="editQuality">
+              <option value="" style="display: none" disabled selected>
+                Select quality
+              </option>
+              <option value="good">Good</option>
+              <option value="normal">Normal</option>
+              <option value="bad">Bad</option>
+            </select>
+          </label>
+          <label>
+            Supplier's Part Type:
+            <br />
+            <p id="editSupType">-</p>
+          </label>
+          <label>
+            WCP's Part Type:
+            <br />
+            <p id="editWcpType">-</p>
+          </label>
+          <label>
+            Main Supplier:
+            <br />
+            <input id="editMain" type="checkbox" />
+          </label>
+        </section>
+        <section class="flex-buttons form-button">
+          <button type="button" name="saveForm">Save</button>
+          <button type="button" name="cancelForm" class="cancel">Cancel</button>
+        </section>
+      </form>
+    </div>
+    <div id="mainConfirmation" class="confirmation" style="display: none">
+      <h2>WARNING: Changing Main Supplier.</h2>
+      <h3>Are you sure?</h3>
+      <h4 id="changeInfo">-</h4>
+      <section class="flex-buttons form-button">
+        <button type="button" name="yes">Yes</button>
+        <button type="button" name="no" class="cancel">Cancel</button>
+      </section>
+    </div>
+    <script src="../js/dist/altIndex.bundle.js"></script>
+  </body>
+</html>

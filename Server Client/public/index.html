@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Validated Login Form</title>
+    <link rel="stylesheet" href="../style/styleLogin.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="label">User Login</h1>
+      <form class="login_form">
+        <div class="font">Username</div>
+        <input autocomplete="on" type="text" name="user" />
+        <p id="no-username" class="error_text" style="display: none">
+          Fill in username
+        </p>
+        <div class="font font2">Password</div>
+        <input type="password" name="password" />
+        <p id="no-password" class="error_text" style="display: none">
+          Fill in password
+        </p>
+        <button type="button" id="loginBtn">Login</button>
+      </form>
+    </div>
+    <script src="js/dist/login.bundle.js"></script>
+  </body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard</title>
+  </head>
+  <body>
+    <p class="description">
+      Quantity of Products to be researched by Team <span id="teamName"></span>:
+      <span id="teamAmount"></span>
+    </p>
+    <p class="description">
+      Quantity of Products to be researched by User <span id="userName"></span>:
+      <span id="userAmount"></span>
+    </p>
+    <hr />
+    <div class="split-layout-dashboard">
+      <section class="grid-section">
+        <label>Research Product per User</label>
+        <table
+          id="userResearchTable"
+          class="compact hover order-column row-border"
+          data-order='[[ 0, "asc" ]]'
+        >
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Quantity</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+      <section class="grid-section">
+        <label>Research Product within Period</label>
+        <div id="period-picker">
+          <label>Date From</label>
+          <label>Date To</label>
+          <input
+            type="date"
+            id="dateFrom"
+            min="2018-01-01"
+            class="date-picker"
+          />
+          <input type="date" id="dateTo" min="2018-01-01" class="date-picker" />
+        </div>
+        <table
+          id="periodResearchTable"
+          class="compact hover order-column row-border"
+          data-order='[[ 0, "asc" ]]'
+        >
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Part Type</th>
+              <th>IC Number</th>
+              <th>IC Description</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <button name="exportBtn">Export</button>
+      </section>
+    </div>
+  </body>
+  <script src="../js/dist/dashboard.bundle.js"></script>
+</html>
