@@ -1,8 +1,14 @@
 {
-  "host": "192.168.1.164",
-  "port": 6005,
-  "instanceName": "sqlexpress",
-  "user": "DetrackSQL",
-  "password": "j7nWh8wrz83TUN",
-  "database": "ResearchTool"
+  "sql": {
+    "server": "192.168.1.164",
+    "port": 6005,
+    "user": "DetrackSQL",
+    "password": "j7nWh8wrz83TUN",
+    "database": "ResearchTool",
+    "driver": "{ODBC Driver 18 for SQL Server}",
+    "options": {
+      "trustedConnection": true,
+      "instanceName": "sqlexpress"
+    }
+  }
 }
