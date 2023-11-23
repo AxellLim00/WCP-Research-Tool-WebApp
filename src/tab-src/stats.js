@@ -6,7 +6,19 @@ import {
   hidePopUpForm,
   exitPopUpForm,
 } from "../utils/html-utils.js";
-import { productSelectedChanged } from "../utils/tab-utils.js";
+import {
+  productSelectedChanged,
+  getProductIdentifier,
+  updateHasChanges,
+  updateChanges,
+  saveChanges,
+} from "../utils/tab-utils.js";
+import {
+  createEmptyRow,
+  findMissingColumnHeader,
+  exportDataTable,
+  readFileToJson,
+} from "../utils/table-utils.js";
 
 $(function () {
   const defaultColumnAmount = 1;
@@ -84,9 +96,13 @@ $(function () {
   isOemEmpty = oemList.length == 0;
   // Fill in Table if loading from API empty
   if (isVinEmpty)
-    $(vinTableName).append(getEmptyRow(defaultRowAmount, defaultColumnAmount));
+    $(vinTableName).append(
+      createEmptyRow(defaultRowAmount, defaultColumnAmount)
+    );
   if (isOemEmpty)
-    $(oemTableName).append(getEmptyRow(defaultRowAmount, defaultColumnAmount));
+    $(oemTableName).append(
+      createEmptyRow(defaultRowAmount, defaultColumnAmount)
+    );
 
   // initialize DataTable
   let tableOptions = {

@@ -1,12 +1,29 @@
 import DataTable from "datatables.net-dt";
-require("datatables.net-datetime");
+import _ from "datatables.net-datetime";
 // require("datatables.net-responsive-dt");
 import dt_css from "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
 import io from "socket.io-client";
 const socket = io();
-import { AlternateIndex } from "../utils/class/table.js";
-import { productSelectedChanged } from "../utils/tab-utils.js";
-
+import { AlternateIndexDto } from "../utils/class/tableDto.js";
+import {
+  productSelectedChanged,
+  calculateAUD,
+  isFloat,
+  toTitleCase,
+  getWeekNumber,
+  getProductIdentifier,
+  getAltIndexValueDictionary,
+  updateObject,
+  updateHasChanges,
+  updateChanges,
+  saveChanges,
+} from "../utils/tab-utils.js";
+import {
+  createEmptyRow,
+  findMissingColumnHeader,
+  exportDataTable,
+  readFileToJson,
+} from "../utils/table-utils.js";
 import {
   showAlert,
   showPopUpForm,
@@ -25,7 +42,7 @@ $(function () {
   var formSelected = "";
   var currencyRate = new Map();
   var currencySupplierMap = new Map();
-  var altIndexSelected = new AlternateIndex();
+  var altIndexSelected = new AlternateIndexDto();
   var altIndexValueDictionary = [];
   var mainSupplier = null;
   var productIdSelected = sessionStorage.getItem("productIDSelected");
@@ -54,7 +71,7 @@ $(function () {
     }
     altIndexObjectArray = selectedProductData.map(
       (product) =>
-        new AlternateIndex(
+        new AlternateIndexDto(
           String(product.vendorName),
           String(product.altIndexNumber)
         )
@@ -104,7 +121,7 @@ $(function () {
   isTableEmpty = altIndexObjectArray.length == 0;
   // Scenario of when data loaded is empty
   if (isTableEmpty) {
-    $(tableName).append(getEmptyRow(rowDefaultAmount, columnDefaultAmount));
+    $(tableName).append(createEmptyRow(rowDefaultAmount, columnDefaultAmount));
   }
 
   // Disable/Enable date picker
@@ -275,7 +292,7 @@ $(function () {
     // highlight clicked row
     $(this).css("background-color", "#D5F3FE");
     // Assign row to productSelected
-    altIndexSelected = new AlternateIndex(
+    altIndexSelected = new AlternateIndexDto(
       ...Object.values(table.row(this).data())
     );
     // Enable Edit button
@@ -377,7 +394,7 @@ $(function () {
           return null;
         }
 
-        let newObject = new AlternateIndex(
+        let newObject = new AlternateIndexDto(
           SUPPLIER_NAME_VALUE_VALUE,
           SUPPLIER_NUMBER_VALUE,
           row[MOQ_VALUE],
@@ -553,7 +570,7 @@ async function getCurrencyRates() {
     currencyRate = JSON.parse(localStorage.getItem("currencyRate"));
     let lastUpdate = new Date(currencyRate["last_updated_at"]);
     // Check if currency Rate was updated within this week
-    if (lastUpdate.getWeekNumber() == new Date().getWeekNumber()) {
+    if (getWeekNumber(lastUpdate) == getWeekNumber(new Date())) {
       return currencyRate;
     }
   }

@@ -4,10 +4,21 @@ import {
   hidePopUpForm,
   exitPopUpForm,
 } from "../utils/html-utils.js";
-
-import { CostVolume } from "../utils/class/table.js";
-import { productSelectedChanged } from "../utils/tab-utils.js";
-
+import { CostVolumeDto } from "../utils/class/tableDto.js";
+import {
+  productSelectedChanged,
+  calculateAUD,
+  isFloatValue,
+  getProductIdentifier,
+  updateObject,
+  updateHasChanges,
+  updateChanges,
+  saveChanges,
+} from "../utils/tab-utils.js";
+import {
+  findMissingColumnHeader,
+  readFileToJson,
+} from "../utils/table-utils.js";
 
 $(function () {
   const tableName = "#costVolTable";
@@ -19,7 +30,7 @@ $(function () {
     sessionStorage.getItem("productRequestHistory")
   );
   var productIdArray = getProductIdentifier(productDtoArray);
-  var costVolSelected = new CostVolume();
+  var costVolSelected = new CostVolumeDto();
   var productData = null;
 
   //Load table from API
@@ -209,18 +220,18 @@ $(function () {
       let importCosVol = SHEET_JSON.map((row) => {
         // Check if all value that in the row has the correct format
 
-        checkAndPushFloatError(row, COST_USD_VALUE, errorMessage);
-        checkAndPushFloatError(row, EST_COST_AUD_VALUE, errorMessage);
-        checkAndPushFloatError(row, EST_SELL_VALUE, errorMessage);
-        checkAndPushFloatError(row, POSTAGE_VALUE, errorMessage);
-        checkAndPushFloatError(row, EXT_GP_VALUE, errorMessage);
+        isFloatValue(row, COST_USD_VALUE, errorMessage);
+        isFloatValue(row, EST_COST_AUD_VALUE, errorMessage);
+        isFloatValue(row, EST_SELL_VALUE, errorMessage);
+        isFloatValue(row, POSTAGE_VALUE, errorMessage);
+        isFloatValue(row, EXT_GP_VALUE, errorMessage);
 
         // convert USD to AUD
         let convertedAud = parseFloat(
           calculateAUD("USD", parseFloat(row[COST_USD_VALUE]))
         ).toFixed(2);
 
-        newObject = new CostVolume(
+        newObject = new CostVolumeDto(
           row[ID_VALUE],
           parseFloat(row[COST_USD_VALUE]).toFixed(2),
           convertedAud,

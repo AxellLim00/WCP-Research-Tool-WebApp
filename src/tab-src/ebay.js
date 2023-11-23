@@ -6,7 +6,14 @@ import {
   hidePopUpForm,
   exitPopUpForm,
 } from "../utils/html-utils.js";
-import { productSelectedChanged } from "../utils/tab-utils.js";
+import {
+  productSelectedChanged,
+  getProductIdentifier,
+  updateHasChanges,
+  updateChanges,
+  saveChanges,
+} from "../utils/tab-utils.js";
+import { createEmptyRow, exportDataTable } from "../utils/table-utils.js";
 
 $(function () {
   const defaultColumnAmount = 1;
@@ -25,9 +32,11 @@ $(function () {
   // if loading is empty
   if (isEmptyData) {
     $(kTypeTableName).append(
-      getEmptyRow(defaultRowAmount, defaultColumnAmount)
+      createEmptyRow(defaultRowAmount, defaultColumnAmount)
     );
-    $(epidTableName).append(getEmptyRow(defaultRowAmount, defaultColumnAmount));
+    $(epidTableName).append(
+      createEmptyRow(defaultRowAmount, defaultColumnAmount)
+    );
   } else {
     let kTypeTable_Data, ePIDTable_Data;
     //fill in table with the data

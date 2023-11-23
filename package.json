@@ -2,11 +2,12 @@
   "name": "server-client",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "main": "app.js",
   "scripts": {
     "dev": "nodemon src/app.js",
     "start": "node src/app.js",
-    "build": "webpack --config webpack.config.js"
+    "build": "webpack --config webpack.config.cjs"
   },
   "keywords": [],
   "author": "",
@@ -19,9 +20,11 @@
     "express": "^4.18.2",
     "http": "^0.0.1-security",
     "jquery": "^3.7.1",
+    "mysql": "^2.18.1",
     "nodemon": "^3.0.1",
     "socket.io": "^4.7.2",
-    "socket.io-client": "^4.7.2"
+    "socket.io-client": "^4.7.2",
+    "url": "^0.11.3"
   },
   "devDependencies": {
     "@babel/core": "^7.23.3",

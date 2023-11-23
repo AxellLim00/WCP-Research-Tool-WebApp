@@ -1,6 +1,6 @@
 import DataTable from "datatables.net-dt";
 import dt_css from "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
-import { ProductRequestHistoryDto } from "../utils/class/ProductRequestHistoryDto.js";
+import { ProductRequestHistoryDto } from "../utils/class/apiDto.js";
 import {
   selectTab,
   showAlert,
@@ -8,7 +8,20 @@ import {
   hidePopUpForm,
   exitPopUpForm,
 } from "../utils/html-utils.js";
-import { Product } from "../utils/class/table.js";
+import { ProductDto } from "../utils/class/tableDto.js";
+import {
+  createEmptyRow,
+  findMissingColumnHeader,
+  exportDataTable,
+  readFileToJson,
+} from "../utils/table-utils.js";
+import {
+  getAltIndexValueDictionary,
+  updateObject,
+  updateHasChanges,
+  updateChanges,
+  saveChanges,
+} from "../utils/tab-utils.js";
 
 $(function () {
   const defaultColumnAmount = 9;
@@ -16,7 +29,7 @@ $(function () {
   const tableName = "#productTable";
   var formSelected = "";
   var isEmptyData = true;
-  var productSelected = new Product();
+  var productSelected = new ProductDto();
   var productObjectList = [];
   // Temporary variables for the new product form
   var prevMake = "";
@@ -33,7 +46,7 @@ $(function () {
   isEmptyData = JSON_ARRAY === null;
   // if loading from API empty
   if (isEmptyData) {
-    $(tableName).append(getEmptyRow(defaultRowAmount, defaultColumnAmount));
+    $(tableName).append(createEmptyRow(defaultRowAmount, defaultColumnAmount));
   } else {
     let productDtoArray = JSON_ARRAY.map((object) =>
       Object.assign(new ProductRequestHistoryDto(), object)
@@ -64,7 +77,7 @@ $(function () {
       }
       // Insert new Product to List
       productObjectList.push(
-        new Product(
+        new ProductDto(
           currentDto.researchIdentifier,
           currentDto.productStockNumber ?? "",
           currentDto.vehicleManufacturers.split("\r").join("; "),
@@ -316,7 +329,7 @@ $(function () {
   $(`${tableName} tbody`).on("click", "tr", function () {
     if (isEmptyData) return;
     // Assign row to productSelected
-    productSelected = new Product(...Object.values(table.row(this).data()));
+    productSelected = new ProductDto(...Object.values(table.row(this).data()));
 
     // Clear highlight of all row in Datatable
     table.rows().nodes().to$().css("background-color", "");
@@ -334,7 +347,7 @@ $(function () {
   // Double Click Row Event
   $(`${tableName} tbody`).on("dblclick", "tr", function () {
     // Find the ID cell in the clicked row and extract its text
-    productSelected = new Product(...Object.values(table.row(this).data()));
+    productSelected = new ProductDto(...Object.values(table.row(this).data()));
     let id =
       productSelected.Sku != "" ? productSelected.Sku : productSelected.Id;
     if (id.length > 0) {
@@ -458,7 +471,7 @@ $(function () {
           return null;
         }
 
-        let newObject = new Product(
+        let newObject = new ProductDto(
           generateProductID(
             row[MAKE_VALUE],
             row[MODEL_VALUE],
@@ -514,7 +527,7 @@ $(function () {
     }
     // New Form Save
     else if (formSelected == "new") {
-      let newProduct = new Product(
+      let newProduct = new ProductDto(
         $("#ID").text(),
         SKU_VALUE,
         MAKE_VALUE,

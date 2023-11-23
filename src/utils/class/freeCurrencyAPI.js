@@ -1,4 +1,4 @@
-class FreeCurrencyAPI {
+export class FreeCurrencyAPI {
   baseUrl = "https://api.freecurrencyapi.com/v1/";
 
   // temporary API_KEY using Axell's account from https://freecurrencyapi.com
@@ -38,5 +38,3 @@ class FreeCurrencyAPI {
     return this.call("historical", params);
   }
 }
-
-module.exports = { FreeCurrencyAPI };

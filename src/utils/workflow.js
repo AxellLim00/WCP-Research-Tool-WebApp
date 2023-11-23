@@ -1,24 +1,12 @@
-const axios = require("axios");
-const fs = require("fs");
+import axios from "axios";
+import { createWriteStream } from "fs";
 
 const baseUrl = "https://workflow.wholesalecarparts.com.au/api";
 const logFilePath = "./axios.log";
 // Create a writable stream to the log file
-const logStream = fs.createWriteStream(logFilePath, { flags: "a" });
-// Custom logger function that writes to the file
-const customLogger = (level, ...messages) => {
-  const formattedMessage = `[${level}] ${new Date().toISOString()} - ${messages.join(
-    " "
-  )}\n`;
-  logStream.write(formattedMessage);
-};
-// Set the custom logger for Axios
-axios.defaults.logger = customLogger;
+const logStream = createWriteStream(logFilePath, { flags: "a" });
 
-module.exports.authenticate = async function (
-  applicationName,
-  applicationSecret
-) {
+export async function authenticate(applicationName, applicationSecret) {
   const requestBody = {
     ApplicationName: applicationName,
     ApplicationSecret: applicationSecret,
@@ -43,7 +31,7 @@ module.exports.authenticate = async function (
         error: error,
       };
     });
-};
+}
 
 /**
  * Get Search Product Request History from Workflow API
@@ -87,9 +75,10 @@ async function searchProduct(
     throw error;
   }
 }
-module.exports.searchProduct = searchProduct;
+const _searchProduct = searchProduct;
+export { _searchProduct as searchProduct };
 
-module.exports.getAllProduct = async function (
+export async function getAllProduct(
   socket,
   token,
   partTypeCode = null,
@@ -138,44 +127,4 @@ module.exports.getAllProduct = async function (
   }
 
   return allProducts;
-  // console.log("Getting First Page...");
-  // // Get first page
-  // let promiseResponse = await searchProduct(
-  //   token,
-  //   1,
-  //   500,
-  //   partTypeCode,
-  //   interchangeNumber,
-  //   interchangeVersion
-  // );
-  // // Get all products
-  // if (
-  //   isGetAll &&
-  //   promiseResponse.data.currentPage === 1 &&
-  //   promiseResponse.data.pageSize < promiseResponse.data.recordCount
-  // ) {
-  //   let loopsToGetTotal = Math.ceil(
-  //     promiseResponse.data.recordCount / promiseResponse.data.pageSize
-  //   );
-  //   // let loadingMessage = $(".loading p").text();
-  //   // Update Loading screen message
-  //   console.log(`Loading ${1}/${loopsToGetTotal}`);
-  //   // skip first iteration
-  //   for (let i = 2; i <= loopsToGetTotal; i++) {
-  //     let response = await searchProduct(
-  //       token,
-  //       i,
-  //       500,
-  //       partTypeCode,
-  //       interchangeNumber,
-  //       interchangeVersion
-  //     );
-  //     let toAdd = response.data.records;
-  //     jsonArray.push(...toAdd);
-  //     console.log(`Loading ${i}/${loopsToGetTotal}`);
-  //   }
-  //   // Return loading screen text
-  // }
-  // // return list of
-  // return jsonArray;
-};
+}

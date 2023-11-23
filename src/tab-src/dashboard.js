@@ -1,5 +1,6 @@
 import DataTable from "datatables.net-dt";
 import dt_css from "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
+import { createEmptyRow } from "../utils/table-utils.js";
 
 $(function () {
   const defaulClumnAmountUser = 2;
@@ -25,10 +26,10 @@ $(function () {
   // if loading from Server-side empty
   if (isEmptyData) {
     $("#userResearchTable > tbody:last-child").append(
-      getEmptyRow(defaultRowAmount, defaulClumnAmountUser)
+      createEmptyRow(defaultRowAmount, defaulClumnAmountUser)
     );
     $("#periodResearchTable > tbody:last-child").append(
-      getEmptyRow(defaultRowAmount, defaulColumnAmountPeriod)
+      createEmptyRow(defaultRowAmount, defaulColumnAmountPeriod)
     );
   } else {
     let userTableData, periodTableData;
