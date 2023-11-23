@@ -5,7 +5,6 @@
     "user": "DetrackSQL",
     "password": "j7nWh8wrz83TUN",
     "database": "ResearchTool",
-    "driver": "{ODBC Driver 18 for SQL Server}",
     "options": {
       "trustedConnection": true,
       "instanceName": "sqlexpress"
