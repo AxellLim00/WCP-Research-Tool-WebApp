@@ -1,5 +1,5 @@
 import DataTable from "datatables.net-dt";
-import _ from "datatables.net-datetime";
+import "datatables.net-datetime";
 // require("datatables.net-responsive-dt");
 import dt_css from "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
 import io from "socket.io-client";

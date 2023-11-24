@@ -1,3 +1,8 @@
+import $ from "jquery";
+import "datatables.net";
+import "../utils/tableExport-utils/tableExport.js";
+import { showAlert } from "./html-utils.js";
+
 /**
  * Gets empty rows for a html table based on rows and columns
  * @param {Number} rowQuantity How many empty rows to create
@@ -187,4 +192,10 @@ export function exportDataTable(
     $(tableID).tableExport(exportData);
     $(tableID).DataTable().page.len(previousPageLength).draw(false);
   }
+}
+
+function delay(milliseconds) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
 }

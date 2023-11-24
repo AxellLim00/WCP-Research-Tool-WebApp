@@ -7,6 +7,8 @@ import {
   showPopUpForm,
   hidePopUpForm,
   exitPopUpForm,
+  showLoadingScreen,
+  hideLoadingScreen,
 } from "../utils/html-utils.js";
 import { ProductDto } from "../utils/class/tableDto.js";
 import {
@@ -229,7 +231,7 @@ $(function () {
   $(".dataTables_length").css("padding-bottom", "1%");
 
   table.rows.add(productObjectList).draw(false);
-  table.search("").draw(false);
+  table.columns().search("").draw();
 
   //#endregion
 
@@ -298,12 +300,15 @@ $(function () {
 
   // Export table Button
   $('button[name="exportBtn"]').on("click", function () {
+    showLoadingScreen("Exporting HTML Table...");
+    console.log("Exporting HTML Table...");
     exportDataTable(
       tableName,
       "Research Product Table",
       isEmptyData,
       productObjectList
     );
+    hideLoadingScreen();
   });
 
   // Edit button

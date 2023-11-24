@@ -1,6 +1,7 @@
 import DataTable from "datatables.net-dt";
-import dt_css from "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
+import "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
 import { createEmptyRow } from "../utils/table-utils.js";
+import "../utils/tableExport-utils/tableExport.js";
 
 $(function () {
   const defaulClumnAmountUser = 2;

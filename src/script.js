@@ -16,7 +16,7 @@ $(async function () {
   var menuToggle = true;
 
   if (token === undefined || token === null) {
-    location.href -= "research-tool";
+    location.href = location.origin;
     return;
   }
   sessionStorage.clear();

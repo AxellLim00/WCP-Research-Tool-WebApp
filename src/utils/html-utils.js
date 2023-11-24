@@ -1,5 +1,5 @@
 import $ from "jquery";
-import _ from "datatables.net-dt";
+import "datatables.net-dt";
 
 /**
  * Shows Alert message by appending or unhiding div with alert class

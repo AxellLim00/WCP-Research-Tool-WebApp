@@ -19,6 +19,7 @@ import {
   findMissingColumnHeader,
   readFileToJson,
 } from "../utils/table-utils.js";
+import "../utils/tableExport-utils/tableExport.js";
 
 $(function () {
   const tableName = "#costVolTable";

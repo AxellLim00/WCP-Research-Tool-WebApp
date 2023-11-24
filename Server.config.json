@@ -1,0 +1,10 @@
+{
+  "sql": {
+    "user": "DetrackSQL",
+    "password": "j7nWh8wrz83TUN",
+    "server": "192.168.1.164",
+    "database": "ResearchTool",
+    "port": 6005,
+    "trustServerCertificate": true
+  }
+}

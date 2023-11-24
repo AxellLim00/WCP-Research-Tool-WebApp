@@ -1,4 +1,5 @@
 import { showAlert, selectTab } from "./html-utils.js";
+import $ from "jquery";
 
 /**
  * Refresh tab when product is updated
