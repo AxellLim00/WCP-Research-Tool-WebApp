@@ -137,3 +137,5 @@ export async function getKeyType(productID) {
     };
   }
 }
+
+// TO DO: Test these with dummy data
