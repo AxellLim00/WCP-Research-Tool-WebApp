@@ -138,4 +138,106 @@ export async function getKeyType(productID) {
   }
 }
 
-// TO DO: Test these with dummy data
+export async function getNewProduct() {
+  try {
+    console.log("Connecting to SQL...");
+    let pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+    console.log("Getting Unsaved Product...");
+    let result = await pool.query(
+      `SELECT *
+      FROM NewProduct`
+    );
+    console.log("Got Unsaved Product");
+    pool.close();
+    console.log("Result: ", result.rowsAffected);
+    return {
+      status: "OK",
+      result: result.recordset,
+    };
+  } catch (err) {
+    console.log(err);
+    return {
+      status: "error",
+      error: err,
+    };
+  }
+}
+
+export async function insertUser(userObject) {
+  try {
+    console.log("Connecting to SQL...");
+    let pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+    console.log("Inserting new user...");
+    let result = await pool.query(
+      `INSERT INTO Users (UserID, Team)
+      VALUES (${userObject.UserID}, ${userObject.Team})`
+    );
+    console.log("Inserted new user");
+    pool.close();
+    console.log("Result: ", result.rowsAffected);
+    return {
+      status: "OK",
+      result: result.recordset,
+    };
+  } catch (err) {
+    console.log(err);
+    return {
+      status: "error",
+      error: err,
+    };
+  }
+}
+
+export async function insertSupplier(supplierObject) {
+  try {
+    console.log("Connecting to SQL...");
+    let pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+    console.log("Inserting new supplier...");
+    let result = await pool.query(
+      `INSERT INTO Supplier (SupplierNumber, SupplierName, Currency)
+      VALUES (${supplierObject.SupplierNumber}, ${supplierObject.SupplierName}, ${supplierObject.Currency})`
+    );
+    console.log("Inserted new supplier");
+    pool.close();
+    console.log("Result: ", result.rowsAffected);
+    return {
+      status: "OK",
+      result: result.recordset,
+    };
+  } catch (err) {
+    console.log(err);
+    return {
+      status: "error",
+      error: err,
+    };
+  }
+}
+
+export async function insertSupplier(supplierObject) {
+  try {
+    console.log("Connecting to SQL...");
+    let pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+    console.log("Inserting new supplier...");
+    let result = await pool.query(
+      `INSERT INTO Supplier (SupplierNumber, SupplierName, Currency)
+      VALUES (${supplierObject.SupplierNumber}, ${supplierObject.SupplierName}, ${supplierObject.Currency})`
+    );
+    console.log("Inserted new supplier");
+    pool.close();
+    console.log("Result: ", result.rowsAffected);
+    return {
+      status: "OK",
+      result: result.recordset,
+    };
+  } catch (err) {
+    console.log(err);
+    return {
+      status: "error",
+      error: err,
+    };
+  }
+}
