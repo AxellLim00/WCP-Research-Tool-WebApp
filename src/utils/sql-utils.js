@@ -164,22 +164,29 @@ export async function getNewProduct() {
   }
 }
 
-export async function insertUser(userObject) {
+/**
+ * Insert User data into the database
+ * @param {Object[]} userObject list of user object
+ * @returns {String | Error} returns status, and message of success with numbers of successful row inserts, or an error when it fails
+ */
+export async function insertUser(userObjects) {
   try {
     console.log("Connecting to SQL...");
-    let pool = await sql.connect(sqlConfig);
+    var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new user...");
     let result = await pool.query(
       `INSERT INTO Users (UserID, Team)
-      VALUES (${userObject.UserID}, ${userObject.Team})`
+      VALUES
+        ${userObjects
+          .map((user) => `('${user.UserID}', '${user.Team}')`)
+          .join(",\n")};`
     );
     console.log("Inserted new user");
-    pool.close();
     console.log("Result: ", result.rowsAffected);
     return {
       status: "OK",
-      result: result.recordset,
+      message: `Successfully created ${result.rowsAffected} supplier.`,
     };
   } catch (err) {
     console.log(err);
@@ -187,10 +194,18 @@ export async function insertUser(userObject) {
       status: "error",
       error: err,
     };
+  } finally {
+    pool.close();
+    console.log("Connection closed.");
   }
 }
 
-export async function insertSupplier(supplierObject) {
+/**
+ * Insert Supplier data into the database
+ * @param {Object[]} supplierObject list of supplier object
+ * @returns {int[] | Error} returns status, and message of success with numbers of successful row inserts OR an error when it fails
+ */
+export async function insertSupplier(supplierObjects) {
   try {
     console.log("Connecting to SQL...");
     let pool = await sql.connect(sqlConfig);
@@ -205,7 +220,7 @@ export async function insertSupplier(supplierObject) {
     console.log("Result: ", result.rowsAffected);
     return {
       status: "OK",
-      result: result.recordset,
+      message: `Successfully created ${result.rowsAffected} supplier.`,
     };
   } catch (err) {
     console.log(err);
@@ -216,18 +231,32 @@ export async function insertSupplier(supplierObject) {
   }
 }
 
-export async function insertSupplier(supplierObject) {
+/**
+ * Insert Oem data into the database based on the Product ID specified
+ * @param {string} productID product's id (SKU or Research ID) selected
+ * @param {Object[]} oemSupplierPairs list of oem-supplier pair object
+ * @returns {Object} returns status, and message of success with number of successful row inserts OR an error when it fails
+ */
+export async function InsertOemByProduct(productID, oemSupplierPairs) {
   try {
     console.log("Connecting to SQL...");
-    let pool = await sql.connect(sqlConfig);
+    var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new supplier...");
-    let result = await pool.query(
-      `INSERT INTO Supplier (SupplierNumber, SupplierName, Currency)
-      VALUES (${supplierObject.SupplierNumber}, ${supplierObject.SupplierName}, ${supplierObject.Currency})`
-    );
+    let query = `DECLARE @productKey uniqueidentifier
+      SET @productKey =
+        (SELECT TOP 1 ID
+          FROM Product
+          WHERE Product.ResearchID = ${productID} OR Product.SKU = ${productID});
+      
+      INSERT INTO Oem (SupplierName, OEM, productID)
+        VALUES
+          ${oemSupplierPairs
+            .map((pair) => `('${pair.supplier}', '${pair.oem}', @productKey)`)
+            .join(",\n")};`;
+    debugger;
+    let result = await pool.query(query);
     console.log("Inserted new supplier");
-    pool.close();
     console.log("Result: ", result.rowsAffected);
     return {
       status: "OK",
@@ -239,5 +268,97 @@ export async function insertSupplier(supplierObject) {
       status: "error",
       error: err,
     };
+  } finally {
+    pool.close();
+    console.log("Connection closed.");
   }
 }
+
+insertUser([
+  { UserID: "Research User Test 1", Team: "Team Trial" },
+  { UserID: "Research User Test 2", Team: "Team Trial" },
+  { UserID: "Research User Test 3", Team: "Team Test" },
+]);
+
+// insertProduct([
+//   {
+//     UserID: "Research User Test 1",
+//     ResearchID: "TEST-RID-0001",
+//     SKU: "SKU-001",
+//     Status: 0,
+//     OemType: 0,
+//     EstSales: 0,
+//     Note: "This is a test note for a product.",
+//     CostUsd: 9.99,
+//     EstCostAud: 9.99,
+//     EstSell: 9.99,
+//     Postage: 9.99,
+//     ExtGp: 5.0,
+//     ePID: null,
+//     LastUpdate: Date.now().toString(),
+//   },
+//   {
+//     UserID: "Research User Test 2",
+//     ResearchID: "TEST-RID-0002",
+//     SKU: "SKU-002",
+//     Status: 0,
+//     OemType: 0,
+//     EstSales: 0,
+//     Note: "This is a test note for a product.",
+//     CostUsd: 9.99,
+//     EstCostAud: 9.99,
+//     EstSell: 9.99,
+//     Postage: 9.99,
+//     ExtGp: 5.0,
+//     ePID: null,
+//     LastUpdate: Date.now().toString(),
+//   },
+//   {
+//     UserID: "Research User Test 3",
+//     ResearchID: "TEST-RID-0003",
+//     SKU: "SKU-003",
+//     Status: 0,
+//     OemType: 0,
+//     EstSales: 0,
+//     Note: "This is a test note for a product.",
+//     CostUsd: 9.99,
+//     EstCostAud: 9.99,
+//     EstSell: 9.99,
+//     Postage: 9.99,
+//     ExtGp: 5.0,
+//     ePID: null,
+//     LastUpdate: Date.now().toString(),
+//   },
+//   {
+//     UserID: "Research User Test 1",
+//     ResearchID: "TEST-RID-0004",
+//     SKU: null,
+//     Status: 0,
+//     OemType: 0,
+//     EstSales: 0,
+//     Note: "This is a test note for a product.",
+//     CostUsd: 9.99,
+//     EstCostAud: 9.99,
+//     EstSell: 9.99,
+//     Postage: 9.99,
+//     ExtGp: 5.0,
+//     ePID: null,
+//     LastUpdate: Date.now().toString(),
+//   },
+//   {
+//     UserID: "Research User Test 3",
+//     ResearchID: null,
+//     SKU: "SKU-005",
+//     Status: 0,
+//     OemType: 0,
+//     EstSales: 0,
+//     Note: "This is a test note for a product.",
+//     CostUsd: 9.99,
+//     EstCostAud: 9.99,
+//     EstSell: 9.99,
+//     Postage: 9.99,
+//     ExtGp: 5.0,
+//     ePID: null,
+//     LastUpdate: Date.now().toString(),
+//   },
+// ]);

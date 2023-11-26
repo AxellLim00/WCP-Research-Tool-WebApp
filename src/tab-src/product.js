@@ -10,7 +10,7 @@ import {
   showLoadingScreen,
   hideLoadingScreen,
 } from "../utils/html-utils.js";
-import { ProductDto } from "../utils/class/tableDto.js";
+import { ProductDto } from "../utils/class/dataTableDto.js";
 import {
   createEmptyRow,
   findMissingColumnHeader,

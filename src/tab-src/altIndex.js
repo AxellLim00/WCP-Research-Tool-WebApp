@@ -4,7 +4,7 @@ import "datatables.net-datetime";
 import dt_css from "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
 import io from "socket.io-client";
 const socket = io();
-import { AlternateIndexDto } from "../utils/class/tableDto.js";
+import { AlternateIndexDto } from "../utils/class/dataTableDto.js";
 import {
   productSelectedChanged,
   calculateAUD,

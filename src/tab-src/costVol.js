@@ -4,7 +4,7 @@ import {
   hidePopUpForm,
   exitPopUpForm,
 } from "../utils/html-utils.js";
-import { CostVolumeDto } from "../utils/class/tableDto.js";
+import { CostVolumeDto } from "../utils/class/dataTableDto.js";
 import {
   productSelectedChanged,
   calculateAUD,
