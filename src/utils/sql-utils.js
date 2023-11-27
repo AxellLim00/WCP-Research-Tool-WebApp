@@ -1,6 +1,28 @@
 import sql from "mssql";
 import config from "../../Server.config.json" assert { type: "json" };
 const sqlConfig = config.sql;
+const ValueDicionary = {
+  Status: {
+    0: "research",
+    research: 0,
+    1: "waiting",
+    waiting: 1,
+    2: "costDone",
+    costDone: 2,
+    3: "approval",
+    approval: 3,
+    4: "pinnacle",
+    pinnacle: 4,
+    5: "peach",
+    peach: 5,
+  },
+  OemType: {
+    0: "aftermarket",
+    aftermarket: 0,
+    1: "genuine",
+    genuine: 1,
+  },
+};
 
 /**
  * Get all Users and their Product Counts saved in the SQL Database.
@@ -9,7 +31,7 @@ const sqlConfig = config.sql;
 export async function getUsersProduct() {
   try {
     console.log("Connecting to SQL...");
-    let pool = await sql.connect(sqlConfig);
+    const pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Getting Users...");
     let result = await pool.query(
@@ -43,12 +65,13 @@ export async function getUsersProduct() {
 export async function getProduct() {
   try {
     console.log("Connecting to SQL...");
-    let pool = await sql.connect(sqlConfig);
+    const pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Getting Product...");
     let result = await pool.query("SELECT * FROM Product");
     console.log("Got Product");
     console.log("Result: ", result.rowsAffected);
+    // TO DO: replace OEM Type and Status int to words
     return {
       status: "OK",
       result: result.recordset,
@@ -72,7 +95,7 @@ export async function getProduct() {
 export async function getOem(productID) {
   try {
     console.log("Connecting to SQL...");
-    let pool = await sql.connect(sqlConfig);
+    const pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Getting Oems...");
     let result = await pool.query(
@@ -106,7 +129,7 @@ export async function getOem(productID) {
 export async function getAltIndex(productID) {
   try {
     console.log("Connecting to SQL...");
-    let pool = await sql.connect(sqlConfig);
+    const pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Getting Alt Indexes...");
     let result = await pool.query(
@@ -141,7 +164,7 @@ export async function getAltIndex(productID) {
 export async function getKeyType(productID) {
   try {
     console.log("Connecting to SQL...");
-    let pool = await sql.connect(sqlConfig);
+    const pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Getting KTypes...");
     let result = await pool.query(
@@ -175,7 +198,7 @@ export async function getKeyType(productID) {
 export async function getNewProduct() {
   try {
     console.log("Connecting to SQL...");
-    let pool = await sql.connect(sqlConfig);
+    const pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Getting Unsaved Product...");
     let result = await pool.query(
@@ -339,7 +362,7 @@ export async function insertNewProduct(productObjects) {
 export async function insertSupplier(supplierObjects) {
   try {
     console.log("Connecting to SQL...");
-    let pool = await sql.connect(sqlConfig);
+    const pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new supplier...");
     let result = await pool.query(
@@ -458,7 +481,7 @@ export async function InsertOemBySupplier(supplierNumber, oemProductPairs) {
 export async function insertKType(kTypeObject) {
   try {
     console.log("Connecting to SQL...");
-    let pool = await sql.connect(sqlConfig);
+    const pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new KType...");
     let result = await pool.query(
@@ -590,25 +613,25 @@ export async function insertAltIndexByProduct(productID, altIndexObjects) {
 export async function updateProduct(changesMapping) {
   try {
     console.log("Connecting to SQL...");
-    var pool = await sql.connect(sqlConfig);
+    const pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
     console.log("Updating Product...");
-    let query = "";
-    if (changesMapping.get("changes")) {
-      query += `UPDATE Product
-      SET ${temp}, LastUpdate = '${new Date()
-        .toISOString()
-        .slice(0, 19)
-        .replace("T", " ")}'
-      WHERE SKU = '${ProductID} OR ResearchID = '${ProductID}';\n`;
+    const changes = changesMapping.get("changes");
+    const productID = changesMapping.get("id");
+    let setUpdates = [];
+    if ("Status" in changes) {
+      setUpdates.push(`Status = '${ValueDicionary.Status[changes.Status]}'`);
     }
-    if (changesMapping) {
-      query += `UPDATE NewProduct
-      SET ${temp} 
-      WHERE ResearchID = ${ProductID}');\n`;
+    if ("Oem" in changes) {
+      setUpdates.push(`OemType = '${ValueDicionary.OemType[changes.Oem]}'`);
     }
-    let result = await pool.query();
+    let result = await pool.query(`UPDATE Product
+      SET ${setUpdates.join()}, LastUpdate = '${new Date()
+      .toISOString()
+      .slice(0, 19)
+      .replace("T", " ")}'
+      WHERE SKU = '${productID} OR ResearchID = '${productID}';`);
     console.log("Updated Product");
 
     console.log("Result: ", result.rowsAffected);
