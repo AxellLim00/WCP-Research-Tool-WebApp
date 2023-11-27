@@ -1,5 +1,5 @@
 import DataTable from "datatables.net-dt";
-import dt_css from "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
+import "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
 import { ProductRequestHistoryDto } from "../utils/class/apiDto.js";
 import {
   selectTab,

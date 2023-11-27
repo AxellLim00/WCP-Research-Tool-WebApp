@@ -2,6 +2,10 @@ import sql from "mssql";
 import config from "../../Server.config.json" assert { type: "json" };
 const sqlConfig = config.sql;
 
+/**
+ * Get all Users and their Product Counts saved in the SQL Database.
+ * @returns {Object[]} Status ("OK" or "ERROR"), and List of {UserID, Team, Count} object OR Error Object.
+ */
 export async function getUsersProduct() {
   try {
     console.log("Connecting to SQL...");
@@ -23,7 +27,7 @@ export async function getUsersProduct() {
   } catch (err) {
     console.log(err);
     return {
-      status: "error",
+      status: "ERROR",
       error: err,
     };
   } finally {
@@ -32,6 +36,10 @@ export async function getUsersProduct() {
   }
 }
 
+/**
+ * Get all Products saved in the SQL Database.
+ * @returns {Object | } Status ("OK" or "ERROR"), and List of Product object according to Product Table Columns OR Error Object.
+ */
 export async function getProduct() {
   try {
     console.log("Connecting to SQL...");
@@ -48,7 +56,7 @@ export async function getProduct() {
   } catch (err) {
     console.log(err);
     return {
-      status: "error",
+      status: "ERROR",
       error: err,
     };
   } finally {
@@ -57,6 +65,10 @@ export async function getProduct() {
   }
 }
 
+/**
+ * Get all Oems saved in the SQL Database.
+ * @returns {Object[]} Status ("OK" or "ERROR"), and List of Oem object according to Oem Table Columns OR Error Object.
+ */
 export async function getOem(productID) {
   try {
     console.log("Connecting to SQL...");
@@ -78,7 +90,7 @@ export async function getOem(productID) {
   } catch (err) {
     console.log(err);
     return {
-      status: "error",
+      status: "ERROR",
       error: err,
     };
   } finally {
@@ -87,6 +99,10 @@ export async function getOem(productID) {
   }
 }
 
+/**
+ * Get all Alternate Indexes saved in the SQL Database.
+ * @returns {Object[]} Status ("OK" or "ERROR"), and List of Alternate Index object according to AlternateIndex Table Columns OR Error Object.
+ */
 export async function getAltIndex(productID) {
   try {
     console.log("Connecting to SQL...");
@@ -109,7 +125,7 @@ export async function getAltIndex(productID) {
   } catch (err) {
     console.log(err);
     return {
-      status: "error",
+      status: "ERROR",
       error: err,
     };
   } finally {
@@ -118,6 +134,10 @@ export async function getAltIndex(productID) {
   }
 }
 
+/**
+ * Get all Key Type (KType) saved in the SQL Database.
+ * @returns {Object[]} Status ("OK" or "ERROR"), and List of KType object according to KeyType Table Columns OR Error Object.
+ */
 export async function getKeyType(productID) {
   try {
     console.log("Connecting to SQL...");
@@ -139,7 +159,7 @@ export async function getKeyType(productID) {
   } catch (err) {
     console.log(err);
     return {
-      status: "error",
+      status: "ERROR",
       error: err,
     };
   } finally {
@@ -148,6 +168,10 @@ export async function getKeyType(productID) {
   }
 }
 
+/**
+ * Get all New Product Information saved in the SQL Database (These are Product info that has not been saved to Pinnacle yet).
+ * @returns {Object[]} Status ("OK" or "ERROR"), and List of NewProduct object according to NewProduct Table Columns OR Error Object.
+ */
 export async function getNewProduct() {
   try {
     console.log("Connecting to SQL...");
@@ -167,7 +191,7 @@ export async function getNewProduct() {
   } catch (err) {
     console.log(err);
     return {
-      status: "error",
+      status: "ERROR",
       error: err,
     };
   } finally {
@@ -177,9 +201,9 @@ export async function getNewProduct() {
 }
 
 /**
- * Insert User data into the database
- * @param {Object[]} userObject list of user object
- * @returns {String | Error} returns status, and message of success with numbers of successful row inserts, or an error when it fails
+ * Insert User data into the SQL Database.
+ * @param {Object[]} userObject list of user object.
+ * @returns {String | Error} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
 export async function insertUser(userObjects) {
   try {
@@ -203,7 +227,7 @@ export async function insertUser(userObjects) {
   } catch (err) {
     console.log(err);
     return {
-      status: "error",
+      status: "ERROR",
       error: err,
     };
   } finally {
@@ -213,9 +237,9 @@ export async function insertUser(userObjects) {
 }
 
 /**
- * Insert Product data into the database that already exists from the Workflow API
- * @param {Object[]} productObjects list of product object
- * @returns {String | Error} returns status, and message of success with numbers of successful row inserts, or an error when it fails
+ * Insert Product data into the SQL Database that already exists from the Workflow API.
+ * @param {Object[]} productObjects list of product object.
+ * @returns {String | Error} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
 export async function insertProduct(productObjects) {
   try {
@@ -246,7 +270,7 @@ export async function insertProduct(productObjects) {
   } catch (err) {
     console.log(err);
     return {
-      status: "error",
+      status: "ERROR",
       error: err,
     };
   } finally {
@@ -256,9 +280,9 @@ export async function insertProduct(productObjects) {
 }
 
 /**
- * Insert Product data into the database that does not exist in the workflow API
- * @param {Object[]} productObjects list of product object
- * @returns {String | Error} returns status, and message of success with numbers of successful row inserts, or an error when it fails
+ * Insert Product data into the database that does not exist in the workflow API.
+ * @param {Object[]} productObjects list of product object with complete product information.
+ * @returns {String | Error} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
 export async function insertNewProduct(productObjects) {
   try {
@@ -298,7 +322,7 @@ export async function insertNewProduct(productObjects) {
   } catch (err) {
     console.log(err);
     return {
-      status: "error",
+      status: "ERROR",
       error: err,
     };
   } finally {
@@ -308,9 +332,9 @@ export async function insertNewProduct(productObjects) {
 }
 
 /**
- * Insert Supplier data into the database
- * @param {Object[]} supplierObject list of supplier object
- * @returns {int[] | Error} returns status, and message of success with numbers of successful row inserts OR an error when it fails
+ * Insert Supplier data into the database.
+ * @param {Object[]} supplierObject list of supplier object.
+ * @returns {int[] | Error} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
 export async function insertSupplier(supplierObjects) {
   try {
@@ -337,7 +361,7 @@ export async function insertSupplier(supplierObjects) {
   } catch (err) {
     console.log(err);
     return {
-      status: "error",
+      status: "ERROR",
       error: err,
     };
   } finally {
@@ -347,10 +371,10 @@ export async function insertSupplier(supplierObjects) {
 }
 
 /**
- * Insert Oem data into the database based on the Product ID specified
- * @param {string} productID product's id (SKU or Research ID) selected
- * @param {Object[]} oemSupplierPairs list of oem-supplierNumber pair object
- * @returns {Object} returns status, and message of success with number of successful row inserts OR an error when it fails
+ * Insert Oem data into the SQL Database based on the Product ID specified.
+ * @param {string} productID product's id (SKU or Research ID) selected.
+ * @param {Object[]} oemSupplierPairs list of oem-supplierNumber pair object.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with number of successful row inserts OR an Error Object.
  */
 export async function InsertOemByProduct(productID, oemSupplierPairs) {
   try {
@@ -378,7 +402,7 @@ export async function InsertOemByProduct(productID, oemSupplierPairs) {
   } catch (err) {
     console.log(err);
     return {
-      status: "error",
+      status: "ERROR",
       error: err,
     };
   } finally {
@@ -388,10 +412,10 @@ export async function InsertOemByProduct(productID, oemSupplierPairs) {
 }
 
 /**
- * Insert Oem data into the database based on the Supplier Number specified
- * @param {string} supplierNumber Supplier's Number or Identification
- * @param {Object[]} oemProductPairs list of oem-productID (SKU or Research ID) pair object
- * @returns {Object} returns status, and message of success with number of successful row inserts OR an error when it fails
+ * Insert Oem data into the SQL Database based on the Supplier Number specified.
+ * @param {string} supplierNumber Supplier's Number or Identification.
+ * @param {Object[]} oemProductPairs list of oem-productID (SKU or Research ID) pair object.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with number of successful row inserts OR an Error Object.
  */
 export async function InsertOemBySupplier(supplierNumber, oemProductPairs) {
   try {
@@ -417,7 +441,7 @@ export async function InsertOemBySupplier(supplierNumber, oemProductPairs) {
   } catch (err) {
     console.log(err);
     return {
-      status: "error",
+      status: "ERROR",
       error: err,
     };
   } finally {
@@ -427,9 +451,9 @@ export async function InsertOemBySupplier(supplierNumber, oemProductPairs) {
 }
 
 /**
- * Insert KType (Key Type) data into the database
- * @param {Object} kTypeObjects KType  (Key Type) object
- * @returns {int[] | Error} returns status, and message of success with numbers of successful row inserts OR an error when it fails
+ * Insert KType (Key Type) data into the SQL Database.
+ * @param {Object} kTypeObjects {KType, ProductID} object.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
 export async function insertKType(kTypeObject) {
   try {
@@ -451,7 +475,7 @@ export async function insertKType(kTypeObject) {
   } catch (err) {
     console.log(err);
     return {
-      status: "error",
+      status: "ERROR",
       error: err,
     };
   } finally {
@@ -461,10 +485,10 @@ export async function insertKType(kTypeObject) {
 }
 
 /**
- * Insert Alternate Index data into the database based on the Supplier
- * @param {String} supplierNumber Supplier's Number
- * @param {Object[]} altIndexObjects List of Alternate Index object
- * @returns {int[] | Error} returns status, and message of success with numbers of successful row inserts OR an error when it fails
+ * Insert Alternate Index data into the SQL Database based on the Supplier.
+ * @param {String} supplierNumber Supplier's Number.
+ * @param {Object[]} altIndexObjects List of Alternate Index object.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
 export async function insertAltIndexBySupplier(
   supplierNumber,
@@ -501,7 +525,7 @@ export async function insertAltIndexBySupplier(
   } catch (err) {
     console.log(err);
     return {
-      status: "error",
+      status: "ERROR",
       error: err,
     };
   } finally {
@@ -511,10 +535,10 @@ export async function insertAltIndexBySupplier(
 }
 
 /**
- * Insert Alternate Index data into the database based on the Product
- * @param {String} ProductID Product's id (SKU or Research ID) selected
- * @param {Object[]} altIndexObjects List of Alternate Index object
- * @returns {int[] | Error} returns status, and message of success with numbers of successful row inserts OR an error when it fails
+ * Insert Alternate Index data into the SQL Database based on the Product.
+ * @param {String} ProductID Product's id (SKU or Research ID) selected.
+ * @param {Object[]} altIndexObjects List of Alternate Index object.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
 export async function insertAltIndexByProduct(productID, altIndexObjects) {
   try {
@@ -549,7 +573,7 @@ export async function insertAltIndexByProduct(productID, altIndexObjects) {
   } catch (err) {
     console.log(err);
     return {
-      status: "error",
+      status: "ERROR",
       error: err,
     };
   } finally {
@@ -558,9 +582,53 @@ export async function insertAltIndexByProduct(productID, altIndexObjects) {
   }
 }
 
-export async function updateProduct({
-  
-})
+/**
+ * Updates Product value based on the new changes' mapping key-values to the SQL Database.
+ * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ */
+export async function updateProduct(changesMapping) {
+  try {
+    console.log("Connecting to SQL...");
+    var pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+
+    console.log("Updating Product...");
+    let query = "";
+    if (changesMapping.get("changes")) {
+      query += `UPDATE Product
+      SET ${temp}, LastUpdate = '${new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace("T", " ")}'
+      WHERE SKU = '${ProductID} OR ResearchID = '${ProductID}';\n`;
+    }
+    if (changesMapping) {
+      query += `UPDATE NewProduct
+      SET ${temp} 
+      WHERE ResearchID = ${ProductID}');\n`;
+    }
+    let result = await pool.query();
+    console.log("Updated Product");
+
+    console.log("Result: ", result.rowsAffected);
+
+    return {
+      status: "OK",
+      message: `Successfully updated ${result.rowsAffected[1]} Product.`,
+    };
+  } catch (err) {
+    console.log(err);
+
+    return {
+      status: "ERROR",
+      error: err,
+    };
+  } finally {
+    pool.close();
+    console.log("Connection closed.");
+  }
+}
 
 // insertUser([
 //   { UserID: "Research User Test 1", Team: "Team Trial" },
@@ -726,4 +794,3 @@ export async function updateProduct({
 //     Supplier: "123-456",
 //   },
 // ]);
-
