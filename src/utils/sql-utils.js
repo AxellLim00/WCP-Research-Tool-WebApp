@@ -31,7 +31,7 @@ const ValueDicionary = {
 export async function getUsersProduct() {
   try {
     console.log("Connecting to SQL...");
-    const pool = await sql.connect(sqlConfig);
+    var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Getting Users...");
     let result = await pool.query(
@@ -65,13 +65,17 @@ export async function getUsersProduct() {
 export async function getProduct() {
   try {
     console.log("Connecting to SQL...");
-    const pool = await sql.connect(sqlConfig);
+    var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Getting Product...");
     let result = await pool.query("SELECT * FROM Product");
     console.log("Got Product");
     console.log("Result: ", result.rowsAffected);
-    // TO DO: replace OEM Type and Status int to words
+    // Translate SQL int to DataTable Value
+    result.recordset.forEach((row, idx) => {
+      result.recordset[idx].OemType = ValueDicionary.OemType[row.OemType];
+      result.recordset[idx].Status = ValueDicionary.Status[row.Status];
+    });
     return {
       status: "OK",
       result: result.recordset,
@@ -95,7 +99,7 @@ export async function getProduct() {
 export async function getOem(productID) {
   try {
     console.log("Connecting to SQL...");
-    const pool = await sql.connect(sqlConfig);
+    var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Getting Oems...");
     let result = await pool.query(
@@ -129,7 +133,7 @@ export async function getOem(productID) {
 export async function getAltIndex(productID) {
   try {
     console.log("Connecting to SQL...");
-    const pool = await sql.connect(sqlConfig);
+    var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Getting Alt Indexes...");
     let result = await pool.query(
@@ -164,7 +168,7 @@ export async function getAltIndex(productID) {
 export async function getKeyType(productID) {
   try {
     console.log("Connecting to SQL...");
-    const pool = await sql.connect(sqlConfig);
+    var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Getting KTypes...");
     let result = await pool.query(
@@ -198,7 +202,7 @@ export async function getKeyType(productID) {
 export async function getNewProduct() {
   try {
     console.log("Connecting to SQL...");
-    const pool = await sql.connect(sqlConfig);
+    var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Getting Unsaved Product...");
     let result = await pool.query(
@@ -312,6 +316,7 @@ export async function insertNewProduct(productObjects) {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
+
     console.log("Inserting new product...");
     let result = await pool.query(
       `INSERT INTO Product (ID, UserID, ResearchID, SKU, Status, OemType, LastUpdate)
@@ -321,7 +326,8 @@ export async function insertNewProduct(productObjects) {
             (product) =>
               `(NEWID(), '${product.UserID}', '${product.ResearchID}', 
               ${product.SKU ? "'" + product.SKU + "'" : "NULL"}, 
-              ${product.Status}, ${product.OemType}, 
+              ${ValueDicionary.Status[product.Status]}, 
+              ${ValueDicionary.OemType[product.Oem]}, 
               '${new Date().toISOString().slice(0, 19).replace("T", " ")}')`
           )
           .join(",\n")};
@@ -332,12 +338,14 @@ export async function insertNewProduct(productObjects) {
             (product) =>
               `('${product.ResearchID}', '${product.Make}', '${product.Model}', '${product.PartType}', 
               '${product.IcNumber}', '${product.IcDescription}', 
-              (SELECT TOP 1 ID FROM Product WHERE ResearchID = '${pair.ResearchID}'))`
+              (SELECT TOP 1 ID FROM Product WHERE ResearchID = '${product.ResearchID}'))`
           )
           .join(",\n")};`
     );
     console.log("Inserted new product");
+
     console.log("Result: ", result.rowsAffected);
+
     return {
       status: "OK",
       message: `Successfully created ${result.rowsAffected[0]} product.`,
@@ -362,7 +370,7 @@ export async function insertNewProduct(productObjects) {
 export async function insertSupplier(supplierObjects) {
   try {
     console.log("Connecting to SQL...");
-    const pool = await sql.connect(sqlConfig);
+    var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new supplier...");
     let result = await pool.query(
@@ -399,7 +407,7 @@ export async function insertSupplier(supplierObjects) {
  * @param {Object[]} oemSupplierPairs list of oem-supplierNumber pair object.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with number of successful row inserts OR an Error Object.
  */
-export async function InsertOemByProduct(productID, oemSupplierPairs) {
+export async function insertOemByProduct(productID, oemSupplierPairs) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
@@ -440,7 +448,7 @@ export async function InsertOemByProduct(productID, oemSupplierPairs) {
  * @param {Object[]} oemProductPairs list of oem-productID (SKU or Research ID) pair object.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with number of successful row inserts OR an Error Object.
  */
-export async function InsertOemBySupplier(supplierNumber, oemProductPairs) {
+export async function insertOemBySupplier(supplierNumber, oemProductPairs) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
@@ -481,7 +489,7 @@ export async function InsertOemBySupplier(supplierNumber, oemProductPairs) {
 export async function insertKType(kTypeObject) {
   try {
     console.log("Connecting to SQL...");
-    const pool = await sql.connect(sqlConfig);
+    var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new KType...");
     let result = await pool.query(
@@ -613,32 +621,42 @@ export async function insertAltIndexByProduct(productID, altIndexObjects) {
 export async function updateProduct(changesMapping) {
   try {
     console.log("Connecting to SQL...");
-    const pool = await sql.connect(sqlConfig);
+    var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
-    console.log("Updating Product...");
-    const changes = changesMapping.get("changes");
-    const productID = changesMapping.get("id");
-    let setUpdates = [];
-    if ("Status" in changes) {
-      setUpdates.push(`Status = '${ValueDicionary.Status[changes.Status]}'`);
-    }
-    if ("Oem" in changes) {
-      setUpdates.push(`OemType = '${ValueDicionary.OemType[changes.Oem]}'`);
-    }
-    let result = await pool.query(`UPDATE Product
+    var insertQueries = [];
+    changesMapping.forEach((item) => {
+      let changes = item.get("changes");
+      let productID = item.get("id");
+      let setUpdates = [];
+      // Translate DataTable value to SQL int value
+      if ("Status" in changes) {
+        setUpdates.push(`Status = '${ValueDicionary.Status[changes.Status]}'`);
+      }
+      if ("Oem" in changes) {
+        setUpdates.push(`OemType = '${ValueDicionary.OemType[changes.Oem]}'`);
+      }
+      insertQueries.push(`UPDATE Product
       SET ${setUpdates.join()}, LastUpdate = '${new Date()
-      .toISOString()
-      .slice(0, 19)
-      .replace("T", " ")}'
-      WHERE SKU = '${productID} OR ResearchID = '${productID}';`);
+        .toISOString()
+        .slice(0, 19)
+        .replace("T", " ")}'
+      WHERE SKU = '${productID}' OR ResearchID = '${productID}';`);
+    });
+
+    console.log("Updating Product...");
+    let result = await pool.query(insertQueries.join("\n"));
     console.log("Updated Product");
 
     console.log("Result: ", result.rowsAffected);
 
     return {
       status: "OK",
-      message: `Successfully updated ${result.rowsAffected[1]} Product.`,
+      message: `Successfully updated ${result.rowsAffected.reduce(
+        (sum, subArray) =>
+          sum + subArray.reduce((innerSum, num) => innerSum + num, 0),
+        0
+      )} Product.`,
     };
   } catch (err) {
     console.log(err);
@@ -653,167 +671,93 @@ export async function updateProduct(changesMapping) {
   }
 }
 
-// insertUser([
-//   { UserID: "Research User Test 1", Team: "Team Trial" },
-//   { UserID: "Research User Test 2", Team: "Team Trial" },
-//   { UserID: "Research User Test 3", Team: "Team Test" },
-// ]);
+/**
+ * Delete Product from NewProduct Table based on the ResearchID given.
+ * @param {Map} changesMapping The mapping of changes synced with the Workflow API.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ */
+export async function deleteNewProduct(changesMapping) {
+  try {
+    console.log("Connecting to SQL...");
+    var pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
 
-// insertProduct([
-//   {
-//     UserID: "Research User Test 1",
-//     ResearchID: "TEST-RID-0001",
-//     SKU: "SKU-001",
-//     Status: 0,
-//     OemType: 0,
-//     EstSales: 0,
-//     Note: "This is a test note for a product.",
-//     CostUsd: 9.99,
-//     EstCostAud: 9.99,
-//     EstSell: 9.99,
-//     Postage: 9.99,
-//     ExtGp: 5.0,
-//   },
-//   {
-//     UserID: "Research User Test 2",
-//     ResearchID: "TEST-RID-0002",
-//     SKU: "SKU-002",
-//     Status: 0,
-//     OemType: 0,
-//     EstSales: 0,
-//     Note: "This is a test note for a product.",
-//     CostUsd: 9.99,
-//     EstCostAud: 9.99,
-//     EstSell: 9.99,
-//     Postage: 9.99,
-//     ExtGp: 5.0,
-//   },
-//   {
-//     UserID: "Research User Test 3",
-//     ResearchID: "TEST-RID-0003",
-//     SKU: "SKU-003",
-//     Status: 0,
-//     OemType: 0,
-//     EstSales: 0,
-//     Note: "This is a test note for a product.",
-//     CostUsd: 9.99,
-//     EstCostAud: 9.99,
-//     EstSell: 9.99,
-//     Postage: 9.99,
-//     ExtGp: 5.0,
-//   },
-//   {
-//     UserID: "Research User Test 1",
-//     ResearchID: "TEST-RID-0004",
-//     SKU: null,
-//     Status: 0,
-//     OemType: 0,
-//     EstSales: 0,
-//     Note: "This is a test note for a product.",
-//     CostUsd: 9.99,
-//     EstCostAud: 9.99,
-//     EstSell: 9.99,
-//     Postage: 9.99,
-//     ExtGp: 5.0,
-//   },
-//   {
-//     UserID: "Research User Test 3",
-//     ResearchID: null,
-//     SKU: "SKU-005",
-//     Status: 0,
-//     OemType: 0,
-//     EstSales: 0,
-//     Note: "This is a test note for a product.",
-//     CostUsd: 9.99,
-//     EstCostAud: 9.99,
-//     EstSell: 9.99,
-//     Postage: 9.99,
-//     ExtGp: 5.0,
-//   },
-// ]);
+    console.log("Deleting New Product...");
+    let result = await pool.query(`DELETE FROM NewProduct 
+    WHERE ResearchID in (${changesMapping
+      .map((item) => {
+        return `'${item.get("id")}'`;
+      })
+      .join()})`);
+    console.log("Deleting New Product");
 
-// InsertOemByProduct("123-456", [
-//   {
-//     Supplier: "123-456",
-//     Oem: "1234567890",
-//   },
-//   {
-//     Supplier: "123-450",
-//     Oem: "9876543210",
-//   },
-// ]);
+    console.log("Result: ", result.rowsAffected);
 
-// InsertOemBySupplier("123-456", [
-//   {
-//     ProductID: "TEST-RID-0003",
-//     Oem: "1357911131",
-//   },
-//   {
-//     ProductID: "TEST-RID-0001",
-//     Oem: "8642086420",
-//   },
-//   {
-//     ProductID: "TEST-RID-0004",
-//     Oem: "2468101214",
-//   },
-//   {
-//     ProductID: "TEST-RID-0002",
-//     Oem: "4682468246:",
-//   },
-// ]);
+    return {
+      status: "OK",
+      message: `Successfully deleted ${result.rowsAffected.reduce(
+        (sum, subArray) =>
+          sum + subArray.reduce((innerSum, num) => innerSum + num, 0),
+        0
+      )} Product.`,
+    };
+  } catch (err) {
+    console.log(err);
 
-// insertKType({ KType: "Test-KType2", ProductID: "SKU-002" });
+    return {
+      status: "ERROR",
+      error: err,
+    };
+  } finally {
+    pool.close();
+    console.log("Connection closed.");
+  }
+}
 
-// insertAltIndexBySupplier("123-456", [
-//   {
-//     MOQ: 10,
-//     CostAud: 9.99,
-//     Quality: 0,
-//     SupplierPartType: "Engine",
-//     WCPPartType: "ENG",
-//     ProductID: "TEST-RID-0002",
-//   },
-//   {
-//     MOQ: 10,
-//     CostAud: 9.99,
-//     Quality: 0,
-//     SupplierPartType: "Engine",
-//     WCPPartType: "ENG",
-//     ProductID: "TEST-RID-0004",
-//   },
-//   {
-//     MOQ: 10,
-//     CostAud: 9.99,
-//     Quality: 0,
-//     SupplierPartType: "Engine",
-//     WCPPartType: "ENG",
-//     ProductID: "TEST-RID-0003",
-//   },
-//   {
-//     MOQ: 10,
-//     CostAud: 9.99,
-//     Quality: 0,
-//     SupplierPartType: "Engine",
-//     WCPPartType: "ENG",
-//     ProductID: "TEST-RID-0001",
-//   },
-// ]);
+/**
+ * Delete Product from Product Table based on the ResearchID OR SKU given.
+ * WILL NOT WORK if product has Oem, KeyType, or Alternate Index.
+ * @param {Map} changesMapping The mapping of changes synced with the Workflow API.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ */
+export async function deleteProduct(changesMapping) {
+  try {
+    console.log("Connecting to SQL...");
+    var pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
 
-// insertAltIndexByProduct("SKU-005", [
-//   {
-//     MOQ: 10,
-//     CostAud: 9.99,
-//     Quality: 0,
-//     SupplierPartType: "Engine",
-//     WCPPartType: "ENG",
-//     Supplier: "123-450",
-//   },
-//   {
-//     MOQ: 10,
-//     CostAud: 9.99,
-//     Quality: 0,
-//     SupplierPartType: "Engine",
-//     WCPPartType: "ENG",
-//     Supplier: "123-456",
-//   },
-// ]);
+    console.log("Deleting Product...");
+    let result = await pool.query(`DELETE FROM Product 
+    WHERE ResearchID in (${changesMapping
+      .map((item) => {
+        return `'${item.get("id")}'`;
+      })
+      .join()}) OR SKU in (${changesMapping
+      .map((item) => {
+        return `'${item.get("id")}'`;
+      })
+      .join()})`);
+    console.log("Deleting Product");
+
+    console.log("Result: ", result.rowsAffected);
+
+    return {
+      status: "OK",
+      message: `Successfully deleted ${result.rowsAffected.reduce(
+        (sum, subArray) =>
+          sum + subArray.reduce((innerSum, num) => innerSum + num, 0),
+        0
+      )} Product.`,
+    };
+  } catch (err) {
+    console.log(err);
+
+    return {
+      status: "ERROR",
+      error: err,
+    };
+  } finally {
+    pool.close();
+    console.log("Connection closed.");
+  }
+}
