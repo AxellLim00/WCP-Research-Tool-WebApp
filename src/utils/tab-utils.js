@@ -170,7 +170,7 @@ export function updateHasChanges(hasChange) {
  * @returns
  */
 export function updateChanges(change) {
-  storedChanges = sessionStorage.getItem("savedChanges");
+  let storedChanges = sessionStorage.getItem("savedChanges");
   // If savedChanges is empty
   if (!storedChanges) {
     sessionStorage.setItem(

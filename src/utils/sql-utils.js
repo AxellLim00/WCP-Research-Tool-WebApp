@@ -672,6 +672,65 @@ export async function updateProduct(changesMapping) {
 }
 
 /**
+ * Updates Product value based on the new changes' mapping key-values to the SQL Database.
+ * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ */
+export async function updateStats(changesMapping) {
+  try {
+    console.log("Connecting to SQL...");
+    var pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+
+    var insertQueries = [];
+    changesMapping.forEach((item) => {
+      let changes = item.get("changes");
+      let productID = item.get("id");
+      let setUpdates = [];
+      // Translate DataTable value to SQL int value
+      if ("Status" in changes) {
+        setUpdates.push(`EstSales = ${changes.Status}`);
+      }
+      if ("Oem" in changes) {
+        setUpdates.push(`Notes = '${changes.Oem}'`);
+      }
+      insertQueries.push(`UPDATE Product
+      SET ${setUpdates.join()}, LastUpdate = '${new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace("T", " ")}'
+      WHERE SKU = '${productID}' OR ResearchID = '${productID}';`);
+    });
+
+    console.log("Updating Product...");
+    let result = await pool.query(insertQueries.join("\n"));
+    console.log("Updated Product");
+
+    console.log("Result: ", result.rowsAffected);
+
+    return {
+      status: "OK",
+      message: `Successfully updated ${result.rowsAffected.reduce(
+        (sum, subArray) =>
+          sum + subArray.reduce((innerSum, num) => innerSum + num, 0),
+        0
+      )} Product.`,
+    };
+  } catch (err) {
+    console.log(err);
+
+    return {
+      status: "ERROR",
+      error: err,
+    };
+  } finally {
+    pool.close();
+    console.log("Connection closed.");
+  }
+}
+
+
+/**
  * Delete Product from NewProduct Table based on the ResearchID given.
  * @param {Map} changesMapping The mapping of changes synced with the Workflow API.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
@@ -689,15 +748,14 @@ export async function deleteNewProduct(changesMapping) {
         return `'${item.get("id")}'`;
       })
       .join()})`);
-    console.log("Deleting New Product");
+    console.log("Deleted New Product");
 
     console.log("Result: ", result.rowsAffected);
 
     return {
       status: "OK",
       message: `Successfully deleted ${result.rowsAffected.reduce(
-        (sum, subArray) =>
-          sum + subArray.reduce((innerSum, num) => innerSum + num, 0),
+        (sum, count) => sum + count,
         0
       )} Product.`,
     };
@@ -737,15 +795,15 @@ export async function deleteProduct(changesMapping) {
         return `'${item.get("id")}'`;
       })
       .join()})`);
-    console.log("Deleting Product");
+    console.log("Deleted Product");
 
     console.log("Result: ", result.rowsAffected);
+
 
     return {
       status: "OK",
       message: `Successfully deleted ${result.rowsAffected.reduce(
-        (sum, subArray) =>
-          sum + subArray.reduce((innerSum, num) => innerSum + num, 0),
+        (sum, count) => sum + count,
         0
       )} Product.`,
     };

@@ -123,14 +123,12 @@ $(function () {
   //#region textbox event
 
   $("#estSalesVolValue").on("change", function () {
-    if ($("#estSalesVolValue").val() != prevEstSales) estSalesChanges = true;
-    else estSalesChanges = false;
+    estSalesChanges = $("#estSalesVolValue").val() != prevEstSales;
     updateHasChanges(estSalesChanges || notesChanges);
   });
 
   $("#note").on("change", function () {
-    if ($("#note").val() != prevNote) notesChanges = true;
-    else notesChanges = false;
+    notesChanges = $("#note").val() != prevNote;
     updateHasChanges(estSalesChanges || notesChanges);
   });
 

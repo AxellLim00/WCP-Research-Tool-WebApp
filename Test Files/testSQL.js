@@ -271,7 +271,7 @@ async function updateProduct_Test() {
 }
 
 async function deleteNewProduct_Test() {
-  insertNewProduct([
+  await insertNewProduct([
     {
       UserID: "Research User Test 3",
       ResearchID: "TEST-DEL-01",
@@ -306,14 +306,15 @@ async function deleteNewProduct_Test() {
       IcDescription: "Test Product FOR DELETING TESTING ONLY",
     },
   ]);
+
   let toDelete = [
     new Map([["id", "TEST-DEL-01"]]),
     new Map([["id", "TEST-DEL-02"]]),
     new Map([["id", "TEST-DEL-03"]]),
   ];
-  var result = await deleteNewProduct(toDelete);
+
+  await deleteNewProduct(toDelete);
   await deleteProduct(toDelete);
   debugger;
 }
 
-deleteNewProduct_Test();
