@@ -22,7 +22,6 @@ export function productSelectedChanged(
     if (!showError) return;
     showAlert(`Error: Product ID ${newId} not found`);
     $("#productSelected").val($("#productSelected").attr("oldvalue"));
-    // $("#productSelected").attr("oldvalue", "");
     return;
   }
   if (hasChanges) {
@@ -33,7 +32,6 @@ export function productSelectedChanged(
   }
   sessionStorage.setItem("productIDSelected", newId);
   selectTab(tabId);
-  // $("#productSelected").attr("oldvalue", "");
 }
 
 /**
@@ -43,7 +41,7 @@ export function productSelectedChanged(
  * @returns {number} Amount converted to AUD
  */
 export function calculateAUD(costCurrency, amount) {
-  let rates = JSON.parse(localStorage.getItem("currencyRate"))["data"];
+  const rates = JSON.parse(localStorage.getItem("currencyRate"))["data"];
   if (!rates.hasOwnProperty(costCurrency))
     // when currency not Found
     return `<i>Cost Currency ${costCurrency}</i> not found and cannot be converted.\n`;
@@ -72,7 +70,7 @@ export function isFloatValue(row, key, errorMessageList) {
  */
 export function isFloat() {
   let isAllFloat = true;
-  let args = Array.prototype.slice.call(arguments);
+  const args = Array.prototype.slice.call(arguments);
   args.forEach((str) => {
     isAllFloat &&= /^\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\s*$/.test(str);
   });
@@ -86,9 +84,9 @@ export function isFloat() {
  */
 export function getWeekNumber(date) {
   date.setMilliseconds(0);
-  var dayNum = date.getUTCDay() || 7;
+  const dayNum = date.getUTCDay() || 7;
   date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-  var yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
   return Math.ceil(((date - yearStart) / 86400000 + 1) / 7);
 }
 
@@ -194,8 +192,8 @@ export function updateChanges(change) {
  */
 export function saveChanges() {
   // TO DO: translate Map changes to Server-side
-  let storedChanges = sessionStorage.getItem("savedChanges");
-  let savedChanges = JSON.parse(storedChanges).map((array) => new Map(array));
+  const storedChanges = sessionStorage.getItem("savedChanges");
+  const savedChanges = JSON.parse(storedChanges).map((array) => new Map(array));
   // If savedChanges is empty or Array is empty
   if (!storedChanges || savedChanges.size == 0) {
     showAlert(
@@ -205,12 +203,12 @@ export function saveChanges() {
   }
   // translate
   savedChanges.forEach(function (changes) {
-    let type = changes.get("type");
-    let id = changes.get("id");
-    let table = changes.get("table");
-    let changedValues = changes.get("changes");
+    const type = changes.get("type");
+    const id = changes.get("id");
+    const table = changes.get("table");
+    const changedValues = changes.get("changes");
   });
-  errorMessage = "";
+  let errorMessage = "";
   // IF there is error message
   if (errorMessage.length > 0) {
     showAlert(

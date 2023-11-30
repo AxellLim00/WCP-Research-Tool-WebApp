@@ -33,6 +33,7 @@ $(function () {
   var isOemEmpty = true;
   var isVinEmpty = true;
   var productIdSelected = sessionStorage.getItem("productIDSelected");
+  var rowindexSelected = -1;
   var oemSelected = "";
   var estSalesChanges = false;
   var notesChanges = false;
@@ -161,13 +162,22 @@ $(function () {
     // find changes in textboxes
     const EST_SALES_VOLUME_VALUE = $("#estSalesVolValue").val();
     const NOTES_VALUE = $("#note").val();
-    let update = {};
+    let update = [];
+
     if (EST_SALES_VOLUME_VALUE != prevEstSales)
       update.estSaleVol = prevEstSales = EST_SALES_VOLUME_VALUE;
 
     if (NOTES_VALUE != prevNote) update.note = prevNote = NOTES_VALUE;
 
-    if (!jQuery.isEmptyObject(update)) updateChanges(update);
+    if (!jQuery.isEmptyObject(update))
+      updateChanges([
+        new Map([
+          ["type", "edit"],
+          ["id", productIdSelected],
+          ["table", "Product"],
+          ["changes", update],
+        ]),
+      ]);
 
     // on successful save to Server-side
     if (saveChanges()) {
@@ -210,6 +220,7 @@ $(function () {
     $(this).css("background-color", "#D5F3FE");
     // Assign row to productSelected
     oemSelected = Object.values(oemTable.row(this).data())[0];
+    rowindexSelected = oemTable.row(this).index();
     if (isProductEditable)
       // Enable Edit button
       $('button[name="editBtn"]').prop("disabled", false);
@@ -284,9 +295,7 @@ $(function () {
     }
     // Edit Form Save
     else if (formSelected == "edit") {
-      // Find the row in the DataTable with the matching ID.
-      let row = oemTable.column(0).data().indexOf(oemSelected);
-      let rowData = oemTable.row(row).data();
+      let rowData = oemTable.row(rowindexSelected).data();
 
       if (oemSelected != OEM_VALUE) {
         // Get all OEMs without special characters
@@ -321,7 +330,7 @@ $(function () {
         ])
       );
       // Redraw the table to reflect the changes
-      oemTable.row(row).data(rowData).invalidate();
+      oemTable.row(rowindexSelected).data(rowData).invalidate().draw();
       oemSelected = OEM_VALUE;
     }
 

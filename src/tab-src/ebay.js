@@ -23,6 +23,7 @@ $(function () {
   var isEmptyData = true;
   var itemSelected = { table: "", value: "" };
   var productIdSelected = sessionStorage.getItem("productIDSelected");
+  var rowindexSelected = -1;
   var productDtoArray = JSON.parse(
     sessionStorage.getItem("productRequestHistory")
   );
@@ -150,6 +151,7 @@ $(function () {
     // Clear highlight of all row in Datatable
     itemSelected.table = "K-Type";
     itemSelected.value = Object.values(kTypeTable.row(this).data())[0];
+    rowindexSelected = kTypeTable.row(this).index();
     kTypeTable.rows().nodes().to$().css("background-color", "");
     ePIDTable.rows().nodes().to$().css("background-color", "");
     // highlight clicked row
@@ -164,6 +166,7 @@ $(function () {
     // Clear highlight of all row in Datatable
     itemSelected.table = "EPID";
     itemSelected.value = Object.values(ePIDTable.row(this).data())[0];
+    rowindexSelected = ePIDTable.row(this).index();
     kTypeTable.rows().nodes().to$().css("background-color", "");
     ePIDTable.rows().nodes().to$().css("background-color", "");
     // highlight clicked row
@@ -251,15 +254,16 @@ $(function () {
     }
     // Edit Form Save
     else if (formSelected == "edit") {
-      let row = -1;
-      let rowData = table
-        .rows((idx, data) => {
-          if (data.item === itemSelected.value) {
-            row = idx;
-            return;
-          }
-        })
-        .data();
+      // let row = -1;
+      // let rowData = table
+      //   .rows((idx, data) => {
+      //     if (data.item === itemSelected.value) {
+      //       row = idx;
+      //       return;
+      //     }
+      //   })
+      //   .data();
+      let rowData = table.row(rowindexSelected).data();
       newUpdate = {};
       if (itemSelected.value != EDIT_VALUE)
         switch (itemSelected.table) {
@@ -286,7 +290,7 @@ $(function () {
       );
       itemSelected.value = EDIT_VALUE;
       // Redraw the table to reflect the changes
-      table.row(row).data(rowData).invalidate();
+      table.row(rowindexSelected).data(rowData).invalidate().draw();
     }
     // save changes in rows into sessionStorage
     updateChanges(changesMade);

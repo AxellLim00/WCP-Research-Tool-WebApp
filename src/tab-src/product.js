@@ -1,4 +1,5 @@
 import DataTable from "datatables.net-dt";
+import "datatables.net-responsive-dt";
 import "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
 import { ProductRequestHistoryDto } from "../utils/class/apiDto.js";
 import {
@@ -33,6 +34,7 @@ $(function () {
   var isEmptyData = true;
   var productSelected = new ProductDto();
   var productObjectList = [];
+  var rowindexSelected = -1;
   // Temporary variables for the new product form
   var prevMake = "";
   var prevModel = "";
@@ -335,6 +337,7 @@ $(function () {
     if (isEmptyData) return;
     // Assign row to productSelected
     productSelected = new ProductDto(...Object.values(table.row(this).data()));
+    rowindexSelected = table.row(this).index();
 
     // Clear highlight of all row in Datatable
     table.rows().nodes().to$().css("background-color", "");
@@ -562,11 +565,9 @@ $(function () {
     }
     // Edit Form Save
     else if (formSelected == "edit") {
-      // Find the row in the DataTable with the matching ID.
-      let row = table.column(0).data().indexOf(productSelected.Id); // column index 0 for ID
-      let rowData = table.row(row).data();
+      let rowData = table.row(rowindexSelected).data();
       // Save if there are any changes compared to old value (can be found in productSelected)
-      newUpdate = {};
+      let newUpdate = {};
       if (productSelected.Status != STATUS_VALUE)
         newUpdate.Status = rowData.Status = STATUS_VALUE;
 
@@ -588,7 +589,7 @@ $(function () {
       );
       productSelected = updateObject(productSelected, newUpdate);
       // Redraw the table to reflect the changes
-      table.row(row).data(rowData).invalidate();
+      table.row(rowindexSelected).data(rowData).invalidate().draw();
     }
     // save changes in rows into sessionStorage
     updateChanges(changesMade);
@@ -622,7 +623,8 @@ $(function () {
       prevPartType = partType.substring(0, 3);
 
       // Generate and display the product ID
-      var productID = generateProductID(make, model, partType);
+      // TO DO: CHECK FOR THIS BUG
+      var productID = generateProductID([make], [model], [partType]);
       prevID = productID;
       $("#ID").text(productID);
     } else if (
@@ -651,6 +653,10 @@ $(function () {
  */
 function generateProductID(make, model, partType) {
   // Extract the first 3 letters from make, model, and partType
+  console.log(make, model, partType);
+  console.log(typeof make);
+  console.log(typeof model);
+  console.log(typeof partType);
   let makePrefix =
     make.length == 1
       ? make[0].substring(0, 3).toUpperCase()

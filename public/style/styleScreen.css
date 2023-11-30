@@ -68,7 +68,6 @@ input {
 table {
   overflow: auto;
   table-layout: auto;
-  white-space: nowrap;
 }
 
 td,

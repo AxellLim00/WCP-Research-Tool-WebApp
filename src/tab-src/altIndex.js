@@ -46,6 +46,7 @@ $(function () {
   var altIndexValueDictionary = [];
   var mainSupplier = null;
   var productIdSelected = sessionStorage.getItem("productIDSelected");
+  var rowindexSelected = -1;
   var productDtoArray = JSON.parse(
     sessionStorage.getItem("productRequestHistory")
   );
@@ -295,6 +296,7 @@ $(function () {
     altIndexSelected = new AlternateIndexDto(
       ...Object.values(table.row(this).data())
     );
+    rowindexSelected = table.row(this).index();
     // Enable Edit button
     $('button[name="editBtn"]').prop("disabled", false);
   });
@@ -443,9 +445,7 @@ $(function () {
         showAlert(`<strong>ERROR!</strong> ${errorMessage.join(".\n")}`);
         return;
       }
-      // Find the row in the DataTable with the matching ID.
-      let row = table.column(1).data().indexOf(altIndexSelected.Number); // column index 1 for Supplier Number
-      let rowData = table.row(row).data();
+      let rowData = table.row(rowindexSelected).data();
       // Save if there are any changes compared to old value (can be found in productSelected)
       newUpdate = {};
 
@@ -461,6 +461,7 @@ $(function () {
 
         // Change previous Main Supplier into normal supplier in table
         if (prevMainSupplier && prevMainSupplier != altIndexSelected.Number) {
+          // TO DO: DEBUG THIS TO SEE IF THIS IS STILL CORRECT after filters
           let prevMainRow = table.column(1).data().indexOf(prevMainSupplier); // column index 1 for Supplier Number
           let prevMainRowData = table.row(prevMainRow).data();
           let updatePrevMain = {};
@@ -496,7 +497,7 @@ $(function () {
       );
       altIndexSelected = updateObject(altIndexSelected, newUpdate);
       // Redraw the table to reflect the changes
-      table.row(row).data(rowData).invalidate();
+      table.row(rowindexSelected).data(rowData).invalidate().draw();
     }
     // save new rows into sessionStorage
     updateChanges(changesMade);
