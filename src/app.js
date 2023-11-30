@@ -31,7 +31,6 @@ io.on("connect", async function (socket) {
       credentials.username,
       credentials.password
     );
-    console.log(response);
     if (response.status == "authenticated") {
       console.log(`User ${credentials.username} has been Authenticated`);
       socket.emit("authenticated", response.token);

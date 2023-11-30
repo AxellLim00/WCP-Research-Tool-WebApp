@@ -39,7 +39,7 @@ $(function () {
   const $dateToFitler = $('input[type="date"][name="to"]');
 
   var isTableEmpty = true;
-  var formSelected = "";
+  var formSelected;
   var currencyRate = new Map();
   var currencySupplierMap = new Map();
   var altIndexSelected = new AlternateIndexDto();
@@ -447,7 +447,7 @@ $(function () {
       }
       let rowData = table.row(rowindexSelected).data();
       // Save if there are any changes compared to old value (can be found in productSelected)
-      newUpdate = {};
+      let newUpdate = {};
 
       if (altIndexSelected.CostAud != COST_AUD_VALUE)
         newUpdate.CostAud = rowData.CostAud = parseFloat(COST_AUD_VALUE);
@@ -461,8 +461,8 @@ $(function () {
 
         // Change previous Main Supplier into normal supplier in table
         if (prevMainSupplier && prevMainSupplier != altIndexSelected.Number) {
-          // TO DO: DEBUG THIS TO SEE IF THIS IS STILL CORRECT after filters
-          let prevMainRow = table.column(1).data().indexOf(prevMainSupplier); // column index 1 for Supplier Number
+          // column index 1 for Supplier Number
+          let prevMainRow = table.column(1).data().indexOf(prevMainSupplier);
           let prevMainRowData = table.row(prevMainRow).data();
           let updatePrevMain = {};
           prevMainRowData.IsMain = updatePrevMain.IsMain = false;
@@ -517,7 +517,7 @@ $(function () {
     prevMainSupplier = mainSupplier;
     $("#mainConfirmation.confirmation").show();
     $("#popupForm").css("z-index", 0);
-    currentSupplierName = $("#editName").text();
+    const currentSupplierName = $("#editName").text();
     if (!mainSupplier)
       $("#changeInfo").html(
         `from <b>Nothing</b> to <b>${currentSupplierName}</b>`

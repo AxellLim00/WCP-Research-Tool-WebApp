@@ -11,6 +11,9 @@ import {
   insertNewProduct,
   deleteNewProduct,
   deleteProduct,
+  updateOem,
+  updateKType,
+  updateEpid,
 } from "../src/utils/sql-utils.js";
 
 async function getProduct_Test() {
@@ -318,3 +321,37 @@ async function deleteNewProduct_Test() {
   debugger;
 }
 
+async function updateOem_Test() {
+  let update = [
+    new Map([
+      ["id", "SKU-005"],
+      ["newValue", "1234567891"],
+      ["oldValue", "1234567890"],
+    ]),
+    new Map([
+      ["id", "TEST-RID-0004"],
+      ["newValue", "1111111111"],
+      ["oldValue", "2468101214"],
+    ]),
+  ];
+  await updateOem(update);
+  let backToPrevious = [
+    new Map([
+      ["id", "SKU-005"],
+      ["newValue", "1234567890"],
+      ["oldValue", "1234567891"],
+    ]),
+    new Map([
+      ["id", "TEST-RID-0004"],
+      ["newValue", "2468101214"],
+      ["oldValue", "1111111111"],
+    ]),
+  ];
+  await updateOem(backToPrevious);
+}
+
+async function updateKType_test() {}
+
+async function updateEpid_test() {}
+
+// TO DO: Create test for KType and ePID

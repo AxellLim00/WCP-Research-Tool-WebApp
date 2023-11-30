@@ -29,7 +29,7 @@ $(function () {
     sessionStorage.getItem("productIDSelected")
   );
 
-  var formSelected = "";
+  var formSelected;
   var isOemEmpty = true;
   var isVinEmpty = true;
   var productIdSelected = sessionStorage.getItem("productIDSelected");
@@ -162,12 +162,12 @@ $(function () {
     // find changes in textboxes
     const EST_SALES_VOLUME_VALUE = $("#estSalesVolValue").val();
     const NOTES_VALUE = $("#note").val();
-    let update = [];
+    let update = {};
 
     if (EST_SALES_VOLUME_VALUE != prevEstSales)
-      update.estSaleVol = prevEstSales = EST_SALES_VOLUME_VALUE;
+      update.EstSaleVol = prevEstSales = EST_SALES_VOLUME_VALUE;
 
-    if (NOTES_VALUE != prevNote) update.note = prevNote = NOTES_VALUE;
+    if (NOTES_VALUE != prevNote) update.Note = prevNote = NOTES_VALUE;
 
     if (!jQuery.isEmptyObject(update))
       updateChanges([
@@ -324,7 +324,7 @@ $(function () {
         new Map([
           ["type", "edit"],
           ["id", productIdSelected],
-          ["table", "Product"],
+          ["table", "Oem"],
           ["oldValue", oemSelected],
           ["newValue", OEM_VALUE],
         ])

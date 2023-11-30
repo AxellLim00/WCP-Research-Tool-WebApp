@@ -24,7 +24,7 @@ import "../utils/tableExport-utils/tableExport.js";
 $(function () {
   const tableName = "#costVolTable";
   const $table = $("#costVolTable");
-  var formSelected = "";
+  var formSelected;
   var isTableEmpty = true;
   var productIdSelected = sessionStorage.getItem("productIDSelected");
   var productDtoArray = JSON.parse(
@@ -317,7 +317,7 @@ $(function () {
         new Map([
           ["type", "edit"],
           ["id", productIdSelected],
-          ["table", "CostVolume"],
+          ["table", "Product"],
           ["changes", newUpdate],
         ])
       );

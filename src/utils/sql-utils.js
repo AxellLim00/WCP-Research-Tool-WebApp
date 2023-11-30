@@ -196,6 +196,40 @@ export async function getKeyType(productID) {
 }
 
 /**
+ * Get all EPID (eBay Product ID) saved in the SQL Database.
+ * @returns {Object[]} Status ("OK" or "ERROR"), and List of KType object according to KeyType Table Columns OR Error Object.
+ */
+export async function getEpid(productID) {
+  try {
+    console.log("Connecting to SQL...");
+    var pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+    console.log("Getting ePID...");
+    let result = await pool.query(
+      `SELECT EPID
+      FROM EPID 
+      JOIN Product ON EPID.ProductID = Product.ID 
+      WHERE Product.ResearchID = ${productID} OR Product.SKU = ${productID}`
+    );
+    console.log("Got ePID");
+    console.log("Result: ", result.rowsAffected);
+    return {
+      status: "OK",
+      result: result.recordset,
+    };
+  } catch (err) {
+    console.log(err);
+    return {
+      status: "ERROR",
+      error: err,
+    };
+  } finally {
+    pool.close();
+    console.log("Connection closed.");
+  }
+}
+
+/**
  * Get all New Product Information saved in the SQL Database (These are Product info that has not been saved to Pinnacle yet).
  * @returns {Object[]} Status ("OK" or "ERROR"), and List of NewProduct object according to NewProduct Table Columns OR Error Object.
  */
@@ -516,6 +550,44 @@ export async function insertKType(kTypeObject) {
 }
 
 /**
+ * Insert EPID (eBay Product ID) data into the SQL Database.
+ * @param {Object} ePIDObjects {EPID, ProductID} object.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
+ */
+export async function insertEpid(ePIDObjects) {
+  try {
+    console.log("Connecting to SQL...");
+    var pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+    console.log("Inserting new ePID...");
+    let result = await pool.query(
+      `INSERT INTO KeyType (KeyType, ProductID)
+      VALUES 
+      ('${ePIDObjects.KType}', 
+      (SELECT TOP 1 ID
+        FROM Product
+        WHERE Product.ResearchID = '${ePIDObjects.ProductID}' 
+          OR Product.SKU = '${ePIDObjects.ProductID}'));`
+    );
+    console.log("Inserted new ePID");
+    console.log("Result: ", result.rowsAffected);
+    return {
+      status: "OK",
+      message: `Successfully created ${result.rowsAffected} ePID.`,
+    };
+  } catch (err) {
+    console.log(err);
+    return {
+      status: "ERROR",
+      error: err,
+    };
+  } finally {
+    pool.close();
+    console.log("Connection closed.");
+  }
+}
+
+/**
  * Insert Alternate Index data into the SQL Database based on the Supplier.
  * @param {String} supplierNumber Supplier's Number.
  * @param {Object[]} altIndexObjects List of Alternate Index object.
@@ -624,19 +696,36 @@ export async function updateProduct(changesMapping) {
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
-    var insertQueries = [];
+    var updateQueries = [];
     changesMapping.forEach((item) => {
       let changes = item.get("changes");
       let productID = item.get("id");
       let setUpdates = [];
       // Translate DataTable value to SQL int value
-      if ("Status" in changes) {
-        setUpdates.push(`Status = '${ValueDicionary.Status[changes.Status]}'`);
-      }
-      if ("Oem" in changes) {
-        setUpdates.push(`OemType = '${ValueDicionary.OemType[changes.Oem]}'`);
-      }
-      insertQueries.push(`UPDATE Product
+      if ("Status" in changes)
+        setUpdates.push(`Status = ${ValueDicionary.Status[changes.Status]}`);
+
+      if ("Oem" in changes)
+        setUpdates.push(`OemType = ${ValueDicionary.OemType[changes.Oem]}`);
+
+      if ("EstSaleVol" in changes)
+        setUpdates.push(`EstSales = ${changes.EstSaleVol}`);
+
+      if ("Note" in changes) setUpdates.push(`Notes = '${changes.Note}'`);
+
+      if ("EstimateCostAUD" in changes)
+        setUpdates.push(`EstCostAud = ${changes.EstimateCostAUD}`);
+
+      if ("EstimateSell" in changes)
+        setUpdates.push(`EstSell = ${changes.EstimateSell}`);
+
+      if ("Postage" in changes) setUpdates.push(`Postage = ${changes.Postage}`);
+
+      if ("ExtGP" in changes) setUpdates.push(`ExtGp = ${changes.ExtGP}`);
+
+      if ("ePID" in changes) setUpdates.push(`ePID = ${changes.ePID}`);
+
+      updateQueries.push(`UPDATE Product
       SET ${setUpdates.join()}, LastUpdate = '${new Date()
         .toISOString()
         .slice(0, 19)
@@ -645,16 +734,20 @@ export async function updateProduct(changesMapping) {
     });
 
     console.log("Updating Product...");
-    let result = await pool.query(insertQueries.join("\n"));
+    let result = await pool.query(updateQueries.join("\n"));
     console.log("Updated Product");
 
     console.log("Result: ", result.rowsAffected);
-
+    console.log(
+      `Successfully updated ${result.rowsAffected.reduce(
+        (sum, count) => sum + count,
+        0
+      )} Product.`
+    );
     return {
       status: "OK",
       message: `Successfully updated ${result.rowsAffected.reduce(
-        (sum, subArray) =>
-          sum + subArray.reduce((innerSum, num) => innerSum + num, 0),
+        (sum, count) => sum + count,
         0
       )} Product.`,
     };
@@ -672,49 +765,48 @@ export async function updateProduct(changesMapping) {
 }
 
 /**
- * Updates Product value based on the new changes' mapping key-values to the SQL Database.
+ * Updates Oem value based on the new changes' mapping key-values to the SQL Database.
  * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
  */
-export async function updateStats(changesMapping) {
+export async function updateOem(changesMapping) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
-    var insertQueries = [];
+    var updateQueries = [];
     changesMapping.forEach((item) => {
-      let changes = item.get("changes");
       let productID = item.get("id");
-      let setUpdates = [];
-      // Translate DataTable value to SQL int value
-      if ("Status" in changes) {
-        setUpdates.push(`EstSales = ${changes.Status}`);
-      }
-      if ("Oem" in changes) {
-        setUpdates.push(`Notes = '${changes.Oem}'`);
-      }
-      insertQueries.push(`UPDATE Product
-      SET ${setUpdates.join()}, LastUpdate = '${new Date()
+
+      updateQueries.push(`UPDATE Oem
+      SET OEM = '${item.get("newValue")}'
+      WHERE OEM = '${item.get("oldValue")}' 
+        AND ProductID =
+          (SELECT TOP 1 ID
+          FROM Product
+          WHERE SKU = '${productID}' 
+            OR ResearchID = '${productID}');
+      UPDATE Product
+      SET LastUpdate = '${new Date()
         .toISOString()
         .slice(0, 19)
         .replace("T", " ")}'
-      WHERE SKU = '${productID}' OR ResearchID = '${productID}';`);
+      WHERE SKU = '${productID}' OR ResearchID = '${productID}'`);
     });
 
-    console.log("Updating Product...");
-    let result = await pool.query(insertQueries.join("\n"));
-    console.log("Updated Product");
+    console.log("Updating Oem...");
+    let result = await pool.query(updateQueries.join("\n"));
+    console.log("Updated Oem");
 
     console.log("Result: ", result.rowsAffected);
 
     return {
       status: "OK",
       message: `Successfully updated ${result.rowsAffected.reduce(
-        (sum, subArray) =>
-          sum + subArray.reduce((innerSum, num) => innerSum + num, 0),
+        (sum, count) => sum + count,
         0
-      )} Product.`,
+      )} OEM.`,
     };
   } catch (err) {
     console.log(err);
@@ -729,6 +821,119 @@ export async function updateStats(changesMapping) {
   }
 }
 
+/**
+ * Updates KType value based on the new changes' mapping key-values to the SQL Database.
+ * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ */
+export async function updateKType(changesMapping) {
+  try {
+    console.log("Connecting to SQL...");
+    var pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+
+    var updateQueries = [];
+    changesMapping.forEach((item) => {
+      let productID = item.get("id");
+
+      updateQueries.push(`UPDATE KeyType
+      SET KType = '${item.get("newValue")}'
+      WHERE KType = '${item.get("oldValue")}' 
+        AND ProductID =
+          (SELECT TOP 1 ID
+          FROM Product
+          WHERE SKU = '${productID}' 
+            OR ResearchID = '${productID}');
+      UPDATE Product
+      SET LastUpdate = '${new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace("T", " ")}'
+      WHERE SKU = '${productID}' OR ResearchID = '${productID}'`);
+    });
+
+    console.log("Updating KType...");
+    let result = await pool.query(updateQueries.join("\n"));
+    console.log("Updated KType");
+
+    console.log("Result: ", result.rowsAffected);
+
+    return {
+      status: "OK",
+      message: `Successfully updated ${result.rowsAffected.reduce(
+        (sum, count) => sum + count,
+        0
+      )} KType.`,
+    };
+  } catch (err) {
+    console.log(err);
+
+    return {
+      status: "ERROR",
+      error: err,
+    };
+  } finally {
+    pool.close();
+    console.log("Connection closed.");
+  }
+}
+
+/**
+ * Updates ePID value based on the new changes' mapping key-values to the SQL Database.
+ * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ */
+export async function updateEpid(changesMapping) {
+  try {
+    console.log("Connecting to SQL...");
+    var pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+
+    var updateQueries = [];
+    changesMapping.forEach((item) => {
+      let productID = item.get("id");
+
+      updateQueries.push(`UPDATE EPID
+      SET EPID = '${item.get("newValue")}'
+      WHERE EPID = '${item.get("oldValue")}' 
+        AND ProductID =
+          (SELECT TOP 1 ID
+          FROM Product
+          WHERE SKU = '${productID}' 
+            OR ResearchID = '${productID}');
+      UPDATE Product
+      SET LastUpdate = '${new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace("T", " ")}'
+      WHERE SKU = '${productID}' OR ResearchID = '${productID}'`);
+    });
+
+    console.log("Updating ePID...");
+    let result = await pool.query(updateQueries.join("\n"));
+    console.log("Updated ePID");
+
+    console.log("Result: ", result.rowsAffected);
+
+    return {
+      status: "OK",
+      message: `Successfully updated ${result.rowsAffected.reduce(
+        (sum, count) => sum + count,
+        0
+      )} ePID.`,
+    };
+  } catch (err) {
+    console.log(err);
+
+    return {
+      status: "ERROR",
+      error: err,
+    };
+  } finally {
+    pool.close();
+    console.log("Connection closed.");
+  }
+}
 
 /**
  * Delete Product from NewProduct Table based on the ResearchID given.
@@ -798,7 +1003,6 @@ export async function deleteProduct(changesMapping) {
     console.log("Deleted Product");
 
     console.log("Result: ", result.rowsAffected);
-
 
     return {
       status: "OK",

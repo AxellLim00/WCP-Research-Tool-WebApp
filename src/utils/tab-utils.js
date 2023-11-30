@@ -191,7 +191,7 @@ export function updateChanges(change) {
  * @returns {Boolean} true if successful, false otherwise
  */
 export function saveChanges() {
-  // TO DO: translate Map changes to Server-side
+  // TO DO: translate Map changes in Server-side
   const storedChanges = sessionStorage.getItem("savedChanges");
   const savedChanges = JSON.parse(storedChanges).map((array) => new Map(array));
   // If savedChanges is empty or Array is empty

@@ -21,6 +21,7 @@ $(function () {
   const kTypeTableName = "#kTypeTable";
   const epidTableName = "#ePIDTable";
   var isEmptyData = true;
+  var formSelected;
   var itemSelected = { table: "", value: "" };
   var productIdSelected = sessionStorage.getItem("productIDSelected");
   var rowindexSelected = -1;
@@ -223,14 +224,16 @@ $(function () {
 
     // New Form Save
     if (formSelected == "new") {
-      let newItem = {};
-
+      let newItem = { ProductID: productIdSelected };
+      let tableDatabaseName;
       switch (ITEM_CHOSEN_VALUE) {
         case "K-Type":
-          newItem.item = K_TYPE_VALUE;
+          newItem.KType = K_TYPE_VALUE;
+          tableDatabaseName = "KeyType";
           break;
         case "EPID":
-          newItem.item = EPID_VALUE;
+          newItem.EPID = EPID_VALUE;
+          tableDatabaseName = "EPID";
           break;
       }
 
@@ -245,7 +248,7 @@ $(function () {
         new Map([
           ["type", "new"],
           ["id", productIdSelected],
-          ["table", "Ebay"],
+          ["table", tableDatabaseName],
           ["changes", newItem],
         ])
       );
@@ -254,24 +257,18 @@ $(function () {
     }
     // Edit Form Save
     else if (formSelected == "edit") {
-      // let row = -1;
-      // let rowData = table
-      //   .rows((idx, data) => {
-      //     if (data.item === itemSelected.value) {
-      //       row = idx;
-      //       return;
-      //     }
-      //   })
-      //   .data();
       let rowData = table.row(rowindexSelected).data();
+      let tableDatabaseName;
       newUpdate = {};
       if (itemSelected.value != EDIT_VALUE)
         switch (itemSelected.table) {
           case "K-Type":
             rowData.item = newUpdate.KType = EDIT_VALUE;
+            tableDatabaseName = "KeyType";
             break;
           case "EPID":
-            rowData.item = newUpdate.EPID = EDIT_VALUE;
+            rowData.item = newUpdate.ePID = EDIT_VALUE;
+            tableDatabaseName = "EPID";
             break;
         }
 
@@ -284,7 +281,7 @@ $(function () {
         new Map([
           ["type", "edit"],
           ["id", productIdSelected],
-          ["table", "Ebay"],
+          ["table", tableDatabaseName],
           ["changes", newUpdate],
         ])
       );

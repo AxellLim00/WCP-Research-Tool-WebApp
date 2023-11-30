@@ -30,7 +30,7 @@ $(function () {
   const defaultColumnAmount = 9;
   const defaultRowAmount = 10;
   const tableName = "#productTable";
-  var formSelected = "";
+  var formSelected;
   var isEmptyData = true;
   var productSelected = new ProductDto();
   var productObjectList = [];
@@ -623,7 +623,6 @@ $(function () {
       prevPartType = partType.substring(0, 3);
 
       // Generate and display the product ID
-      // TO DO: CHECK FOR THIS BUG
       var productID = generateProductID([make], [model], [partType]);
       prevID = productID;
       $("#ID").text(productID);
