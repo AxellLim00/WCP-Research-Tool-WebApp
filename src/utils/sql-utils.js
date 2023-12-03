@@ -22,6 +22,14 @@ const ValueDicionary = {
     1: "genuine",
     genuine: 1,
   },
+  Quality: {
+    0: "good",
+    good: 0,
+    1: "normal",
+    normal: 1,
+    2: "bad",
+    bad: 2,
+  },
 };
 
 /**
@@ -93,6 +101,38 @@ export async function getProduct() {
 }
 
 /**
+ * Get all New Product Information saved in the SQL Database (These are Product info that has not been saved to Pinnacle yet).
+ * @returns {Object[]} Status ("OK" or "ERROR"), and List of NewProduct object according to NewProduct Table Columns OR Error Object.
+ */
+export async function getNewProduct() {
+  try {
+    console.log("Connecting to SQL...");
+    var pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+    console.log("Getting Unsaved Product...");
+    let result = await pool.query(
+      `SELECT *
+      FROM NewProduct`
+    );
+    console.log("Got Unsaved Product");
+    console.log("Result: ", result.rowsAffected);
+    return {
+      status: "OK",
+      result: result.recordset,
+    };
+  } catch (err) {
+    console.log(err);
+    return {
+      status: "ERROR",
+      error: err,
+    };
+  } finally {
+    pool.close();
+    console.log("Connection closed.");
+  }
+}
+
+/**
  * Get all Oems saved in the SQL Database.
  * @returns {Object[]} Status ("OK" or "ERROR"), and List of Oem object according to Oem Table Columns OR Error Object.
  */
@@ -145,6 +185,11 @@ export async function getAltIndex(productID) {
     );
     console.log("Got Alt Index");
     console.log("Result: ", result.rowsAffected);
+    // Translate SQL int to DataTable Value
+    result.recordset.forEach(
+      (row, idx) =>
+        (result.recordset[idx].Quality = ValueDicionary.OemType[row.Quality])
+    );
     return {
       status: "OK",
       result: result.recordset,
@@ -230,43 +275,11 @@ export async function getEpid(productID) {
 }
 
 /**
- * Get all New Product Information saved in the SQL Database (These are Product info that has not been saved to Pinnacle yet).
- * @returns {Object[]} Status ("OK" or "ERROR"), and List of NewProduct object according to NewProduct Table Columns OR Error Object.
- */
-export async function getNewProduct() {
-  try {
-    console.log("Connecting to SQL...");
-    var pool = await sql.connect(sqlConfig);
-    console.log("Connected to SQL");
-    console.log("Getting Unsaved Product...");
-    let result = await pool.query(
-      `SELECT *
-      FROM NewProduct`
-    );
-    console.log("Got Unsaved Product");
-    console.log("Result: ", result.rowsAffected);
-    return {
-      status: "OK",
-      result: result.recordset,
-    };
-  } catch (err) {
-    console.log(err);
-    return {
-      status: "ERROR",
-      error: err,
-    };
-  } finally {
-    pool.close();
-    console.log("Connection closed.");
-  }
-}
-
-/**
  * Insert User data into the SQL Database.
- * @param {Object[]} userObject list of user object.
+ * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
  * @returns {String | Error} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
-export async function insertUser(userObjects) {
+export async function insertUser(changesMapping) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
@@ -275,8 +288,12 @@ export async function insertUser(userObjects) {
     let result = await pool.query(
       `INSERT INTO Users (UserID, Team)
       VALUES
-        ${userObjects
-          .map((user) => `('${user.UserID}', '${user.Team}')`)
+        ${changesMapping
+          .map((changeMap) =>
+            changeMap
+              .get("changes")
+              .map((user) => `('${user.UserID}', '${user.Team}')`)
+          )
           .join(",\n")};`
     );
     console.log("Inserted new user");
@@ -299,10 +316,10 @@ export async function insertUser(userObjects) {
 
 /**
  * Insert Product data into the SQL Database that already exists from the Workflow API.
- * @param {Object[]} productObjects list of product object.
+ * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
  * @returns {String | Error} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
-export async function insertProduct(productObjects) {
+export async function insertProduct(changesMapping) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
@@ -311,14 +328,16 @@ export async function insertProduct(productObjects) {
     let result = await pool.query(
       `INSERT INTO Product (ID, UserID, ResearchID, SKU, Status, OemType, LastUpdate)
       VALUES
-        ${productObjects
-          .map(
-            (product) =>
-              `(NEWID(), '${product.UserID}', 
+        ${changesMapping
+          .map((changeMap) =>
+            changeMap.get("changes").map(
+              (product) =>
+                `(NEWID(), '${product.UserID}', 
               ${product.ResearchID ? "'" + product.ResearchID + "'" : "NULL"}, 
               ${product.SKU ? "'" + product.SKU + "'" : "NULL"}, 
               ${product.Status}, ${product.OemType}, 
               '${new Date().toISOString().slice(0, 19).replace("T", " ")}')`
+            )
           )
           .join(",\n")};`
     );
@@ -342,10 +361,10 @@ export async function insertProduct(productObjects) {
 
 /**
  * Insert Product data into the database that does not exist in the workflow API.
- * @param {Object[]} productObjects list of product object with complete product information.
+ * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
  * @returns {String | Error} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
-export async function insertNewProduct(productObjects) {
+export async function insertNewProduct(changesMapping) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
@@ -355,24 +374,28 @@ export async function insertNewProduct(productObjects) {
     let result = await pool.query(
       `INSERT INTO Product (ID, UserID, ResearchID, SKU, Status, OemType, LastUpdate)
       VALUES
-        ${productObjects
-          .map(
-            (product) =>
-              `(NEWID(), '${product.UserID}', '${product.ResearchID}', 
+        ${changesMapping
+          .map((changeMap) =>
+            changeMap.get("changes").map(
+              (product) =>
+                `(NEWID(), '${product.UserID}', '${product.ResearchID}', 
               ${product.SKU ? "'" + product.SKU + "'" : "NULL"}, 
               ${ValueDicionary.Status[product.Status]}, 
               ${ValueDicionary.OemType[product.Oem]}, 
               '${new Date().toISOString().slice(0, 19).replace("T", " ")}')`
+            )
           )
           .join(",\n")};
       INSERT INTO NewProduct (ResearchID, Make, Model, PartType, IcNumber, IcDescription, ProductID)
       VALUES
-        ${productObjects
-          .map(
-            (product) =>
-              `('${product.ResearchID}', '${product.Make}', '${product.Model}', '${product.PartType}', 
+        ${changesMapping
+          .map((changeMap) =>
+            changeMap.get("changes").map(
+              (product) =>
+                `('${product.ResearchID}', '${product.Make}', '${product.Model}', '${product.PartType}', 
               '${product.IcNumber}', '${product.IcDescription}', 
               (SELECT TOP 1 ID FROM Product WHERE ResearchID = '${product.ResearchID}'))`
+            )
           )
           .join(",\n")};`
     );
@@ -398,10 +421,10 @@ export async function insertNewProduct(productObjects) {
 
 /**
  * Insert Supplier data into the database.
- * @param {Object[]} supplierObject list of supplier object.
+ * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
  * @returns {int[] | Error} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
-export async function insertSupplier(supplierObjects) {
+export async function insertSupplier(changesMapping) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
@@ -410,10 +433,14 @@ export async function insertSupplier(supplierObjects) {
     let result = await pool.query(
       `INSERT INTO Supplier (SupplierNumber, SupplierName, Currency)
       VALUES 
-      ${supplierObject
-        .map(
-          (supplier) =>
-            `('${supplier.SupplierNumber}', '${supplier.SupplierName}', '${supplier.Currency}')`
+      ${changesMapping
+        .map((changeMap) =>
+          changeMap
+            .get("changes")
+            .map(
+              (supplier) =>
+                `('${supplier.SupplierNumber}', '${supplier.SupplierName}', '${supplier.Currency}')`
+            )
         )
         .join(",\n")};`
     );
@@ -437,29 +464,36 @@ export async function insertSupplier(supplierObjects) {
 
 /**
  * Insert Oem data into the SQL Database based on the Product ID specified.
- * @param {string} productID product's id (SKU or Research ID) selected.
- * @param {Object[]} oemSupplierPairs list of oem-supplierNumber pair object.
+ * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with number of successful row inserts OR an Error Object.
  */
-export async function insertOemByProduct(productID, oemSupplierPairs) {
+export async function insertOemByProduct(changesMapping) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new Oem...");
-    let result = await pool.query(`DECLARE @productKey uniqueidentifier
-      SET @productKey =
+    let query = `DECLARE @productKey uniqueidentifier;
+    ${changesMapping
+      .map(
+        (Map) =>
+          `SET @productKey =
         (SELECT TOP 1 ID
           FROM Product
-          WHERE Product.ResearchID = '${productID}' OR Product.SKU = '${productID}');
-      
-      INSERT INTO Oem (SupplierNumber, OEM, productID)
+          WHERE Product.ResearchID = '${Map.get("id")}' 
+          OR Product.SKU = '${Map.get("id")}');
+        INSERT INTO Oem (SupplierNumber, OEM, productID)
         VALUES
-          ${oemSupplierPairs
+          ${Map.get("changes")
             .map((pair) => `('${pair.Supplier}', '${pair.Oem}', @productKey)`)
-            .join(",\n")};`);
+            .join(",\n")};`
+      )
+      .join("\n")}`;
+    let result = await pool.query(query);
     console.log("Inserted new Oem");
+
     console.log("Result: ", result.rowsAffected);
+
     return {
       status: "OK",
       message: `Successfully created ${result.rowsAffected[1]} Oem.`,
@@ -482,23 +516,33 @@ export async function insertOemByProduct(productID, oemSupplierPairs) {
  * @param {Object[]} oemProductPairs list of oem-productID (SKU or Research ID) pair object.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with number of successful row inserts OR an Error Object.
  */
-export async function insertOemBySupplier(supplierNumber, oemProductPairs) {
+export async function insertOemBySupplier(changesMapping) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
+
     console.log("Inserting new Oem...");
-    let result =
-      await pool.query(`INSERT INTO Oem (SupplierNumber, OEM, productID)
-        VALUES
-          ${oemProductPairs
-            .map(
-              (pair) =>
-                `('${supplierNumber}', '${pair.Oem}', (SELECT TOP 1 ID FROM Product WHERE SKU = '${pair.ProductID}' OR ResearchID = '${pair.ProductID}'))`
-            )
-            .join(",\n")};`);
+    let query = `${changesMapping
+      .map(
+        (Map) =>
+          `INSERT INTO Oem (SupplierNumber, OEM, productID) VALUES
+            ${Map.get("changes")
+              .map(
+                (pair) =>
+                  `('${Map.get("Supplier")}', '${pair.Oem}', 
+                  (SELECT TOP 1 ID FROM Product
+                  WHERE SKU = '${pair.ProductID}' 
+                  OR ResearchID = '${pair.ProductID}'))`
+              )
+              .join(",\n")};`
+      )
+      .join("\n")}`;
+    let result = await pool.query(query);
     console.log("Inserted new Oem");
+
     console.log("Result: ", result.rowsAffected);
+
     return {
       status: "OK",
       message: `Successfully created ${result.rowsAffected} Oem.`,
@@ -517,20 +561,25 @@ export async function insertOemBySupplier(supplierNumber, oemProductPairs) {
 
 /**
  * Insert KType (Key Type) data into the SQL Database.
- * @param {Object} kTypeObjects {KType, ProductID} object.
+ * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
-export async function insertKType(kTypeObject) {
+export async function insertKType(changesMapping) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new KType...");
-    let result = await pool.query(
-      `INSERT INTO KeyType (KeyType, ProductID)
+    let query = `INSERT INTO KeyType (KeyType, ProductID)
       VALUES 
-      ('${kTypeObject.KType}', (SELECT TOP 1 ID FROM Product WHERE Product.ResearchID = '${kTypeObject.ProductID}' OR Product.SKU = '${kTypeObject.ProductID}'));`
-    );
+      ${changesMapping.map(
+        (Map) =>
+          `('${Map.get("changes").KType}', 
+            (SELECT TOP 1 ID FROM Product
+              WHERE Product.ResearchID = '${Map.get("id")}' 
+              OR Product.SKU = '${Map.get("id")}'));`
+      )}`;
+    let result = await pool.query(query);
     console.log("Inserted new KType");
     console.log("Result: ", result.rowsAffected);
     return {
@@ -551,24 +600,23 @@ export async function insertKType(kTypeObject) {
 
 /**
  * Insert EPID (eBay Product ID) data into the SQL Database.
- * @param {Object} ePIDObjects {EPID, ProductID} object.
+ * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
-export async function insertEpid(ePIDObjects) {
+export async function insertEpid(changesMapping) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new ePID...");
-    let result = await pool.query(
-      `INSERT INTO KeyType (KeyType, ProductID)
-      VALUES 
-      ('${ePIDObjects.KType}', 
-      (SELECT TOP 1 ID
-        FROM Product
-        WHERE Product.ResearchID = '${ePIDObjects.ProductID}' 
-          OR Product.SKU = '${ePIDObjects.ProductID}'));`
-    );
+    let result = await pool.query(`INSERT INTO EPID (EPID, ProductID)
+      VALUES ${changesMapping.map(
+        (Map) =>
+          `('${Map.get("changes").EPID}', 
+          (SELECT TOP 1 ID FROM Product
+            WHERE Product.ResearchID = '${Map.get("id")}' 
+            OR Product.SKU = '${Map.get("id")}'))`
+      )}`);
     console.log("Inserted new ePID");
     console.log("Result: ", result.rowsAffected);
     return {
@@ -723,8 +771,6 @@ export async function updateProduct(changesMapping) {
 
       if ("ExtGP" in changes) setUpdates.push(`ExtGp = ${changes.ExtGP}`);
 
-      if ("ePID" in changes) setUpdates.push(`ePID = ${changes.ePID}`);
-
       updateQueries.push(`UPDATE Product
       SET ${setUpdates.join()}, LastUpdate = '${new Date()
         .toISOString()
@@ -837,8 +883,8 @@ export async function updateKType(changesMapping) {
       let productID = item.get("id");
 
       updateQueries.push(`UPDATE KeyType
-      SET KType = '${item.get("newValue")}'
-      WHERE KType = '${item.get("oldValue")}' 
+      SET KeyType = '${item.get("newValue")}'
+      WHERE KeyType = '${item.get("oldValue")}' 
         AND ProductID =
           (SELECT TOP 1 ID
           FROM Product
@@ -936,6 +982,86 @@ export async function updateEpid(changesMapping) {
 }
 
 /**
+ * Updates Alternate Index value based on the new changes' mapping key-values to the SQL Database.
+ * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ */
+export async function updateAltIndex(changesMapping) {
+  try {
+    console.log("Connecting to SQL...");
+    var pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+
+    var updateQueries = [];
+    changesMapping.forEach((item) => {
+      let changes = item.get("changes");
+      let productID = item.get("id");
+      let setUpdates = [];
+      // Translate DataTable value to SQL int value
+      if ("CostAud" in changes) setUpdates.push(`CostAud = ${changes.CostAud}`);
+
+      if ("Quality" in changes)
+        setUpdates.push(`Quality = ${ValueDicionary.Quality[changes.Quality]}`);
+
+      if ("IsMain" in changes)
+        setUpdates.push(`IsMain = ${Number(changes.IsMain)}`);
+
+      updateQueries.push(`UPDATE AlternateIndex
+      SET ${setUpdates.join()}, LastUpdate = '${new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace("T", " ")}'
+      WHERE ProductID =
+        (SELECT TOP 1 ID
+          FROM Product
+          WHERE SKU = '${productID}' OR ResearchID = '${productID}')
+        AND SupplierNumber = '${item.get("number")}';`);
+      if (changes.IsMain) {
+        updateQueries.push(`UPDATE AlternateIndex
+        SET IsMain = 0, LastUpdate = '${new Date()
+          .toISOString()
+          .slice(0, 19)
+          .replace("T", " ")}'
+        WHERE ProductID =
+          (SELECT TOP 1 ID
+            FROM Product
+            WHERE SKU = '${productID}' OR ResearchID = '${productID}')
+          AND IsMain = 1;`);
+      }
+    });
+
+    console.log("Updating Alternate Index...");
+    let result = await pool.query(updateQueries.join("\n"));
+    console.log("Updated Alternate Index");
+
+    console.log("Result: ", result.rowsAffected);
+    console.log(
+      `Successfully updated ${result.rowsAffected.reduce(
+        (sum, count) => sum + count,
+        0
+      )} Alternate Indexes.`
+    );
+    return {
+      status: "OK",
+      message: `Successfully updated ${result.rowsAffected.reduce(
+        (sum, count) => sum + count,
+        0
+      )} Alternate Indexes.`,
+    };
+  } catch (err) {
+    console.log(err);
+
+    return {
+      status: "ERROR",
+      error: err,
+    };
+  } finally {
+    pool.close();
+    console.log("Connection closed.");
+  }
+}
+
+/**
  * Delete Product from NewProduct Table based on the ResearchID given.
  * @param {Map} changesMapping The mapping of changes synced with the Workflow API.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
@@ -979,7 +1105,6 @@ export async function deleteNewProduct(changesMapping) {
 
 /**
  * Delete Product from Product Table based on the ResearchID OR SKU given.
- * WILL NOT WORK if product has Oem, KeyType, or Alternate Index.
  * @param {Map} changesMapping The mapping of changes synced with the Workflow API.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
  */
@@ -992,12 +1117,12 @@ export async function deleteProduct(changesMapping) {
     console.log("Deleting Product...");
     let result = await pool.query(`DELETE FROM Product 
     WHERE ResearchID in (${changesMapping
-      .map((item) => {
-        return `'${item.get("id")}'`;
+      .map((Map) => {
+        return `'${Map.get("id")}'`;
       })
       .join()}) OR SKU in (${changesMapping
-      .map((item) => {
-        return `'${item.get("id")}'`;
+      .map((Map) => {
+        return `'${Map.get("id")}'`;
       })
       .join()})`);
     console.log("Deleted Product");
@@ -1023,3 +1148,229 @@ export async function deleteProduct(changesMapping) {
     console.log("Connection closed.");
   }
 }
+
+/**
+ * Delete User from Users Table based on the UserID.
+ * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ */
+export async function deleteUser(changesMapping) {
+  try {
+    console.log("Connecting to SQL...");
+    var pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+    console.log("Deleting User...");
+    let result = await pool.query(`DELETE FROM Users 
+    WHERE UserID IN (${changesMapping
+      .map((changeMap) => changeMap.get("changes").map((user) => `'${user}'`))
+      .join()});`);
+    console.log("Deleted User");
+
+    console.log("Result: ", result.rowsAffected);
+
+    return {
+      status: "OK",
+      message: `Successfully deleted ${result.rowsAffected.reduce(
+        (sum, count) => sum + count,
+        0
+      )} User.`,
+    };
+  } catch (err) {
+    console.log(err);
+    return {
+      status: "ERROR",
+      error: err,
+    };
+  } finally {
+    pool.close();
+    console.log("Connection closed.");
+  }
+}
+
+/**
+ * Delete User from Users Table.
+ * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ */
+export async function deleteSupplier(changesMapping) {
+  try {
+    console.log("Connecting to SQL...");
+    var pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+    console.log("Deleting Supplier...");
+    let result = await pool.query(`DELETE FROM Supplier 
+    WHERE SupplierNumber IN (${changesMapping
+      .map((changeMap) =>
+        changeMap.get("changes").map((supplierNumber) => `'${supplierNumber}'`)
+      )
+      .join()});`);
+    console.log("Deleted Supplier");
+
+    console.log("Result: ", result.rowsAffected);
+
+    return {
+      status: "OK",
+      message: `Successfully deleted ${result.rowsAffected.reduce(
+        (sum, count) => sum + count,
+        0
+      )} Supplier.`,
+    };
+  } catch (err) {
+    console.log(err);
+    return {
+      status: "ERROR",
+      error: err,
+    };
+  } finally {
+    pool.close();
+    console.log("Connection closed.");
+  }
+}
+
+/**
+ * Delete KeyType from KeyType Table
+ * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ */
+export async function deleteKType(changesMapping) {
+  try {
+    console.log("Connecting to SQL...");
+    var pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+    console.log("Deleting KeyType...");
+    let result = await pool.query(
+      `${changesMapping
+        .map(
+          (Map) =>
+            `DELETE FROM KeyType 
+              WHERE KeyType = '${Map.get("changes").KType}'
+              AND ProductID = 
+              (SELECT TOP 1 ID FROM Product
+                WHERE Product.ResearchID = '${Map.get("id")}'
+                OR Product.SKU = '${Map.get("id")}');`
+        )
+        .join("\n")}`
+    );
+    console.log("Deleted KeyType");
+
+    console.log("Result: ", result.rowsAffected);
+
+    return {
+      status: "OK",
+      message: `Successfully deleted ${result.rowsAffected.reduce(
+        (sum, count) => sum + count,
+        0
+      )} KeyType.`,
+    };
+  } catch (err) {
+    console.log(err);
+    return {
+      status: "ERROR",
+      error: err,
+    };
+  } finally {
+    pool.close();
+    console.log("Connection closed.");
+  }
+}
+
+/**
+ * Delete EPID from EPID Table
+ * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ */
+export async function deleteEpid(changesMapping) {
+  try {
+    console.log("Connecting to SQL...");
+    var pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+    console.log("Deleting ePID...");
+    let result = await pool.query(
+      `${changesMapping
+        .map(
+          (Map) =>
+            `DELETE FROM EPID 
+              WHERE EPID = '${Map.get("changes").EPID}'
+              AND ProductID = 
+              (SELECT TOP 1 ID FROM Product
+                WHERE Product.ResearchID = '${Map.get("id")}'
+                OR Product.SKU = '${Map.get("id")}');`
+        )
+        .join("\n")}`
+    );
+    console.log("Deleted ePID");
+
+    console.log("Result: ", result.rowsAffected);
+
+    return {
+      status: "OK",
+      message: `Successfully deleted ${result.rowsAffected.reduce(
+        (sum, count) => sum + count,
+        0
+      )} ePID.`,
+    };
+  } catch (err) {
+    console.log(err);
+    return {
+      status: "ERROR",
+      error: err,
+    };
+  } finally {
+    pool.close();
+    console.log("Connection closed.");
+  }
+}
+
+/**
+ * Delete OEM from Oem Table
+ * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ */
+export async function deleteOem(changesMapping) {
+  try {
+    console.log("Connecting to SQL...");
+    var pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+    console.log("Deleting OEM...");
+    let query = `${changesMapping
+      .map(
+        (Map) =>
+          `DELETE FROM Oem 
+              WHERE OEM = '${Map.get("changes").Oem}'
+              AND SupplierNumber = '${Map.get("changes").Supplier}'
+              AND ProductID = 
+              (SELECT TOP 1 ID FROM Product
+                WHERE Product.ResearchID = '${Map.get("id")}'
+                OR Product.SKU = '${Map.get("id")}');`
+      )
+      .join("\n")}`;
+    let result = await pool.query(query);
+    console.log("Deleted OEM");
+
+    console.log("Result: ", result.rowsAffected);
+
+    return {
+      status: "OK",
+      message: `Successfully deleted ${result.rowsAffected.reduce(
+        (sum, count) => sum + count,
+        0
+      )} ePID.`,
+    };
+  } catch (err) {
+    console.log(err);
+    return {
+      status: "ERROR",
+      error: err,
+    };
+  } finally {
+    pool.close();
+    console.log("Connection closed.");
+  }
+}
+
+/**
+ * Delete Alternate Index from AlternateIndex Table
+ * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ */
+export async function deleteAltIndex(changesMapping) {}

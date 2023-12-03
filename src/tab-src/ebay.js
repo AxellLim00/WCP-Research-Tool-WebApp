@@ -224,7 +224,7 @@ $(function () {
 
     // New Form Save
     if (formSelected == "new") {
-      let newItem = { ProductID: productIdSelected };
+      let newItem = [];
       let tableDatabaseName;
       switch (ITEM_CHOSEN_VALUE) {
         case "K-Type":
@@ -259,15 +259,15 @@ $(function () {
     else if (formSelected == "edit") {
       let rowData = table.row(rowindexSelected).data();
       let tableDatabaseName;
-      newUpdate = {};
+      let newUpdate;
       if (itemSelected.value != EDIT_VALUE)
         switch (itemSelected.table) {
           case "K-Type":
-            rowData.item = newUpdate.KType = EDIT_VALUE;
+            rowData.item = newUpdate = EDIT_VALUE;
             tableDatabaseName = "KeyType";
             break;
           case "EPID":
-            rowData.item = newUpdate.ePID = EDIT_VALUE;
+            rowData.item = newUpdate = EDIT_VALUE;
             tableDatabaseName = "EPID";
             break;
         }
@@ -282,7 +282,8 @@ $(function () {
           ["type", "edit"],
           ["id", productIdSelected],
           ["table", tableDatabaseName],
-          ["changes", newUpdate],
+          ["oldValue", itemSelected.value],
+          ["newValue", newUpdate],
         ])
       );
       itemSelected.value = EDIT_VALUE;
