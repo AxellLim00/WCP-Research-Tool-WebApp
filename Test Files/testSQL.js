@@ -604,60 +604,300 @@ async function insertEpid_Test() {
 }
 
 async function insertAltIndexBySupplier_Test() {
-  insertAltIndexBySupplier("123-456", [
-    {
-      MOQ: 10,
-      CostAud: 9.99,
-      Quality: 0,
-      SupplierPartType: "Engine",
-      WCPPartType: "ENG",
-      ProductID: "TEST-RID-0002",
-    },
-    {
-      MOQ: 10,
-      CostAud: 9.99,
-      Quality: 0,
-      SupplierPartType: "Engine",
-      WCPPartType: "ENG",
-      ProductID: "TEST-RID-0004",
-    },
-    {
-      MOQ: 10,
-      CostAud: 9.99,
-      Quality: 0,
-      SupplierPartType: "Engine",
-      WCPPartType: "ENG",
-      ProductID: "TEST-RID-0003",
-    },
-    {
-      MOQ: 10,
-      CostAud: 9.99,
-      Quality: 0,
-      SupplierPartType: "Engine",
-      WCPPartType: "ENG",
-      ProductID: "TEST-RID-0001",
-    },
+  await insertUser([
+    new Map([
+      ["table", "Users"],
+      [
+        "changes",
+        [
+          { UserID: "Research User Test 1", Team: "Team Trial" },
+          { UserID: "Research User Test 2", Team: "Team Trial" },
+          { UserID: "Research User Test 3", Team: "Team Test" },
+        ],
+      ],
+    ]),
+  ]);
+
+  await insertProduct([
+    new Map([
+      ["table", "Product"],
+      [
+        "changes",
+        [
+          {
+            UserID: "Research User Test 1",
+            ResearchID: "TEST-RID-0001",
+            SKU: "SKU-001",
+            Status: 0,
+            OemType: 0,
+            EstSales: 0,
+            Note: "This is a test note for a product.",
+            CostUsd: 9.99,
+            EstCostAud: 9.99,
+            EstSell: 9.99,
+            Postage: 9.99,
+            ExtGp: 5.0,
+          },
+          {
+            UserID: "Research User Test 2",
+            ResearchID: "TEST-RID-0002",
+            SKU: "SKU-002",
+            Status: 0,
+            OemType: 0,
+            EstSales: 0,
+            Note: "This is a test note for a product.",
+            CostUsd: 9.99,
+            EstCostAud: 9.99,
+            EstSell: 9.99,
+            Postage: 9.99,
+            ExtGp: 5.0,
+          },
+          {
+            UserID: "Research User Test 3",
+            ResearchID: "TEST-RID-0003",
+            SKU: "SKU-003",
+            Status: 0,
+            OemType: 0,
+            EstSales: 0,
+            Note: "This is a test note for a product.",
+            CostUsd: 9.99,
+            EstCostAud: 9.99,
+            EstSell: 9.99,
+            Postage: 9.99,
+            ExtGp: 5.0,
+          },
+          {
+            UserID: "Research User Test 1",
+            ResearchID: "TEST-RID-0004",
+            SKU: null,
+            Status: 0,
+            OemType: 0,
+            EstSales: 0,
+            Note: "This is a test note for a product.",
+            CostUsd: 9.99,
+            EstCostAud: 9.99,
+            EstSell: 9.99,
+            Postage: 9.99,
+            ExtGp: 5.0,
+          },
+        ],
+      ],
+    ]),
+  ]);
+
+  await insertSupplier([
+    new Map([
+      ["table", "Supplier"],
+      [
+        "changes",
+        [
+          {
+            SupplierNumber: "123-456",
+            SupplierName: "TEST-SUPPLIER-01",
+            Currency: "AUD",
+          },
+        ],
+      ],
+    ]),
+  ]);
+
+  await insertAltIndexBySupplier([
+    new Map([
+      ["supplier", "123-456"],
+      [
+        "changes",
+        [
+          {
+            MOQ: 10,
+            CostAud: 9.99,
+            Quality: 0,
+            SupplierPartType: "Engine",
+            WCPPartType: "ENG",
+            ProductID: "TEST-RID-0002",
+          },
+          {
+            MOQ: 10,
+            CostAud: 9.99,
+            Quality: 0,
+            SupplierPartType: "Engine",
+            WCPPartType: "ENG",
+            ProductID: "TEST-RID-0004",
+          },
+          {
+            MOQ: 10,
+            CostAud: 9.99,
+            Quality: 0,
+            SupplierPartType: "Engine",
+            WCPPartType: "ENG",
+            ProductID: "TEST-RID-0003",
+          },
+          {
+            MOQ: 10,
+            CostAud: 9.99,
+            Quality: 0,
+            SupplierPartType: "Engine",
+            WCPPartType: "ENG",
+            ProductID: "TEST-RID-0001",
+          },
+        ],
+      ],
+    ]),
+  ]);
+
+  await deleteAltIndex([
+    new Map([
+      ["id", "TEST-RID-0001"],
+      ["changes", { Supplier: "123-456" }],
+    ]),
+    new Map([
+      ["id", "TEST-RID-0002"],
+      ["changes", { Supplier: "123-456" }],
+    ]),
+    new Map([
+      ["id", "TEST-RID-0003"],
+      ["changes", { Supplier: "123-456" }],
+    ]),
+    new Map([
+      ["id", "TEST-RID-0004"],
+      ["changes", { Supplier: "123-456" }],
+    ]),
+  ]);
+
+  await deleteSupplier([
+    new Map([
+      ["table", "Supplier"],
+      ["changes", ["123-456"]],
+    ]),
+  ]);
+
+  await deleteProduct([
+    new Map([["id", "TEST-RID-0001"]]),
+    new Map([["id", "TEST-RID-0002"]]),
+    new Map([["id", "TEST-RID-0003"]]),
+    new Map([["id", "TEST-RID-0004"]]),
+  ]);
+
+  await deleteUser([
+    new Map([
+      ["table", "Users"],
+      [
+        "changes",
+        [
+          "Research User Test 1",
+          "Research User Test 2",
+          "Research User Test 3",
+        ],
+      ],
+    ]),
   ]);
 }
 
 async function insertAltIndexByProduct_Test() {
-  insertAltIndexByProduct("SKU-005", [
-    {
-      MOQ: 10,
-      CostAud: 9.99,
-      Quality: 0,
-      SupplierPartType: "Engine",
-      WCPPartType: "ENG",
-      Supplier: "123-450",
-    },
-    {
-      MOQ: 10,
-      CostAud: 9.99,
-      Quality: 0,
-      SupplierPartType: "Engine",
-      WCPPartType: "ENG",
-      Supplier: "123-456",
-    },
+  await insertUser([
+    new Map([
+      ["table", "Users"],
+      ["changes", [{ UserID: "Research User Test 3", Team: "Team Test" }]],
+    ]),
+  ]);
+
+  await insertProduct([
+    new Map([
+      ["table", "Product"],
+      [
+        "changes",
+        [
+          {
+            UserID: "Research User Test 3",
+            ResearchID: null,
+            SKU: "SKU-005",
+            Status: 0,
+            OemType: 0,
+            EstSales: 0,
+            Note: "This is a test note for a product.",
+            CostUsd: 9.99,
+            EstCostAud: 9.99,
+            EstSell: 9.99,
+            Postage: 9.99,
+            ExtGp: 5.0,
+          },
+        ],
+      ],
+    ]),
+  ]);
+
+  await insertSupplier([
+    new Map([
+      ["table", "Supplier"],
+      [
+        "changes",
+        [
+          {
+            SupplierNumber: "123-456",
+            SupplierName: "TEST-SUPPLIER-01",
+            Currency: "AUD",
+          },
+          {
+            SupplierNumber: "123-450",
+            SupplierName: "TEST-SUPPLIER-02",
+            Currency: "USD",
+          },
+        ],
+      ],
+    ]),
+  ]);
+
+  await insertAltIndexByProduct([
+    new Map([
+      ["id", "SKU-005"],
+      [
+        "changes",
+        [
+          {
+            MOQ: 10,
+            CostAud: 9.99,
+            Quality: 0,
+            SupplierPartType: "Engine",
+            WCPPartType: "ENG",
+            Supplier: "123-450",
+          },
+          {
+            MOQ: 10,
+            CostAud: 9.99,
+            Quality: 0,
+            SupplierPartType: "Engine",
+            WCPPartType: "ENG",
+            Supplier: "123-456",
+          },
+        ],
+      ],
+    ]),
+  ]);
+
+  await deleteAltIndex([
+    new Map([
+      ["id", "SKU-005"],
+      ["changes", { Supplier: "123-456" }],
+    ]),
+    new Map([
+      ["id", "SKU-005"],
+      ["changes", { Supplier: "123-450" }],
+    ]),
+  ]);
+
+  await deleteSupplier([
+    new Map([
+      ["table", "Supplier"],
+      ["changes", ["123-456", "123-450"]],
+    ]),
+  ]);
+
+  await deleteProduct([new Map([["id", "SKU-005"]])]);
+
+  await deleteUser([
+    new Map([
+      ["table", "Users"],
+      ["changes", ["Research User Test 3"]],
+    ]),
   ]);
 }
 
@@ -962,5 +1202,3 @@ async function updateAltIndex_test() {
     ]),
   ]);
 }
-
-insertOemBySupplier_Test();

@@ -637,36 +637,34 @@ export async function insertEpid(changesMapping) {
 
 /**
  * Insert Alternate Index data into the SQL Database based on the Supplier.
- * @param {String} supplierNumber Supplier's Number.
- * @param {Object[]} altIndexObjects List of Alternate Index object.
+ * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
-export async function insertAltIndexBySupplier(
-  supplierNumber,
-  altIndexObjects
-) {
+export async function insertAltIndexBySupplier(changesMapping) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new AltIndex...");
-    let result = await pool.query(
-      `INSERT INTO AlternateIndex (AltIndexKey, MOQ, CostAud, LastUpdate, Quality, SupplierPartType, WCPPartType, ProductID, SupplierNumber)
-      VALUES 
-      ${altIndexObjects
-        .map(
-          (altIndex) =>
-            `(NEWID(), ${altIndex.MOQ}, ${altIndex.CostAud},
+    let query = `${changesMapping
+      .map(
+        (Map) =>
+          `INSERT INTO AlternateIndex (AltIndexKey, MOQ, CostAud, LastUpdate, Quality, SupplierPartType, WCPPartType, ProductID, SupplierNumber)
+        VALUES ${Map.get("changes")
+          .map(
+            (altIndex) => `(NEWID(), ${altIndex.MOQ}, ${altIndex.CostAud},
             '${new Date().toISOString().slice(0, 19).replace("T", " ")}',
             ${altIndex.Quality}, '${altIndex.SupplierPartType}', 
             '${altIndex.WCPPartType}', 
             (SELECT TOP 1 ID FROM Product
               WHERE SKU = '${altIndex.ProductID}' 
               OR ResearchID = '${altIndex.ProductID}'), 
-            '${supplierNumber}')`
-        )
-        .join(",\n")};`
-    );
+            '${Map.get("supplier")}')`
+          )
+          .join()};`
+      )
+      .join("\n")}`;
+    let result = await pool.query(query);
     console.log("Inserted new AltIndex");
     console.log("Result: ", result.rowsAffected);
     return {
@@ -691,30 +689,33 @@ export async function insertAltIndexBySupplier(
  * @param {Object[]} altIndexObjects List of Alternate Index object.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
-export async function insertAltIndexByProduct(productID, altIndexObjects) {
+export async function insertAltIndexByProduct(changesMapping) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new AltIndex...");
-    let result = await pool.query(`DECLARE @productKey uniqueidentifier
-      SET @productKey =
-        (SELECT TOP 1 ID
-          FROM Product
-          WHERE Product.ResearchID = '${productID}' OR Product.SKU = '${productID}');
-      
-      INSERT INTO AlternateIndex (AltIndexKey, MOQ, CostAud, LastUpdate, Quality, SupplierPartType, WCPPartType, ProductID, SupplierNumber)
-      VALUES 
-      ${altIndexObjects
-        .map(
-          (altIndex) =>
-            `(NEWID(), ${altIndex.MOQ}, ${altIndex.CostAud}, 
-            '${new Date().toISOString().slice(0, 19).replace("T", " ")}',
-            ${altIndex.Quality}, '${altIndex.SupplierPartType}', 
-            '${altIndex.WCPPartType}', @productKey, 
-            '${altIndex.Supplier}')`
-        )
-        .join(",\n")};`);
+    let query = `DECLARE @productKey uniqueidentifier
+    ${changesMapping
+      .map(
+        (Map) =>
+          `SET @productKey = (SELECT TOP 1 ID FROM Product
+          WHERE Product.ResearchID = '${Map.get("id")}' 
+            OR Product.SKU = '${Map.get("id")}');
+          INSERT INTO AlternateIndex (AltIndexKey, MOQ, CostAud, LastUpdate, Quality, SupplierPartType, WCPPartType, ProductID, SupplierNumber)
+          VALUES ${Map.get("changes")
+            .map(
+              (altIndex) =>
+                `(NEWID(), ${altIndex.MOQ}, ${altIndex.CostAud}, 
+                '${new Date().toISOString().slice(0, 19).replace("T", " ")}',
+                ${altIndex.Quality}, '${altIndex.SupplierPartType}', 
+                '${altIndex.WCPPartType}', @productKey, 
+                '${altIndex.Supplier}')`
+            )
+            .join()};`
+      )
+      .join("\n")}`;
+    let result = await pool.query(query);
     console.log("Inserted new AltIndex");
     console.log("Result: ", result.rowsAffected);
     return {
@@ -1373,4 +1374,43 @@ export async function deleteOem(changesMapping) {
  * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
  */
-export async function deleteAltIndex(changesMapping) {}
+export async function deleteAltIndex(changesMapping) {
+  try {
+    console.log("Connecting to SQL...");
+    var pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+    console.log("Deleting AltIndex...");
+    let query = `${changesMapping
+      .map(
+        (Map) =>
+          `DELETE FROM AlternateIndex 
+              WHERE SupplierNumber = '${Map.get("changes").Supplier}'
+              AND ProductID = 
+              (SELECT TOP 1 ID FROM Product
+                WHERE Product.ResearchID = '${Map.get("id")}'
+                OR Product.SKU = '${Map.get("id")}');`
+      )
+      .join("\n")}`;
+    let result = await pool.query(query);
+    console.log("Deleted AltIndex");
+
+    console.log("Result: ", result.rowsAffected);
+
+    return {
+      status: "OK",
+      message: `Successfully deleted ${result.rowsAffected.reduce(
+        (sum, count) => sum + count,
+        0
+      )} AltIndex.`,
+    };
+  } catch (err) {
+    console.log(err);
+    return {
+      status: "ERROR",
+      error: err,
+    };
+  } finally {
+    pool.close();
+    console.log("Connection closed.");
+  }
+}
