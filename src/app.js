@@ -121,7 +121,7 @@ io.on("connect", async function (socket) {
     callback(responseJSON);
   });
 
-  socket.on("get object database", table, productID, async (callback) => {
+  socket.on("get object database", async (table, productID, callback) => {
     let result;
     switch (table) {
       case "Users":
@@ -157,7 +157,7 @@ io.on("connect", async function (socket) {
     callback(result);
   });
 
-  socket.on("update database", updateList, async (callback) => {
+  socket.on("update database", async (updateList, callback) => {
     // Use reduce to split the list based on tablename and action
     const separatedLists = updateList.reduce((acc, item) => {
       const key = `${item.tablename}_${item.action}`;

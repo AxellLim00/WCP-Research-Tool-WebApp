@@ -47,6 +47,7 @@ $(function () {
   const JSON_ARRAY = JSON.parse(
     sessionStorage.getItem("productRequestHistory")
   );
+  
   isEmptyData = JSON_ARRAY === null;
   // if loading from API empty
   if (isEmptyData) {
