@@ -110,10 +110,7 @@ export async function getNewProduct() {
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Getting Unsaved Product...");
-    let result = await pool.query(
-      `SELECT *
-      FROM NewProduct`
-    );
+    let result = await pool.query(`SELECT * FROM NewProduct`);
     console.log("Got Unsaved Product");
     console.log("Result: ", result.rowsAffected);
     return {
@@ -133,7 +130,7 @@ export async function getNewProduct() {
 }
 
 /**
- * Get all Oems saved in the SQL Database.
+ * Get all Oems saved in the SQL Database based on a product.
  * @returns {Object[]} Status ("OK" or "ERROR"), and List of Oem object according to Oem Table Columns OR Error Object.
  */
 export async function getOem(productID) {
@@ -167,7 +164,36 @@ export async function getOem(productID) {
 }
 
 /**
- * Get all Alternate Indexes saved in the SQL Database.
+ * Get all Supplier saved in the SQL Database.
+ * @returns {Object[]} Status ("OK" or "ERROR"), and List of Oem object according to Oem Table Columns OR Error Object.
+ */
+export async function getSupplier() {
+  try {
+    console.log("Connecting to SQL...");
+    var pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+    console.log("Getting Supplier...");
+    let result = await pool.query(`SELECT * FROM Supplier;`);
+    console.log("Got Supplier");
+    console.log("Result: ", result.rowsAffected);
+    return {
+      status: "OK",
+      result: result.recordset,
+    };
+  } catch (err) {
+    console.log(err);
+    return {
+      status: "ERROR",
+      error: err,
+    };
+  } finally {
+    pool.close();
+    console.log("Connection closed.");
+  }
+}
+
+/**
+ * Get all Alternate Indexes saved in the SQL Database based on a product.
  * @returns {Object[]} Status ("OK" or "ERROR"), and List of Alternate Index object according to AlternateIndex Table Columns OR Error Object.
  */
 export async function getAltIndex(productID) {
@@ -207,7 +233,7 @@ export async function getAltIndex(productID) {
 }
 
 /**
- * Get all Key Type (KType) saved in the SQL Database.
+ * Get all Key Type (KType) saved in the SQL Database based on a product.
  * @returns {Object[]} Status ("OK" or "ERROR"), and List of KType object according to KeyType Table Columns OR Error Object.
  */
 export async function getKeyType(productID) {
@@ -241,7 +267,7 @@ export async function getKeyType(productID) {
 }
 
 /**
- * Get all EPID (eBay Product ID) saved in the SQL Database.
+ * Get all EPID (eBay Product ID) saved in the SQL Database based on a product.
  * @returns {Object[]} Status ("OK" or "ERROR"), and List of KType object according to KeyType Table Columns OR Error Object.
  */
 export async function getEpid(productID) {
@@ -276,10 +302,10 @@ export async function getEpid(productID) {
 
 /**
  * Insert User data into the SQL Database.
- * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
  * @returns {String | Error} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
-export async function insertUser(changesMapping) {
+export async function insertUser(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
@@ -288,7 +314,7 @@ export async function insertUser(changesMapping) {
     let result = await pool.query(
       `INSERT INTO Users (UserID, Team)
       VALUES
-        ${changesMapping
+        ${mapChange
           .map((changeMap) =>
             changeMap
               .get("changes")
@@ -316,10 +342,10 @@ export async function insertUser(changesMapping) {
 
 /**
  * Insert Product data into the SQL Database that already exists from the Workflow API.
- * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
  * @returns {String | Error} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
-export async function insertProduct(changesMapping) {
+export async function insertProduct(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
@@ -328,7 +354,7 @@ export async function insertProduct(changesMapping) {
     let result = await pool.query(
       `INSERT INTO Product (ID, UserID, ResearchID, SKU, Status, OemType, LastUpdate)
       VALUES
-        ${changesMapping
+        ${mapChange
           .map((changeMap) =>
             changeMap.get("changes").map(
               (product) =>
@@ -361,10 +387,10 @@ export async function insertProduct(changesMapping) {
 
 /**
  * Insert Product data into the database that does not exist in the workflow API.
- * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
  * @returns {String | Error} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
-export async function insertNewProduct(changesMapping) {
+export async function insertNewProduct(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
@@ -374,7 +400,7 @@ export async function insertNewProduct(changesMapping) {
     let result = await pool.query(
       `INSERT INTO Product (ID, UserID, ResearchID, SKU, Status, OemType, LastUpdate)
       VALUES
-        ${changesMapping
+        ${mapChange
           .map((changeMap) =>
             changeMap.get("changes").map(
               (product) =>
@@ -388,7 +414,7 @@ export async function insertNewProduct(changesMapping) {
           .join(",\n")};
       INSERT INTO NewProduct (ResearchID, Make, Model, PartType, IcNumber, IcDescription, ProductID)
       VALUES
-        ${changesMapping
+        ${mapChange
           .map((changeMap) =>
             changeMap.get("changes").map(
               (product) =>
@@ -421,10 +447,10 @@ export async function insertNewProduct(changesMapping) {
 
 /**
  * Insert Supplier data into the database.
- * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
  * @returns {int[] | Error} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
-export async function insertSupplier(changesMapping) {
+export async function insertSupplier(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
@@ -433,7 +459,7 @@ export async function insertSupplier(changesMapping) {
     let result = await pool.query(
       `INSERT INTO Supplier (SupplierNumber, SupplierName, Currency)
       VALUES 
-      ${changesMapping
+      ${mapChange
         .map((changeMap) =>
           changeMap
             .get("changes")
@@ -464,17 +490,17 @@ export async function insertSupplier(changesMapping) {
 
 /**
  * Insert Oem data into the SQL Database based on the Product ID specified.
- * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with number of successful row inserts OR an Error Object.
  */
-export async function insertOemByProduct(changesMapping) {
+export async function insertOemByProduct(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new Oem...");
     let query = `DECLARE @productKey uniqueidentifier;
-    ${changesMapping
+    ${mapChange
       .map(
         (Map) =>
           `SET @productKey =
@@ -516,14 +542,14 @@ export async function insertOemByProduct(changesMapping) {
  * @param {Object[]} oemProductPairs list of oem-productID (SKU or Research ID) pair object.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with number of successful row inserts OR an Error Object.
  */
-export async function insertOemBySupplier(changesMapping) {
+export async function insertOemBySupplier(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
     console.log("Inserting new Oem...");
-    let query = `${changesMapping
+    let query = `${mapChange
       .map(
         (Map) =>
           `INSERT INTO Oem (SupplierNumber, OEM, productID) VALUES
@@ -561,10 +587,10 @@ export async function insertOemBySupplier(changesMapping) {
 
 /**
  * Insert KType (Key Type) data into the SQL Database.
- * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
-export async function insertKType(changesMapping) {
+export async function insertKType(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
@@ -572,7 +598,7 @@ export async function insertKType(changesMapping) {
     console.log("Inserting new KType...");
     let query = `INSERT INTO KeyType (KeyType, ProductID)
       VALUES 
-      ${changesMapping.map(
+      ${mapChange.map(
         (Map) =>
           `('${Map.get("changes").KType}', 
             (SELECT TOP 1 ID FROM Product
@@ -600,17 +626,17 @@ export async function insertKType(changesMapping) {
 
 /**
  * Insert EPID (eBay Product ID) data into the SQL Database.
- * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
-export async function insertEpid(changesMapping) {
+export async function insertEpid(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new ePID...");
     let result = await pool.query(`INSERT INTO EPID (EPID, ProductID)
-      VALUES ${changesMapping.map(
+      VALUES ${mapChange.map(
         (Map) =>
           `('${Map.get("changes").EPID}', 
           (SELECT TOP 1 ID FROM Product
@@ -637,16 +663,16 @@ export async function insertEpid(changesMapping) {
 
 /**
  * Insert Alternate Index data into the SQL Database based on the Supplier.
- * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
-export async function insertAltIndexBySupplier(changesMapping) {
+export async function insertAltIndexBySupplier(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new AltIndex...");
-    let query = `${changesMapping
+    let query = `${mapChange
       .map(
         (Map) =>
           `INSERT INTO AlternateIndex (AltIndexKey, MOQ, CostAud, LastUpdate, Quality, SupplierPartType, WCPPartType, ProductID, SupplierNumber)
@@ -689,14 +715,14 @@ export async function insertAltIndexBySupplier(changesMapping) {
  * @param {Object[]} altIndexObjects List of Alternate Index object.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
  */
-export async function insertAltIndexByProduct(changesMapping) {
+export async function insertAltIndexByProduct(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new AltIndex...");
     let query = `DECLARE @productKey uniqueidentifier
-    ${changesMapping
+    ${mapChange
       .map(
         (Map) =>
           `SET @productKey = (SELECT TOP 1 ID FROM Product
@@ -736,17 +762,17 @@ export async function insertAltIndexByProduct(changesMapping) {
 
 /**
  * Updates Product value based on the new changes' mapping key-values to the SQL Database.
- * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
  */
-export async function updateProduct(changesMapping) {
+export async function updateProduct(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
     var updateQueries = [];
-    changesMapping.forEach((item) => {
+    mapChange.forEach((item) => {
       let changes = item.get("changes");
       let productID = item.get("id");
       let setUpdates = [];
@@ -813,17 +839,17 @@ export async function updateProduct(changesMapping) {
 
 /**
  * Updates Oem value based on the new changes' mapping key-values to the SQL Database.
- * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
  */
-export async function updateOem(changesMapping) {
+export async function updateOem(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
     var updateQueries = [];
-    changesMapping.forEach((item) => {
+    mapChange.forEach((item) => {
       let productID = item.get("id");
 
       updateQueries.push(`UPDATE Oem
@@ -870,17 +896,17 @@ export async function updateOem(changesMapping) {
 
 /**
  * Updates KType value based on the new changes' mapping key-values to the SQL Database.
- * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
  */
-export async function updateKType(changesMapping) {
+export async function updateKType(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
     var updateQueries = [];
-    changesMapping.forEach((item) => {
+    mapChange.forEach((item) => {
       let productID = item.get("id");
 
       updateQueries.push(`UPDATE KeyType
@@ -927,17 +953,17 @@ export async function updateKType(changesMapping) {
 
 /**
  * Updates ePID value based on the new changes' mapping key-values to the SQL Database.
- * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
  */
-export async function updateEpid(changesMapping) {
+export async function updateEpid(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
     var updateQueries = [];
-    changesMapping.forEach((item) => {
+    mapChange.forEach((item) => {
       let productID = item.get("id");
 
       updateQueries.push(`UPDATE EPID
@@ -984,17 +1010,17 @@ export async function updateEpid(changesMapping) {
 
 /**
  * Updates Alternate Index value based on the new changes' mapping key-values to the SQL Database.
- * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
  */
-export async function updateAltIndex(changesMapping) {
+export async function updateAltIndex(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
     var updateQueries = [];
-    changesMapping.forEach((item) => {
+    mapChange.forEach((item) => {
       let changes = item.get("changes");
       let productID = item.get("id");
       let setUpdates = [];
@@ -1064,10 +1090,10 @@ export async function updateAltIndex(changesMapping) {
 
 /**
  * Delete Product from NewProduct Table based on the ResearchID given.
- * @param {Map} changesMapping The mapping of changes synced with the Workflow API.
+ * @param {Map} mapChange The mapping of changes synced with the Workflow API.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
  */
-export async function deleteNewProduct(changesMapping) {
+export async function deleteNewProduct(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
@@ -1075,7 +1101,7 @@ export async function deleteNewProduct(changesMapping) {
 
     console.log("Deleting New Product...");
     let result = await pool.query(`DELETE FROM NewProduct 
-    WHERE ResearchID in (${changesMapping
+    WHERE ResearchID in (${mapChange
       .map((item) => {
         return `'${item.get("id")}'`;
       })
@@ -1106,10 +1132,10 @@ export async function deleteNewProduct(changesMapping) {
 
 /**
  * Delete Product from Product Table based on the ResearchID OR SKU given.
- * @param {Map} changesMapping The mapping of changes synced with the Workflow API.
+ * @param {Map} mapChange The mapping of changes synced with the Workflow API.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
  */
-export async function deleteProduct(changesMapping) {
+export async function deleteProduct(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
@@ -1117,11 +1143,11 @@ export async function deleteProduct(changesMapping) {
 
     console.log("Deleting Product...");
     let result = await pool.query(`DELETE FROM Product 
-    WHERE ResearchID in (${changesMapping
+    WHERE ResearchID in (${mapChange
       .map((Map) => {
         return `'${Map.get("id")}'`;
       })
-      .join()}) OR SKU in (${changesMapping
+      .join()}) OR SKU in (${mapChange
       .map((Map) => {
         return `'${Map.get("id")}'`;
       })
@@ -1152,17 +1178,17 @@ export async function deleteProduct(changesMapping) {
 
 /**
  * Delete User from Users Table based on the UserID.
- * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
  */
-export async function deleteUser(changesMapping) {
+export async function deleteUser(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Deleting User...");
     let result = await pool.query(`DELETE FROM Users 
-    WHERE UserID IN (${changesMapping
+    WHERE UserID IN (${mapChange
       .map((changeMap) => changeMap.get("changes").map((user) => `'${user}'`))
       .join()});`);
     console.log("Deleted User");
@@ -1190,17 +1216,17 @@ export async function deleteUser(changesMapping) {
 
 /**
  * Delete User from Users Table.
- * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
  */
-export async function deleteSupplier(changesMapping) {
+export async function deleteSupplier(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Deleting Supplier...");
     let result = await pool.query(`DELETE FROM Supplier 
-    WHERE SupplierNumber IN (${changesMapping
+    WHERE SupplierNumber IN (${mapChange
       .map((changeMap) =>
         changeMap.get("changes").map((supplierNumber) => `'${supplierNumber}'`)
       )
@@ -1230,17 +1256,17 @@ export async function deleteSupplier(changesMapping) {
 
 /**
  * Delete KeyType from KeyType Table
- * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
  */
-export async function deleteKType(changesMapping) {
+export async function deleteKType(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Deleting KeyType...");
     let result = await pool.query(
-      `${changesMapping
+      `${mapChange
         .map(
           (Map) =>
             `DELETE FROM KeyType 
@@ -1277,17 +1303,17 @@ export async function deleteKType(changesMapping) {
 
 /**
  * Delete EPID from EPID Table
- * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
  */
-export async function deleteEpid(changesMapping) {
+export async function deleteEpid(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Deleting ePID...");
     let result = await pool.query(
-      `${changesMapping
+      `${mapChange
         .map(
           (Map) =>
             `DELETE FROM EPID 
@@ -1324,16 +1350,16 @@ export async function deleteEpid(changesMapping) {
 
 /**
  * Delete OEM from Oem Table
- * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
  */
-export async function deleteOem(changesMapping) {
+export async function deleteOem(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Deleting OEM...");
-    let query = `${changesMapping
+    let query = `${mapChange
       .map(
         (Map) =>
           `DELETE FROM Oem 
@@ -1371,16 +1397,16 @@ export async function deleteOem(changesMapping) {
 
 /**
  * Delete Alternate Index from AlternateIndex Table
- * @param {Map} changesMapping The mapping of changes made to the DataTable on the client side.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
  */
-export async function deleteAltIndex(changesMapping) {
+export async function deleteAltIndex(mapChange) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Deleting AltIndex...");
-    let query = `${changesMapping
+    let query = `${mapChange
       .map(
         (Map) =>
           `DELETE FROM AlternateIndex 
