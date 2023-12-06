@@ -60,7 +60,6 @@ export async function readFileToJson(
       if (!worksheetSeperated) {
         const SHEET_NAME = WORKBOOK.SheetNames[0];
         const SHEET = WORKBOOK.Sheets[SHEET_NAME];
-        debugger;
         // Get all header cell location
         let headerCell = [];
         // const SHEET_ARRAY = XLSX.utils.sheet_to_json(SHEET);

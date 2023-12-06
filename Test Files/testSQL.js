@@ -27,7 +27,6 @@ import {
 
 async function getProduct_Test() {
   var result = await getProduct();
-  debugger;
 }
 
 async function insertUser_Test() {
@@ -1035,7 +1034,6 @@ async function updateProduct_Test() {
     ]),
   ];
   var result = await updateProduct(update);
-  debugger;
 }
 
 async function deleteNewProduct_Test() {
@@ -1083,7 +1081,6 @@ async function deleteNewProduct_Test() {
 
   await deleteNewProduct(toDelete);
   await deleteProduct(toDelete);
-  debugger;
 }
 
 async function updateOem_Test() {

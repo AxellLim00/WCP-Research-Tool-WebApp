@@ -45,7 +45,7 @@ export async function getUsersProduct() {
     let result = await pool.query(
       `SELECT Users.*,COUNT(Product.ID) AS 'ProductCount' 
       FROM Users 
-      JOIN Product ON Users.UserID = Product.UserID 
+      LEFT JOIN Product ON Users.UserID = Product.UserID 
       GROUP BY Users.UserID, Users.Team;`
     );
     console.log("Got Users");
@@ -61,7 +61,7 @@ export async function getUsersProduct() {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -95,7 +95,7 @@ export async function getProduct() {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -124,7 +124,7 @@ export async function getNewProduct() {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -158,7 +158,7 @@ export async function getOem(productID) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -187,7 +187,7 @@ export async function getSupplier() {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -227,7 +227,7 @@ export async function getAltIndex(productID) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -261,7 +261,7 @@ export async function getKeyType(productID) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -295,7 +295,7 @@ export async function getEpid(productID) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -335,7 +335,7 @@ export async function insertUser(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -380,7 +380,7 @@ export async function insertProduct(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -440,7 +440,7 @@ export async function insertNewProduct(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -483,7 +483,7 @@ export async function insertSupplier(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -531,7 +531,7 @@ export async function insertOemByProduct(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -580,7 +580,7 @@ export async function insertOemBySupplier(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -619,7 +619,7 @@ export async function insertKType(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -656,7 +656,7 @@ export async function insertEpid(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -704,7 +704,7 @@ export async function insertAltIndexBySupplier(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -755,7 +755,7 @@ export async function insertAltIndexByProduct(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -832,7 +832,7 @@ export async function updateProduct(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -889,7 +889,7 @@ export async function updateOem(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -946,7 +946,7 @@ export async function updateKType(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -1003,7 +1003,7 @@ export async function updateEpid(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -1083,7 +1083,7 @@ export async function updateAltIndex(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -1125,7 +1125,7 @@ export async function deleteNewProduct(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -1171,7 +1171,7 @@ export async function deleteProduct(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -1209,7 +1209,7 @@ export async function deleteUser(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -1249,7 +1249,7 @@ export async function deleteSupplier(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -1296,7 +1296,7 @@ export async function deleteKType(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -1343,7 +1343,7 @@ export async function deleteEpid(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -1390,7 +1390,7 @@ export async function deleteOem(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }
@@ -1436,7 +1436,7 @@ export async function deleteAltIndex(mapChange) {
       error: err,
     };
   } finally {
-    pool.close();
+    if (pool) pool.close();
     console.log("Connection closed.");
   }
 }

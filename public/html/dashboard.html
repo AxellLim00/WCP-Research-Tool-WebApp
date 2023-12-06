@@ -63,6 +63,33 @@
         <button name="exportBtn">Export</button>
       </section>
     </div>
+    <div id="popupForm" class="popup-form" style="display: none">
+      <form class="flex-form" style="height: 100%">
+        <h2 name="formTitle">Title</h2>
+        <section id="newForm" class="flex-form form-information">
+          <p align="center">
+            First time in the Research Tool?<br />Choose a team or Create a new
+            team!
+          </p>
+          <label name="Team Name" align="center">
+            Team Name<b style="color: red">*</b>:
+            <select id="newTeamSelect">
+              <option value="" disabled selected>Select a Team</option>
+            </select>
+            <input id="newTeamText" type="text" style="display: none" />
+            <br />
+            <br />
+            <label>
+              <input type="checkbox" id="isNewTeam" />
+              New Team?
+            </label>
+          </label>
+        </section>
+        <section class="flex-buttons form-button">
+          <button type="button" name="saveForm">Confirm</button>
+        </section>
+      </form>
+    </div>
   </body>
   <script src="../js/dist/dashboard.bundle.js"></script>
 </html>

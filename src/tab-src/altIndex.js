@@ -415,7 +415,7 @@ $(function () {
             ["type", "new"],
             ["id", productIdSelected],
             ["table", "AlternateIndex"],
-            ["changes", newObject],
+            ["changes", [newObject]],
           ])
         );
         return newObject;

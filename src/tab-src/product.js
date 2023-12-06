@@ -47,7 +47,7 @@ $(function () {
   const JSON_ARRAY = JSON.parse(
     sessionStorage.getItem("productRequestHistory")
   );
-  
+
   isEmptyData = JSON_ARRAY === null;
   // if loading from API empty
   if (isEmptyData) {
@@ -653,10 +653,6 @@ $(function () {
  */
 function generateProductID(make, model, partType) {
   // Extract the first 3 letters from make, model, and partType
-  console.log(make, model, partType);
-  console.log(typeof make);
-  console.log(typeof model);
-  console.log(typeof partType);
   let makePrefix =
     make.length == 1
       ? make[0].substring(0, 3).toUpperCase()

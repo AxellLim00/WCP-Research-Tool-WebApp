@@ -128,9 +128,18 @@ io.on("connect", async function (socket) {
         result = await getUsersProduct();
         break;
       case "Product":
-        result = {};
-        result.Product = await getProduct();
-        result.NewProduct = await getNewProduct();
+        let product = await getProduct();
+        let newProduct = await getNewProduct();
+        if (product.status == "OK" && newProduct.status == "OK")
+          result = {
+            status: "OK",
+            result: { Product: product.result, NewProduct: newProduct.result },
+          };
+        else {
+          result = { status: "ERROR", error: [] };
+          if (product.status == "ERROR") result.error.push(product.error);
+          if (newProduct.status == "ERROR") result.error.push(newProduct.error);
+        }
         break;
       case "KeyType":
         result = await getKeyType(productID);
@@ -160,7 +169,7 @@ io.on("connect", async function (socket) {
   socket.on("update database", async (updateList, callback) => {
     // Use reduce to split the list based on tablename and action
     const separatedLists = updateList.reduce((acc, item) => {
-      const key = `${item.tablename}_${item.action}`;
+      const key = `${item.get("table")}_${item.get("type")}`;
       if (!acc[key]) {
         acc[key] = [];
       }

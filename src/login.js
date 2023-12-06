@@ -38,6 +38,7 @@ $(function () {
     $passwordInput.prop("disabled", false);
 
     sessionStorage.setItem("token", token);
+    sessionStorage.setItem("username", $usernameInput.val());
     location.href += "research-tool";
   });
 
