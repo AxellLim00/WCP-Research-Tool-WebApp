@@ -52,13 +52,11 @@ $(async function () {
       createEmptyRow(defaultRowAmount, defaulClumnAmountUser)
     );
   else {
-    if (
-      userTableData.some(
-        (user) => user.UserID == sessionStorage.getItem("username")
-      )
-    ) {
-      // Show team name form
-    } else {
+    const currentUser = userTableData.find(
+      (user) => user.UserID === sessionStorage.getItem("username")
+    );
+    if (currentUser) fillDashboardTexts(currentUser, userTableData);
+    else {
       Array.from(new Set(userTableData.map((user) => user.Team))).forEach(
         (team) =>
           $("#newTeamSelect").append(
@@ -67,12 +65,9 @@ $(async function () {
       );
       showPopUpForm("new", "New User?");
     }
-    // $(userTableName + ' > tbody:last-child').append(
-    //   // HTML for user table data here
-    // );
   }
 
-  if (!periodTableData || jQuery.isEmptyObject(periodTableData))
+  if (!periodTableData || jQuery.isEmptyObject(periodTableData.Product))
     $(periodTableName + " > tbody:last-child").append(
       createEmptyRow(defaultRowAmount, defaulColumnAmountPeriod)
     );
@@ -82,12 +77,13 @@ $(async function () {
     // );
   }
 
-  const TABLE_USER = new DataTable(userTableName, {
+  const tableUser = new DataTable(userTableName, {
     orderCellsTop: true,
     columns: [{ data: "UserID" }, { data: "ProductCount" }],
   });
+  tableUser.rows.add(userTableData).draw();
 
-  const TABLE_PERIOD = new DataTable(periodTableName, {
+  const tablePeriod = new DataTable(periodTableName, {
     orderCellsTop: true,
     columns: [
       { data: "UserID" },
@@ -96,6 +92,7 @@ $(async function () {
       { data: "Desc" },
     ],
   });
+  tablePeriod.rows.add(periodTableData).draw();
 
   $(".dataTables_filter").css("padding-bottom", "20px");
 
@@ -133,7 +130,7 @@ $(async function () {
 
   $('button[name="saveForm"]').on("click", async function () {
     const teamSelect = $(`#newTeamSelect`).val();
-    const teamText = $(`#newTeamText`).text();
+    const teamText = $(`#newTeamText`).val();
     // If any team input is empty
     if (!(teamSelect || teamText)) {
       showAlert("Please select a team for yourself.");
@@ -154,8 +151,14 @@ $(async function () {
         ["changes", [newUser]],
       ]),
     ]);
-    saveChanges();
-    hidePopUpForm();
+    let isSaved = await saveChanges(socket);
+    if (isSaved) {
+      newUser.ProductCount = 0;
+      tableUser.row.add(newUser).draw();
+      fillDashboardTexts(newUser, userTableData);
+      userTableData.append(newUser);
+      hidePopUpForm();
+    }
   });
 
   //#endregion
@@ -179,6 +182,10 @@ async function fetchUserDataFromDatabase() {
   });
 }
 
+/**
+ * Fetch All Product Details from SQL Database
+ * @returns {Promise<Object>} Return Array of product or Array of error
+ */
 async function fetchPeriodDataFromDatabase() {
   return new Promise((resolve, reject) => {
     socket.emit("get object database", "Product", "", (ackData) => {
@@ -199,4 +206,20 @@ async function fetchPeriodDataFromDatabase() {
       }
     });
   });
+}
+
+/**
+ * Fill html text in the dashboard tab with revelant data
+ * @param {*} currentUser current user signed in
+ * @param {*} allUsers all user in the platform to process
+ */
+function fillDashboardTexts(currentUser, allUsers) {
+  $("#userName").text(currentUser.UserID);
+  $("#userAmount").text(currentUser.ProductCount);
+  $("#team").text(currentUser.Team);
+  $("#teamAmount").text(
+    allUsers
+      .filter((user) => user.Team === currentUser.Team)
+      .reduce((acc, user) => acc + user.ProductCount, 0)
+  );
 }

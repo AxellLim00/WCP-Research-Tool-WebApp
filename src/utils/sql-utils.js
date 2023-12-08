@@ -15,12 +15,18 @@ const ValueDicionary = {
     pinnacle: 4,
     5: "peach",
     peach: 5,
+    6: "catalogue",
+    catalogue: 6,
+    "": "NULL",
+    NULL: "",
   },
   OemType: {
     0: "aftermarket",
     aftermarket: 0,
     1: "genuine",
     genuine: 1,
+    "": "NULL",
+    NULL: "",
   },
   Quality: {
     0: "good",
@@ -29,6 +35,8 @@ const ValueDicionary = {
     normal: 1,
     2: "bad",
     bad: 2,
+    "": "NULL",
+    NULL: "",
   },
 };
 
@@ -41,15 +49,17 @@ export async function getUsersProduct() {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
+
     console.log("Getting Users...");
-    let result = await pool.query(
-      `SELECT Users.*,COUNT(Product.ID) AS 'ProductCount' 
+    let query = `SELECT Users.*,COUNT(Product.ID) AS 'ProductCount' 
       FROM Users 
       LEFT JOIN Product ON Users.UserID = Product.UserID 
-      GROUP BY Users.UserID, Users.Team;`
-    );
+      GROUP BY Users.UserID, Users.Team;`;
+    let result = await pool.query(query);
     console.log("Got Users");
+
     console.log("Result: ", result.rowsAffected);
+
     return {
       status: "OK",
       result: result.recordset,
@@ -139,12 +149,12 @@ export async function getOem(productID) {
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Getting Oems...");
-    let result = await pool.query(
-      `SELECT OEM FROM Oem 
+    let query = `SELECT * FROM Oem 
       JOIN Product on Oem.ProductID = Product.ID
       WHERE Product.ResearchID = ${productID} 
-        OR Product.SKU = ${productID}`
-    );
+        OR Product.SKU = ${productID}`;
+    if (productID === "All") query = "SELECT * from Oem";
+    const result = await pool.query(query);
     console.log("Got Oem");
     console.log("Result: ", result.rowsAffected);
     return {
@@ -202,13 +212,13 @@ export async function getAltIndex(productID) {
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Getting Alt Indexes...");
-    let result = await pool.query(
-      `SELECT AlternateIndex.*, Supplier.SupplierName, Supplier.Currency 
+    let query = `SELECT AlternateIndex.*, Supplier.SupplierName, Supplier.Currency 
       FROM AlternateIndex 
       JOIN Product ON AlternateIndex.ProductID = Product.ID 
       JOIN Supplier ON AlternateIndex.SupplierNumber = Supplier.SupplierNumber 
-      WHERE Product.ResearchID = ${productID} OR Product.SKU = ${productID}`
-    );
+      WHERE Product.ResearchID = ${productID} OR Product.SKU = ${productID}`;
+    if (productID === "All") query = `Select * from AlternateIndex`;
+    const result = await pool.query(query);
     console.log("Got Alt Index");
     console.log("Result: ", result.rowsAffected);
     // Translate SQL int to DataTable Value
@@ -350,24 +360,26 @@ export async function insertProduct(mapChange) {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
-    console.log("Inserting new product...");
-    let result = await pool.query(
-      `INSERT INTO Product (ID, UserID, ResearchID, SKU, Status, OemType, LastUpdate)
+    console.log("Inserting product details...");
+
+    let query = `INSERT INTO Product (ID, UserID, ResearchID, SKU, Status, OemType, LastUpdate)
       VALUES
         ${mapChange
           .map((changeMap) =>
             changeMap.get("changes").map(
               (product) =>
-                `(NEWID(), '${product.UserID}', 
-              ${product.ResearchID ? "'" + product.ResearchID + "'" : "NULL"}, 
-              ${product.SKU ? "'" + product.SKU + "'" : "NULL"}, 
-              ${product.Status}, ${product.OemType}, 
+                `(NEWID(), '${changeMap.get("user")}', 
+              ${product.Id ? "'" + product.Id + "'" : "NULL"}, 
+              ${product.Sku ? "'" + product.Sku + "'" : "NULL"}, 
+              ${ValueDicionary.Status[product.Status]}, 
+              ${ValueDicionary.OemType[product.Oem]}, 
               '${new Date().toISOString().slice(0, 19).replace("T", " ")}')`
             )
           )
-          .join(",\n")};`
-    );
-    console.log("Inserted new product");
+          .join(",\n")};`;
+    debugger;
+    const result = await pool.query(query);
+    console.log("Inserted product details");
     console.log("Result: ", result.rowsAffected);
     return {
       status: "OK",
@@ -396,7 +408,7 @@ export async function insertNewProduct(mapChange) {
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
-    console.log("Inserting new product...");
+    console.log("Inserting new product information...");
     let result = await pool.query(
       `INSERT INTO Product (ID, UserID, ResearchID, SKU, Status, OemType, LastUpdate)
       VALUES
@@ -404,7 +416,7 @@ export async function insertNewProduct(mapChange) {
           .map((changeMap) =>
             changeMap.get("changes").map(
               (product) =>
-                `(NEWID(), '${product.UserID}', '${product.ResearchID}', 
+                `(NEWID(), '${changeMap.get("user")}', '${product.ResearchID}', 
               ${product.SKU ? "'" + product.SKU + "'" : "NULL"}, 
               ${ValueDicionary.Status[product.Status]}, 
               ${ValueDicionary.OemType[product.Oem]}, 
@@ -425,7 +437,7 @@ export async function insertNewProduct(mapChange) {
           )
           .join(",\n")};`
     );
-    console.log("Inserted new product");
+    console.log("Inserted new product information");
 
     console.log("Result: ", result.rowsAffected);
 

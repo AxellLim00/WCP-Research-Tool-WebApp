@@ -167,7 +167,9 @@ io.on("connect", async function (socket) {
   });
 
   socket.on("update database", async (updateList, callback) => {
+    // TO DO: Change from using map to just Objects
     // Use reduce to split the list based on tablename and action
+    updateList = updateList.map((obj) => new Map(JSON.parse(obj)));
     const separatedLists = updateList.reduce((acc, item) => {
       const key = `${item.get("table")}_${item.get("type")}`;
       if (!acc[key]) {
@@ -178,94 +180,96 @@ io.on("connect", async function (socket) {
     }, {});
 
     let resultArray = [];
-    if (seperatedLists["Users_new"])
-      resultArray.push(await insertUser(seperatedLists["Users_new"]));
+    if (separatedLists["Users_new"])
+      resultArray.push(await insertUser(separatedLists["Users_new"]));
 
-    if (seperatedLists["Product_new"])
-      resultArray.push(await insertProduct(seperatedLists["Product_new"]));
+    if (separatedLists["Product_new"])
+      resultArray.push(await insertProduct(separatedLists["Product_new"]));
 
-    if (seperatedLists["Product_edit"])
-      resultArray.push(await updateProduct(seperatedLists["Product_edit"]));
+    if (separatedLists["Product_edit"])
+      resultArray.push(await updateProduct(separatedLists["Product_edit"]));
 
-    if (seperatedLists["NewProduct_new"])
+    if (separatedLists["NewProduct_new"])
       resultArray.push(
-        await insertNewProduct(seperatedLists["NewProduct_new"])
+        await insertNewProduct(separatedLists["NewProduct_new"])
       );
 
-    if (seperatedLists["NewProduct_delete"])
+    if (separatedLists["NewProduct_delete"])
       resultArray.push(
-        await deleteNewProduct(seperatedLists["NewProduct_delete"])
+        await deleteNewProduct(separatedLists["NewProduct_delete"])
       );
 
-    if (seperatedLists["KeyType_new"])
-      resultArray.push(await insertKType(seperatedLists["KeyType_new"]));
+    if (separatedLists["KeyType_new"])
+      resultArray.push(await insertKType(separatedLists["KeyType_new"]));
 
-    if (seperatedLists["KeyType_edit"])
-      resultArray.push(await updateKType(seperatedLists["KeyType_edit"]));
+    if (separatedLists["KeyType_edit"])
+      resultArray.push(await updateKType(separatedLists["KeyType_edit"]));
 
-    if (seperatedLists["KeyType_delete"])
-      resultArray.push(await deleteKType(seperatedLists["KeyType_delete"]));
+    if (separatedLists["KeyType_delete"])
+      resultArray.push(await deleteKType(separatedLists["KeyType_delete"]));
 
-    if (seperatedLists["EPID_new"])
-      resultArray.push(await insertEpid(seperatedLists["EPID_new"]));
+    if (separatedLists["EPID_new"])
+      resultArray.push(await insertEpid(separatedLists["EPID_new"]));
 
-    if (seperatedLists["EPID_edit"])
-      resultArray.push(await updateEpid(seperatedLists["EPID_edit"]));
+    if (separatedLists["EPID_edit"])
+      resultArray.push(await updateEpid(separatedLists["EPID_edit"]));
 
-    if (seperatedLists["EPID_delete"])
-      resultArray.push(await deleteEpid(seperatedLists["EPID_delete"]));
+    if (separatedLists["EPID_delete"])
+      resultArray.push(await deleteEpid(separatedLists["EPID_delete"]));
 
-    if (seperatedLists["Supplier_new"])
-      resultArray.push(await insertSupplier(seperatedLists["Supplier_new"]));
+    if (separatedLists["Supplier_new"])
+      resultArray.push(await insertSupplier(separatedLists["Supplier_new"]));
 
-    if (seperatedLists["Supplier_delete"])
-      resultArray.push(await deleteSupplier(seperatedLists["Supplier_delete"]));
+    if (separatedLists["Supplier_delete"])
+      resultArray.push(await deleteSupplier(separatedLists["Supplier_delete"]));
 
-    if (seperatedLists["AlternateIndex_newProduct"])
+    if (separatedLists["AlternateIndex_newProduct"])
       resultArray.push(
         await insertAltIndexByProduct(
-          seperatedLists["AlternateIndex_newProduct"]
+          separatedLists["AlternateIndex_newProduct"]
         )
       );
 
-    if (seperatedLists["AlternateIndex_newSupplier"])
+    if (separatedLists["AlternateIndex_newSupplier"])
       resultArray.push(
         await insertAltIndexBySupplier(
-          seperatedLists["AlternateIndex_newSupplier"]
+          separatedLists["AlternateIndex_newSupplier"]
         )
       );
 
-    if (seperatedLists["AlternateIndex_edit"])
+    if (separatedLists["AlternateIndex_edit"])
       resultArray.push(
-        await updateAltIndex(seperatedLists["AlternateIndex_edit"])
+        await updateAltIndex(separatedLists["AlternateIndex_edit"])
       );
 
-    if (seperatedLists["AlternateIndex_delete"])
+    if (separatedLists["AlternateIndex_delete"])
       resultArray.push(
-        await deleteAltIndex(seperatedLists["AlternateIndex_delete"])
+        await deleteAltIndex(separatedLists["AlternateIndex_delete"])
       );
 
-    if (seperatedLists["Oem_newProduct"])
+    if (separatedLists["Oem_newProduct"])
       resultArray.push(
-        await insertOemByProduct(seperatedLists["Oem_newProduct"])
+        await insertOemByProduct(separatedLists["Oem_newProduct"])
       );
 
-    if (seperatedLists["Oem_newSupplier"])
+    if (separatedLists["Oem_newSupplier"])
       resultArray.push(
-        await insertOemBySupplier(seperatedLists["Oem_newSupplier"])
+        await insertOemBySupplier(separatedLists["Oem_newSupplier"])
       );
 
-    if (seperatedLists["Oem_edit"])
-      resultArray.push(await updateOem(seperatedLists["Oem_edit"]));
+    if (separatedLists["Oem_edit"])
+      resultArray.push(await updateOem(separatedLists["Oem_edit"]));
 
-    if (seperatedLists["Oem_delete"])
-      resultArray.push(await deleteOem(seperatedLists["Oem_delete"]));
+    if (separatedLists["Oem_delete"])
+      resultArray.push(await deleteOem(separatedLists["Oem_delete"]));
 
-    errors = resultArray.filter((result) => result.status == "ERROR");
-    successes = resultArray.filter((result) => result.status == "OK");
-
-    let status = errors ? "ERROR" : "OK";
-    if (errors) errors.forEach((err) => console.error(err.error));
+    let errors = resultArray.filter((result) => result.status == "ERROR");
+    let successes = resultArray.filter((result) => result.status == "OK");
+    let status = "OK";
+    if (errors.length > 0) {
+      errors.forEach((err) => console.error(err.error));
+      status = "ERROR";
+    }
 
     callback({
       status: status,

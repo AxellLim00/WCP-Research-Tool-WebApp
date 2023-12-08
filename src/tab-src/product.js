@@ -25,15 +25,17 @@ import {
   updateChanges,
   saveChanges,
 } from "../utils/tab-utils.js";
+import io from "socket.io-client";
+const socket = io();
 
-$(function () {
+$(async function () {
   const defaultColumnAmount = 9;
   const defaultRowAmount = 10;
   const tableName = "#productTable";
+  const productObjectList = [];
   var formSelected;
   var isEmptyData = true;
   var productSelected = new ProductDto();
-  var productObjectList = [];
   var rowindexSelected = -1;
   // Temporary variables for the new product form
   var prevMake = "";
@@ -42,71 +44,163 @@ $(function () {
   var prevID = "";
 
   //#region Initialize Page
-
+  showLoadingScreen("Loading All Products...");
   //Load table from API
-  const JSON_ARRAY = JSON.parse(
+  const productWorkflowArray = JSON.parse(
     sessionStorage.getItem("productRequestHistory")
   );
 
-  isEmptyData = JSON_ARRAY === null;
+  //Load Product from Database
+  const productDatabaseArray = await fetchProductDataFromDatabase().catch(
+    (error) => console.error(error)
+  );
+
+  isEmptyData =
+    !Boolean(productWorkflowArray) &&
+    (!Boolean(productDatabaseArray) ||
+      productDatabaseArray.NewProduct.length === 0);
   // if loading from API empty
   if (isEmptyData) {
     $(tableName).append(createEmptyRow(defaultRowAmount, defaultColumnAmount));
   } else {
-    let productDtoArray = JSON_ARRAY.map((object) =>
+    const productDtoArray = productWorkflowArray.map((object) =>
       Object.assign(new ProductRequestHistoryDto(), object)
     );
+    const productDetails = productDatabaseArray
+      ? productDatabaseArray.Product
+      : [];
+    const newProductSaved = productDatabaseArray
+      ? productDatabaseArray.NewProduct
+      : [];
+    const productAddingToDatabase = [];
 
-    productDtoArray.forEach(function (currentDto) {
-      var i = currentDto.productStockNumber
+    productDtoArray.forEach((currDto) => {
+      var i = currDto.productStockNumber
         ? productObjectList.findIndex(
-            (x) => x.Sku == currentDto.productStockNumber
+            (x) => x.Sku == currDto.productStockNumber
           )
         : -1;
       if (i != -1) {
         // Skip null altIndexes
-        if (!currentDto.altIndexNumber) return;
+        if (!currDto.altIndexNumber) return;
         productObjectList[i].SuppList.push(
-          currentDto.altIndexNumber.toLowerCase()
+          currDto.altIndexNumber.toLowerCase()
         );
         return;
       }
 
       // researchIdentifier will be used to place Generated Research ID
-      if (!currentDto.productStockNumber && !currentDto.researchIdentifier) {
-        currentDto.researchIdentifier = generateProductID(
-          currentDto.vehicleManufacturers.split("\r"),
-          currentDto.vehicleModels.split("\r"),
-          currentDto.partTypeFriendlyName.split(" ")
+      if (!currDto.productStockNumber && !currDto.researchIdentifier) {
+        currDto.researchIdentifier = generateProductID(
+          currDto.vehicleManufacturers.split("\r"),
+          currDto.vehicleModels.split("\r"),
+          currDto.partTypeFriendlyName.split(" ")
         );
       }
-      // Insert new Product to List
-      productObjectList.push(
-        new ProductDto(
-          currentDto.researchIdentifier,
-          currentDto.productStockNumber ?? "",
-          currentDto.vehicleManufacturers.split("\r").join("; "),
-          currentDto.vehicleModels.split("\r").join("; "),
-          currentDto.partTypeFriendlyName,
-          currentDto.interchangeVersion
-            ? `${currentDto.interchangeNumber.trim()} ${
-                currentDto.interchangeVersion
+      let productDetailMatch = productDetails.find(
+        (product) => product.SKU == currDto.productStockNumber
+      );
+
+      let productObjectToPush;
+      // If product Details was saved before
+      if (productDetailMatch) {
+        productObjectToPush = new ProductDto(
+          productDetailMatch.ResearchID,
+          currDto.productStockNumber ?? "",
+          currDto.vehicleManufacturers.split("\r").join("; "),
+          currDto.vehicleModels.split("\r").join("; "),
+          currDto.partTypeFriendlyName,
+          currDto.interchangeVersion
+            ? `${currDto.interchangeNumber.trim()} ${
+                currDto.interchangeVersion
               }`
-            : currentDto.interchangeNumber.trim(),
-          currentDto.interchangeDescriptions
-            ? currentDto.interchangeDescriptions.split("\r").join("; ")
+            : currDto.interchangeNumber.trim(),
+          currDto.interchangeDescriptions
+            ? currDto.interchangeDescriptions.split("\r").join("; ")
             : "",
-          currentDto.productStockNumber &&
-          currentDto.productStockNumber.includes("P-")
+          productDetailMatch.Status,
+          productDetailMatch.OemType,
+          // TO DO: AltIndex and/or Oem-Supplier Pair place here (Database)
+          currDto.altIndexNumber ? [currDto.altIndexNumber.toLowerCase()] : [],
+          // TO DO: oem place here (Database)
+          productDetailMatch ? [""] : []
+        );
+      } else {
+        productObjectToPush = new ProductDto(
+          currDto.researchIdentifier,
+          currDto.productStockNumber ?? "",
+          currDto.vehicleManufacturers.split("\r").join("; "),
+          currDto.vehicleModels.split("\r").join("; "),
+          currDto.partTypeFriendlyName,
+          currDto.interchangeVersion
+            ? `${currDto.interchangeNumber.trim()} ${
+                currDto.interchangeVersion
+              }`
+            : currDto.interchangeNumber.trim(),
+          currDto.interchangeDescriptions
+            ? currDto.interchangeDescriptions.split("\r").join("; ")
+            : "",
+          currDto.productStockNumber &&
+          currDto.productStockNumber.includes("P-")
             ? "catalogue"
             : "research",
           "",
-          currentDto.altIndexNumber
-            ? [currentDto.altIndexNumber.toLowerCase()]
-            : []
+          currDto.altIndexNumber ? [currDto.altIndexNumber.toLowerCase()] : [],
+          []
+        );
+        productAddingToDatabase.push(productObjectToPush);
+      }
+      // Insert new Product to List
+      productObjectList.push(productObjectToPush);
+    });
+    // Slice product inserts if more than 1000, to avoid 1000 SQL insert limit
+    let updateLoops = 1;
+    const sqlInsertLimit = 1000;
+    if (productObjectList.length > sqlInsertLimit)
+      updateLoops = Math.ceil(productObjectList.length / sqlInsertLimit);
+    for (let i = 0; i < updateLoops; i++) {
+      // Insert into SQL
+      updateChanges([
+        new Map([
+          ["type", "new"],
+          ["table", "Product"],
+          ["user", "product-research-tool"],
+          [
+            "changes",
+            productAddingToDatabase.slice(
+              0 + i * sqlInsertLimit,
+              sqlInsertLimit + i * sqlInsertLimit
+            ),
+          ],
+        ]),
+      ]);
+      await saveChanges(socket);
+    }
+
+    // Insert Product that was saved and not in WorkFlow yet.
+    newProductSaved.forEach((currProductSaved) => {
+      let productDetailMatch = productDetails.find(
+        (product) => product.ResearchID == currDto.ResearchID
+      );
+      productObjectList.push(
+        new ProductDto(
+          currProductSaved.ResearchID,
+          currProductSaved.SKU ?? "",
+          currProductSaved.Make,
+          currProductSaved.Model,
+          currProductSaved.PartType,
+          currProductSaved.IcNumber,
+          currProductSaved.IcDescription,
+          productDetailMatch.Status,
+          productDetailMatch.OemType,
+          // TO DO: AltIndex and/or Oem-Supplier Pair place here (Database)
+          currDto.altIndexNumber ? [currDto.altIndexNumber.toLowerCase()] : [],
+          // TO DO: oem place here (Database)
+          []
         )
       );
     });
+
     // Update product with new Generated Research ID
     sessionStorage.setItem(
       "productRequestHistory",
@@ -232,7 +326,6 @@ $(function () {
 
   $(`${tableName}_filter`).remove();
   $(".dataTables_length").css("padding-bottom", "1%");
-
   table.rows.add(productObjectList).draw(false);
   table.columns().search("").draw();
 
@@ -387,7 +480,8 @@ $(function () {
     const OEM_CATEGORY_VALUE = $(`#${formSelected}Oem`).val();
     const ID_VALUE = $("#ID").text();
     const FILE_VALUE = $(`#${formSelected}File`).val();
-    let changesMade = [];
+    const changesMade = [];
+    const user = sessionStorage.getItem("username");
     //check if mandatory field
     let isFormFilled = Boolean(
       MAKE_VALUE &&
@@ -511,8 +605,9 @@ $(function () {
           new Map([
             ["type", "new"],
             ["id", newObject.Id],
-            ["table", "Product"],
-            ["changes", newObject],
+            ["user", user],
+            [("table", "Product")],
+            ["changes", [newObject]],
           ])
         );
         return newObject;
@@ -557,8 +652,9 @@ $(function () {
         new Map([
           ["type", "new"],
           ["id", newProduct.Id],
+          ["user", user],
           ["table", "Product"],
-          ["changes", newProduct],
+          ["changes", [newProduct]],
         ])
       );
       // Add data to table
@@ -640,6 +736,7 @@ $(function () {
     }
   });
 
+  hideLoadingScreen();
   //#endregion
 });
 
@@ -700,4 +797,82 @@ function areAllFieldsFilled() {
   let model = $("#newModel").val();
   let partType = $("#newType").val();
   return make.length >= 3 && model.length >= 3 && partType.length >= 3;
+}
+
+/**
+ * Fetch All Product Details from SQL Database
+ * @returns {Promise<Object>} Return Array of product data or Array of error
+ */
+async function fetchProductDataFromDatabase() {
+  return new Promise((resolve, reject) => {
+    socket.emit("get object database", "Product", "", (ackData) => {
+      if (ackData.status === "OK") {
+        resolve(ackData.result);
+      } else {
+        console.log(
+          `Error Occurred on getting Period data from Database: ${ackData.error
+            .map((err) => `${err.code}: ${err.name}`)
+            .join("\n")}`
+        );
+        showAlert(
+          `Error Occurred on getting Period data from Database: ${ackData.error
+            .map((err) => `${err.code}: ${err.name}`)
+            .join("\n")}`
+        );
+        reject(ackData.error);
+      }
+    });
+  });
+}
+
+/**
+ * Fetch All Oem from SQL Database
+ * @returns {Promise<Object>} Return Array of OEM or Array of error
+ */
+async function fetchOemFromDatabase() {
+  return new Promise((resolve, reject) => {
+    socket.emit("get object database", "Oem", "All", (ackData) => {
+      if (ackData.status === "OK") {
+        resolve(ackData.result);
+      } else {
+        console.log(
+          `Error Occurred on getting Period data from Database: ${ackData.error
+            .map((err) => `${err.code}: ${err.name}`)
+            .join("\n")}`
+        );
+        showAlert(
+          `Error Occurred on getting Period data from Database: ${ackData.error
+            .map((err) => `${err.code}: ${err.name}`)
+            .join("\n")}`
+        );
+        reject(ackData.error);
+      }
+    });
+  });
+}
+
+/**
+ * Fetch All Alternate Index from SQL Database
+ * @returns {Promise<Object>} Return Array of Alternate Index data or Array of error
+ */
+async function fetchAltIndexFromDatabase() {
+  return new Promise((resolve, reject) => {
+    socket.emit("get object database", "AlternateIndex", "All", (ackData) => {
+      if (ackData.status === "OK") {
+        resolve(ackData.result);
+      } else {
+        console.log(
+          `Error Occurred on getting Period data from Database: ${ackData.error
+            .map((err) => `${err.code}: ${err.name}`)
+            .join("\n")}`
+        );
+        showAlert(
+          `Error Occurred on getting Period data from Database: ${ackData.error
+            .map((err) => `${err.code}: ${err.name}`)
+            .join("\n")}`
+        );
+        reject(ackData.error);
+      }
+    });
+  });
 }

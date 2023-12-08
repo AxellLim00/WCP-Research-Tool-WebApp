@@ -11,6 +11,7 @@ import {
 
 $(async function () {
   const token = sessionStorage.getItem("token");
+  const user = sessionStorage.getItem("username");
   const productJsonString = sessionStorage.getItem("productRequestHistory");
   var tabChosen = "";
   var menuToggle = true;
@@ -21,6 +22,7 @@ $(async function () {
   }
   sessionStorage.clear();
   sessionStorage.setItem("token", token);
+  sessionStorage.setItem("username", user);
   sessionStorage.setItem("productRequestHistory", productJsonString);
   sessionStorage.setItem("hasChanges", false);
 

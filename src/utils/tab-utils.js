@@ -188,9 +188,10 @@ export function updateChanges(change) {
 /**
  * Save changes made to Server-side
  * Session Storage's "savedChanges" will be cleared
+ * @param {Socket<DefaultEventsMap, DefaultEventsMap>} socket
  * @returns {Boolean} true if successful, false otherwise
  */
-export function saveChanges() {
+export async function saveChanges(socket) {
   // TO DO: translate Map changes in Server-side
   const storedChanges = sessionStorage.getItem("savedChanges");
   const savedChanges = JSON.parse(storedChanges).map((array) => new Map(array));
@@ -201,22 +202,33 @@ export function saveChanges() {
     );
     return false;
   }
-  // translate
-  savedChanges.forEach(function (changes) {
-    const type = changes.get("type");
-    const id = changes.get("id");
-    const table = changes.get("table");
-    const changedValues = changes.get("changes");
-  });
-  let errorMessage = "";
-  // IF there is error message
-  if (errorMessage.length > 0) {
-    showAlert(
-      `<strong>FATAL Error!</strong> Fail to save to database, please contact administrator --> ${errorMessage}`
-    );
-    return false;
-  }
 
+  const result = await updateDataOnDatabase(socket, savedChanges).catch(
+    (error) => console.error(error)
+  );
+  // IF there is error message
+  if (!result) return false;
   sessionStorage.removeItem("savedChanges");
   return true;
+}
+
+/**
+ * Call emit function to update database
+ * @param {*} changes array of changes to update
+ * @returns {Promise<boolean>} True if all works well, False when there is an error
+ */
+async function updateDataOnDatabase(socket, changes) {
+  changes = changes.map((Map) => JSON.stringify(Array.from(Map.entries())));
+  return new Promise((resolve, reject) => {
+    socket.emit("update database", changes, (ackData) => {
+      if (ackData.status === "ERROR") {
+        showAlert(
+          `<strong>FATAL Error!</strong> Fail to save to database, please contact administrator --><br>${ackData.errors
+            .map((err) => `${err.name}: ${err.message}`)
+            .join("<br>")}`
+        );
+        reject(false);
+      } else resolve(true);
+    });
+  });
 }
