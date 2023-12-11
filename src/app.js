@@ -22,6 +22,7 @@ import {
   insertUser,
   insertProduct,
   updateProduct,
+  insertNewProduct,
   deleteNewProduct,
   insertKType,
   updateKType,

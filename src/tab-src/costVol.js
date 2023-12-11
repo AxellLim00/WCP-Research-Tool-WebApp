@@ -20,6 +20,8 @@ import {
   readFileToJson,
 } from "../utils/table-utils.js";
 import "../utils/tableExport-utils/tableExport.js";
+import io from "socket.io-client";
+const socket = io();
 
 $(function () {
   const tableName = "#costVolTable";
@@ -104,7 +106,7 @@ $(function () {
   // Save changes Button
   $('button[name="saveBtn"]').on("click", function () {
     // on successful save to Server-side
-    if (saveChanges()) {
+    if (saveChanges(socket)) {
       updateHasChanges(false);
     }
   });

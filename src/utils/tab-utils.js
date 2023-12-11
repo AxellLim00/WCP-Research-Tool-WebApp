@@ -152,31 +152,19 @@ export function updateObject(object, updates) {
  * @returns {}
  */
 export function updateHasChanges(hasChange) {
-  // change hasChanges value in session storage
+  // Change hasChanges value in session storage
   sessionStorage.setItem("hasChanges", hasChange);
-  if (hasChange) {
-    $("button[name=saveBtn]").prop("disabled", false);
-    // Change save button back to normal when false
-  } else {
-    $("button[name=saveBtn]").prop("disabled", true);
-  }
+
+  // Enable or disable the save button based on hasChange value
+  $("button[name=saveBtn]").prop("disabled", !hasChange);
 }
 
 /**
  * Save changes made to Session Storage's "savedChanges" in JSON Format
  * @param {Map[]} change Map Array of changes to be saved
- * @returns
  */
 export function updateChanges(change) {
-  let storedChanges = sessionStorage.getItem("savedChanges");
-  // If savedChanges is empty
-  if (!storedChanges) {
-    sessionStorage.setItem(
-      "savedChanges",
-      JSON.stringify(change.map((map) => Array.from(map.entries())))
-    );
-    return;
-  }
+  let storedChanges = sessionStorage.getItem("savedChanges") || "[]";
   storedChanges = JSON.parse(storedChanges).map((array) => new Map(array));
   storedChanges.push(...change);
   sessionStorage.setItem(
@@ -189,46 +177,52 @@ export function updateChanges(change) {
  * Save changes made to Server-side
  * Session Storage's "savedChanges" will be cleared
  * @param {Socket<DefaultEventsMap, DefaultEventsMap>} socket
- * @returns {Boolean} true if successful, false otherwise
+ * @returns {Promise<boolean>} true if successful, false otherwise
  */
 export async function saveChanges(socket) {
-  // TO DO: translate Map changes in Server-side
   const storedChanges = sessionStorage.getItem("savedChanges");
   const savedChanges = JSON.parse(storedChanges).map((array) => new Map(array));
-  // If savedChanges is empty or Array is empty
-  if (!storedChanges || savedChanges.size == 0) {
+
+  if (!storedChanges || savedChanges.size === 0) {
     showAlert(
-      "<strong>FATAL Error!</strong> No changes was found, please contact administrator"
+      "<strong>FATAL Error!</strong> No changes were found, please contact the administrator"
     );
     return false;
   }
 
-  const result = await updateDataOnDatabase(socket, savedChanges).catch(
-    (error) => console.error(error)
-  );
-  // IF there is error message
-  if (!result) return false;
-  sessionStorage.removeItem("savedChanges");
-  return true;
+  try {
+    const result = await updateDataOnDatabase(socket, savedChanges);
+    sessionStorage.removeItem("savedChanges");
+    return result;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
 }
 
 /**
- * Call emit function to update database
- * @param {*} changes array of changes to update
- * @returns {Promise<boolean>} True if all works well, False when there is an error
+ * Call emit function to update the database
+ * @param {Socket<DefaultEventsMap, DefaultEventsMap>} socket
+ * @param {Map[]} changes array of changes to update
+ * @returns {Promise<boolean>} true if all works well, false when there is an error
  */
 async function updateDataOnDatabase(socket, changes) {
-  changes = changes.map((Map) => JSON.stringify(Array.from(Map.entries())));
+  const serializedChanges = changes.map((map) =>
+    JSON.stringify(Array.from(map.entries()))
+  );
+
   return new Promise((resolve, reject) => {
-    socket.emit("update database", changes, (ackData) => {
+    socket.emit("update database", serializedChanges, (ackData) => {
       if (ackData.status === "ERROR") {
         showAlert(
-          `<strong>FATAL Error!</strong> Fail to save to database, please contact administrator --><br>${ackData.errors
+          `<strong>FATAL Error!</strong> Failed to save to the database, please contact the administrator:<br>${ackData.errors
             .map((err) => `${err.name}: ${err.message}`)
             .join("<br>")}`
         );
         reject(false);
-      } else resolve(true);
+      } else {
+        resolve(true);
+      }
     });
   });
 }

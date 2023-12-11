@@ -1,7 +1,7 @@
 import sql from "mssql";
 import config from "../../Server.config.json" assert { type: "json" };
 const sqlConfig = config.sql;
-const ValueDicionary = {
+const ValueDictionary = {
   Status: {
     0: "research",
     research: 0,
@@ -91,8 +91,8 @@ export async function getProduct() {
     console.log("Result: ", result.rowsAffected);
     // Translate SQL int to DataTable Value
     result.recordset.forEach((row, idx) => {
-      result.recordset[idx].OemType = ValueDicionary.OemType[row.OemType];
-      result.recordset[idx].Status = ValueDicionary.Status[row.Status];
+      result.recordset[idx].OemType = ValueDictionary.OemType[row.OemType];
+      result.recordset[idx].Status = ValueDictionary.Status[row.Status];
     });
     return {
       status: "OK",
@@ -224,7 +224,7 @@ export async function getAltIndex(productID) {
     // Translate SQL int to DataTable Value
     result.recordset.forEach(
       (row, idx) =>
-        (result.recordset[idx].Quality = ValueDicionary.OemType[row.Quality])
+        (result.recordset[idx].Quality = ValueDictionary.OemType[row.Quality])
     );
     return {
       status: "OK",
@@ -371,13 +371,12 @@ export async function insertProduct(mapChange) {
                 `(NEWID(), '${changeMap.get("user")}', 
               ${product.Id ? "'" + product.Id + "'" : "NULL"}, 
               ${product.Sku ? "'" + product.Sku + "'" : "NULL"}, 
-              ${ValueDicionary.Status[product.Status]}, 
-              ${ValueDicionary.OemType[product.Oem]}, 
+              ${ValueDictionary.Status[product.Status]}, 
+              ${ValueDictionary.OemType[product.Oem]}, 
               '${new Date().toISOString().slice(0, 19).replace("T", " ")}')`
             )
           )
           .join(",\n")};`;
-    debugger;
     const result = await pool.query(query);
     console.log("Inserted product details");
     console.log("Result: ", result.rowsAffected);
@@ -416,10 +415,11 @@ export async function insertNewProduct(mapChange) {
           .map((changeMap) =>
             changeMap.get("changes").map(
               (product) =>
-                `(NEWID(), '${changeMap.get("user")}', '${product.ResearchID}', 
-              ${product.SKU ? "'" + product.SKU + "'" : "NULL"}, 
-              ${ValueDicionary.Status[product.Status]}, 
-              ${ValueDicionary.OemType[product.Oem]}, 
+                `(NEWID(), '${changeMap.get("user")}', 
+                '${changeMap.get("id")}', 
+              ${product.Sku ? "'" + product.Sku + "'" : "NULL"}, 
+              ${ValueDictionary.Status[product.Status]}, 
+              ${ValueDictionary.OemType[product.Oem]}, 
               '${new Date().toISOString().slice(0, 19).replace("T", " ")}')`
             )
           )
@@ -430,9 +430,13 @@ export async function insertNewProduct(mapChange) {
           .map((changeMap) =>
             changeMap.get("changes").map(
               (product) =>
-                `('${product.ResearchID}', '${product.Make}', '${product.Model}', '${product.PartType}', 
-              '${product.IcNumber}', '${product.IcDescription}', 
-              (SELECT TOP 1 ID FROM Product WHERE ResearchID = '${product.ResearchID}'))`
+                `('${changeMap.get("id")}', 
+                '${product.Make}', '${product.Model}', 
+                '${product.Type}', 
+              '${product.Num}', '${product.Desc}', 
+              (SELECT TOP 1 ID 
+                FROM Product 
+                WHERE ResearchID = '${changeMap.get("id")}'))`
             )
           )
           .join(",\n")};`
@@ -690,10 +694,10 @@ export async function insertAltIndexBySupplier(mapChange) {
           `INSERT INTO AlternateIndex (AltIndexKey, MOQ, CostAud, LastUpdate, Quality, SupplierPartType, WCPPartType, ProductID, SupplierNumber)
         VALUES ${Map.get("changes")
           .map(
-            (altIndex) => `(NEWID(), ${altIndex.MOQ}, ${altIndex.CostAud},
+            (altIndex) => `(NEWID(), ${altIndex.Moq}, ${altIndex.CostAud},
             '${new Date().toISOString().slice(0, 19).replace("T", " ")}',
-            ${altIndex.Quality}, '${altIndex.SupplierPartType}', 
-            '${altIndex.WCPPartType}', 
+            ${ValueDictionary.Quality[altIndex.Quality]}, '${altIndex.SupplierPartType}', 
+            '${altIndex.WcpPartType}', 
             (SELECT TOP 1 ID FROM Product
               WHERE SKU = '${altIndex.ProductID}' 
               OR ResearchID = '${altIndex.ProductID}'), 
@@ -744,11 +748,11 @@ export async function insertAltIndexByProduct(mapChange) {
           VALUES ${Map.get("changes")
             .map(
               (altIndex) =>
-                `(NEWID(), ${altIndex.MOQ}, ${altIndex.CostAud}, 
+                `(NEWID(), ${altIndex.Moq}, ${altIndex.CostAud}, 
                 '${new Date().toISOString().slice(0, 19).replace("T", " ")}',
                 ${altIndex.Quality}, '${altIndex.SupplierPartType}', 
-                '${altIndex.WCPPartType}', @productKey, 
-                '${altIndex.Supplier}')`
+                '${altIndex.WcpPartType}', @productKey, 
+                '${altIndex.SupplierNumber}')`
             )
             .join()};`
       )
@@ -790,10 +794,10 @@ export async function updateProduct(mapChange) {
       let setUpdates = [];
       // Translate DataTable value to SQL int value
       if ("Status" in changes)
-        setUpdates.push(`Status = ${ValueDicionary.Status[changes.Status]}`);
+        setUpdates.push(`Status = ${ValueDictionary.Status[changes.Status]}`);
 
       if ("Oem" in changes)
-        setUpdates.push(`OemType = ${ValueDicionary.OemType[changes.Oem]}`);
+        setUpdates.push(`OemType = ${ValueDictionary.OemType[changes.Oem]}`);
 
       if ("EstSaleVol" in changes)
         setUpdates.push(`EstSales = ${changes.EstSaleVol}`);
@@ -1040,7 +1044,7 @@ export async function updateAltIndex(mapChange) {
       if ("CostAud" in changes) setUpdates.push(`CostAud = ${changes.CostAud}`);
 
       if ("Quality" in changes)
-        setUpdates.push(`Quality = ${ValueDicionary.Quality[changes.Quality]}`);
+        setUpdates.push(`Quality = ${ValueDictionary.Quality[changes.Quality]}`);
 
       if ("IsMain" in changes)
         setUpdates.push(`IsMain = ${Number(changes.IsMain)}`);

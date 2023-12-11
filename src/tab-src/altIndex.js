@@ -245,7 +245,7 @@ $(function () {
   // Save changes Button
   $('button[name="saveBtn"]').on("click", function () {
     //on successful save
-    if (saveChanges()) {
+    if (saveChanges(socket)) {
       updateHasChanges(false);
     }
   });

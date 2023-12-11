@@ -37,13 +37,9 @@ $(async function () {
   var isEmptyData = true;
   var productSelected = new ProductDto();
   var rowindexSelected = -1;
-  // Temporary variables for the new product form
-  var prevMake = "";
-  var prevModel = "";
-  var prevPartType = "";
-  var prevID = "";
 
   //#region Initialize Page
+  
   showLoadingScreen("Loading All Products...");
   //Load table from API
   const productWorkflowArray = JSON.parse(
@@ -81,7 +77,6 @@ $(async function () {
           )
         : -1;
       if (i != -1) {
-        // Skip null altIndexes
         if (!currDto.altIndexNumber) return;
         productObjectList[i].SuppList.push(
           currDto.altIndexNumber.toLowerCase()
@@ -89,117 +84,71 @@ $(async function () {
         return;
       }
 
-      // researchIdentifier will be used to place Generated Research ID
       if (!currDto.productStockNumber && !currDto.researchIdentifier) {
         currDto.researchIdentifier = generateProductID(
-          currDto.vehicleManufacturers.split("\r"),
-          currDto.vehicleModels.split("\r"),
-          currDto.partTypeFriendlyName.split(" ")
+          `${currDto.interchangeNumber.trim()}${currDto.interchangeVersion}`,
+          currDto.partTypeCode
         );
       }
-      let productDetailMatch = productDetails.find(
-        (product) => product.SKU == currDto.productStockNumber
-      );
 
-      let productObjectToPush;
-      // If product Details was saved before
-      if (productDetailMatch) {
-        productObjectToPush = new ProductDto(
-          productDetailMatch.ResearchID,
-          currDto.productStockNumber ?? "",
-          currDto.vehicleManufacturers.split("\r").join("; "),
-          currDto.vehicleModels.split("\r").join("; "),
-          currDto.partTypeFriendlyName,
-          currDto.interchangeVersion
-            ? `${currDto.interchangeNumber.trim()} ${
-                currDto.interchangeVersion
-              }`
-            : currDto.interchangeNumber.trim(),
-          currDto.interchangeDescriptions
-            ? currDto.interchangeDescriptions.split("\r").join("; ")
-            : "",
-          productDetailMatch.Status,
-          productDetailMatch.OemType,
-          // TO DO: AltIndex and/or Oem-Supplier Pair place here (Database)
-          currDto.altIndexNumber ? [currDto.altIndexNumber.toLowerCase()] : [],
-          // TO DO: oem place here (Database)
-          productDetailMatch ? [""] : []
-        );
-      } else {
-        productObjectToPush = new ProductDto(
-          currDto.researchIdentifier,
-          currDto.productStockNumber ?? "",
-          currDto.vehicleManufacturers.split("\r").join("; "),
-          currDto.vehicleModels.split("\r").join("; "),
-          currDto.partTypeFriendlyName,
-          currDto.interchangeVersion
-            ? `${currDto.interchangeNumber.trim()} ${
-                currDto.interchangeVersion
-              }`
-            : currDto.interchangeNumber.trim(),
-          currDto.interchangeDescriptions
-            ? currDto.interchangeDescriptions.split("\r").join("; ")
-            : "",
-          currDto.productStockNumber &&
-          currDto.productStockNumber.includes("P-")
-            ? "catalogue"
-            : "research",
-          "",
-          currDto.altIndexNumber ? [currDto.altIndexNumber.toLowerCase()] : [],
-          []
-        );
-        productAddingToDatabase.push(productObjectToPush);
-      }
-      // Insert new Product to List
-      productObjectList.push(productObjectToPush);
-    });
-    // Slice product inserts if more than 1000, to avoid 1000 SQL insert limit
-    let updateLoops = 1;
-    const sqlInsertLimit = 1000;
-    if (productObjectList.length > sqlInsertLimit)
-      updateLoops = Math.ceil(productObjectList.length / sqlInsertLimit);
-    for (let i = 0; i < updateLoops; i++) {
-      // Insert into SQL
-      updateChanges([
-        new Map([
-          ["type", "new"],
-          ["table", "Product"],
-          ["user", "product-research-tool"],
-          [
-            "changes",
-            productAddingToDatabase.slice(
-              0 + i * sqlInsertLimit,
-              sqlInsertLimit + i * sqlInsertLimit
-            ),
-          ],
-        ]),
-      ]);
-      await saveChanges(socket);
-    }
+      let productDetailMatch = productDetails.find((product) => {
+        // Check if SKU match or Research ID match in database with current product in workflow list (currDto)
+        let isSkuMatch = product.SKU
+          ? product.SKU == currDto.productStockNumber
+          : false;
+        let isResearchIdMatch = product.ResearchID
+          ? product.ResearchID.includes(
+              (
+                currDto.interchangeNumber +
+                currDto.interchangeVersion +
+                currDto.partTypeCode
+              ).replace(/\s+/g, "")
+            )
+          : false;
+        return isSkuMatch || isResearchIdMatch;
+      });
 
-    // Insert Product that was saved and not in WorkFlow yet.
-    newProductSaved.forEach((currProductSaved) => {
-      let productDetailMatch = productDetails.find(
-        (product) => product.ResearchID == currDto.ResearchID
-      );
       productObjectList.push(
         new ProductDto(
-          currProductSaved.ResearchID,
-          currProductSaved.SKU ?? "",
-          currProductSaved.Make,
-          currProductSaved.Model,
-          currProductSaved.PartType,
-          currProductSaved.IcNumber,
-          currProductSaved.IcDescription,
-          productDetailMatch.Status,
-          productDetailMatch.OemType,
-          // TO DO: AltIndex and/or Oem-Supplier Pair place here (Database)
+          productDetailMatch
+            ? productDetailMatch.ResearchID
+            : currDto.researchIdentifier,
+          currDto.productStockNumber,
+          currDto.vehicleManufacturers.split("\r").join("; "),
+          currDto.vehicleModels.split("\r").join("; "),
+          currDto.partTypeFriendlyName,
+          currDto.interchangeVersion
+            ? `${currDto.interchangeNumber.trim()} ${
+                currDto.interchangeVersion
+              }`
+            : currDto.interchangeNumber.trim(),
+          currDto.interchangeDescriptions
+            ? currDto.interchangeDescriptions.split("\r").join("; ")
+            : "",
+          productDetailMatch
+            ? productDetailMatch.Status
+            : currDto.productStockNumber &&
+              currDto.productStockNumber.includes("P-")
+            ? "catalogue"
+            : "research",
+          productDetailMatch ? productDetailMatch.OemType : "",
           currDto.altIndexNumber ? [currDto.altIndexNumber.toLowerCase()] : [],
-          // TO DO: oem place here (Database)
-          []
+          productDetailMatch ? [] : []
         )
       );
+
+      // If product is not in database, add to database
+      if (!productDetailMatch) {
+        productAddingToDatabase.push(
+          productObjectList[productObjectList.length - 1]
+        );
+      }
     });
+    console.log(
+      `productAddingToDatabase array length: ${productAddingToDatabase.length}`
+    );
+
+    insertNewWorkflowProductToDatabase(socket, productAddingToDatabase);
 
     // Update product with new Generated Research ID
     sessionStorage.setItem(
@@ -229,14 +178,14 @@ $(async function () {
       {
         data: "Id",
         render: function (data) {
-          if (data.length > 0) return data;
+          if (data && data.length > 0) return data;
           return "<i>Not set</i>";
         },
       },
       {
         data: "Sku",
         render: function (data) {
-          if (String(data).trim().length > 0) return data;
+          if (data && String(data).trim().length > 0) return data;
           return "<i>Not set</i>";
         },
       },
@@ -377,7 +326,7 @@ $(async function () {
   // Save changes Button
   $('button[name="saveBtn"]').on("click", function () {
     //on successful save
-    if (saveChanges()) {
+    if (saveChanges(socket)) {
       updateHasChanges(false);
     }
   });
@@ -469,67 +418,71 @@ $(async function () {
   //#endregion
 
   //#region Form Button
+  const researchIdPlaceHolder = "Fill the form to make an ID";
+
   $('button[name="saveForm"]').on("click", async function () {
-    const SKU_VALUE = $(`#${formSelected}Sku`).val();
-    const MAKE_VALUE = $(`#${formSelected}Make`).val();
-    const MODEL_VALUE = $(`#${formSelected}Model`).val();
-    const PART_TYPE_VALUE = $(`#${formSelected}Type`).val();
-    const IC_NUMBER_VALUE = $(`#${formSelected}Num`).val();
-    const IC_DESCRIPTION_VALUE = $(`#${formSelected}Desc`).val();
-    const STATUS_VALUE = $(`#${formSelected}Status`).val();
-    const OEM_CATEGORY_VALUE = $(`#${formSelected}Oem`).val();
-    const ID_VALUE = $("#ID").text();
-    const FILE_VALUE = $(`#${formSelected}File`).val();
+    const skuVal = $(`#${formSelected}Sku`).val();
+    const makeVal = $(`#${formSelected}Make`).val();
+    const modelVal = $(`#${formSelected}Model`).val();
+    const partTypeVal = $(`#${formSelected}Type`).val();
+    const partTypeCodeVal = $(`#${formSelected}TypeCode`).val();
+    const icNumVal = $(`#${formSelected}Num`).val();
+    const icDescVal = $(`#${formSelected}Desc`).val();
+    const statusVal = $(`#${formSelected}Status`).val();
+    const oemTypeVal = $(`#${formSelected}Oem`).val();
+    const idVal = $("#ID").text();
+    const fileVal = $(`#${formSelected}File`).val();
     const changesMade = [];
     const user = sessionStorage.getItem("username");
-    //check if mandatory field
+
+    const incompleteMessage = "Please complete all non-optional fields";
+    // Check if all input mandatory fields are non-empty
     let isFormFilled = Boolean(
-      MAKE_VALUE &&
-        MODEL_VALUE &&
-        PART_TYPE_VALUE &&
-        IC_NUMBER_VALUE &&
-        IC_DESCRIPTION_VALUE
+      makeVal && modelVal && partTypeVal && icNumVal && icDescVal
     );
-    let incompleteMessage = "Please complete all non-optional fields";
-    //extra validation on new product
+    // Extra validation on new product form (ID is generated)
     if (formSelected == "new")
       isFormFilled &= Boolean(
         // 18 is length of ID generated
-        STATUS_VALUE && OEM_CATEGORY_VALUE && ID_VALUE.length == 18
+        statusVal && oemTypeVal && idVal != researchIdPlaceHolder
       );
-    // extra validation on import product
-    else if (formSelected == "import") isFormFilled &= Boolean(FILE_VALUE);
-    // validation on edit product
+
+    // Extra validation on import product form (File is uploaded)
+    else if (formSelected == "import") isFormFilled &= Boolean(fileVal);
+      
+    // Extra validation on edit product form (ID is not empty)
     else if (formSelected == "edit") {
-      isFormFilled = Boolean(STATUS_VALUE && OEM_CATEGORY_VALUE);
+      isFormFilled = Boolean(statusVal && oemTypeVal);
       incompleteMessage = "Please have all fields filled before saving";
     }
-    // On Form being filled Completely
+
+    // On Form not filled properly, show alert and exit
     if (!isFormFilled) {
       showAlert(`<strong>Error!</strong> ${incompleteMessage}.`);
       return;
     }
 
-    // Import Form Save
+    // Import Form Save 
     if (formSelected == "import") {
       // Optional Column header name
-      let isSkuEmpty = SKU_VALUE.trim().length == 0;
-      let isStatusEmtpy = STATUS_VALUE.trim().length == 0;
-      let isOemCategoryEmtpy = OEM_CATEGORY_VALUE.trim().length == 0;
+      let isSkuEmpty = skuVal.trim().length == 0;
+      let isStatusEmtpy = statusVal.trim().length == 0;
+      let isOemCategoryEmtpy = oemTypeVal.trim().length == 0;
       let columnHeaders = [
-        SKU_VALUE,
-        MAKE_VALUE,
-        MODEL_VALUE,
-        PART_TYPE_VALUE,
-        IC_NUMBER_VALUE,
-        IC_DESCRIPTION_VALUE,
-        STATUS_VALUE,
-        OEM_CATEGORY_VALUE,
+        skuVal,
+        makeVal,
+        modelVal,
+        partTypeCodeVal,
+        partTypeVal,
+        icNumVal,
+        icDescVal,
+        statusVal,
+        oemTypeVal,
       ];
       columnHeaders.filter((n) => n);
       const SHEET_JSON = await readFileToJson("#importFile", columnHeaders);
 
-      // Check if file is empty or blank
+      // Check if file is empty or blank (no data), exit and alert if true 
       if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {
         showAlert(
           `<strong>Error!</strong> <i>${$("input[type=file]")
@@ -541,14 +494,15 @@ $(async function () {
       }
 
       let missingHeader = findMissingColumnHeader(SHEET_JSON[0], [
-        isSkuEmpty ? null : SKU_VALUE,
-        MAKE_VALUE,
-        MODEL_VALUE,
-        PART_TYPE_VALUE,
-        IC_NUMBER_VALUE,
-        IC_DESCRIPTION_VALUE,
-        isStatusEmtpy ? null : STATUS_VALUE,
-        isOemCategoryEmtpy ? null : OEM_CATEGORY_VALUE,
+        isSkuEmpty ? null : skuVal,
+        makeVal,
+        modelVal,
+        partTypeCodeVal,
+        partTypeVal,
+        icNumVal,
+        icDescVal,
+        isStatusEmtpy ? null : statusVal,
+        isOemCategoryEmtpy ? null : oemTypeVal,
       ]);
 
       // Check if all headers from input are inside the file
@@ -562,42 +516,26 @@ $(async function () {
       errorMessage = [];
       // Put map data into Object List
       let importProducts = SHEET_JSON.map((row) => {
-        if (
-          row[MAKE_VALUE].length < 3 ||
-          row[MODEL_VALUE].length < 3 ||
-          row[PART_TYPE_VALUE].length < 3
-        ) {
-          errorMessage.push(
-            `Make <i>${row[MAKE_VALUE]}</i>, Model <i>${row[MODEL_VALUE]}</i> and ` +
-              `Part Type <i>${row[PART_TYPE_VALUE]}</i> must be at least 3 characters long`
-          );
-          return null;
-        }
-
         let newObject = new ProductDto(
-          generateProductID(
-            row[MAKE_VALUE],
-            row[MODEL_VALUE],
-            row[PART_TYPE_VALUE]
-          ),
-          isSkuEmpty ? "" : row[SKU_VALUE],
-          row[MAKE_VALUE],
-          row[MODEL_VALUE],
-          row[PART_TYPE_VALUE],
-          row[IC_NUMBER_VALUE],
-          row[IC_DESCRIPTION_VALUE],
-          isStatusEmtpy ? "" : row[STATUS_VALUE],
-          isOemCategoryEmtpy ? "" : row[OEM_CATEGORY_VALUE]
+          generateProductID(row[icNumVal], row[partTypeCodeVal]),
+          isSkuEmpty ? "" : row[skuVal],
+          row[makeVal],
+          row[modelVal],
+          row[partTypeVal],
+          row[icNumVal],
+          row[icDescVal],
+          isStatusEmtpy ? "" : row[statusVal],
+          isOemCategoryEmtpy ? "" : row[oemTypeVal]
         );
 
         if (newObject.Status === null) {
           errorMessage.push(
-            `STATUS <i>${row[STATUS_VALUE]}</i> must be a valid value`
+            `STATUS <i>${row[statusVal]}</i> must be a valid value`
           );
         }
         if (newObject.Oem === null) {
           errorMessage.push(
-            `OEM type <i>${row[OEM_CATEGORY_VALUE]}</i> must be a valid value`
+            `OEM type <i>${row[oemTypeVal]}</i> must be a valid value`
           );
         }
         // Store each new row locally
@@ -633,14 +571,14 @@ $(async function () {
     else if (formSelected == "new") {
       let newProduct = new ProductDto(
         $("#ID").text(),
-        SKU_VALUE,
-        MAKE_VALUE,
-        MODEL_VALUE,
-        PART_TYPE_VALUE,
-        IC_NUMBER_VALUE,
-        IC_DESCRIPTION_VALUE,
-        STATUS_VALUE,
-        OEM_CATEGORY_VALUE
+        skuVal,
+        makeVal,
+        modelVal,
+        partTypeVal,
+        icNumVal,
+        icDescVal,
+        statusVal,
+        oemTypeVal
       );
       // Empty Table if DataTable previosly was empty
       if (isEmptyData) {
@@ -653,7 +591,7 @@ $(async function () {
           ["type", "new"],
           ["id", newProduct.Id],
           ["user", user],
-          ["table", "Product"],
+          ["table", "NewProduct"],
           ["changes", [newProduct]],
         ])
       );
@@ -665,11 +603,11 @@ $(async function () {
       let rowData = table.row(rowindexSelected).data();
       // Save if there are any changes compared to old value (can be found in productSelected)
       let newUpdate = {};
-      if (productSelected.Status != STATUS_VALUE)
-        newUpdate.Status = rowData.Status = STATUS_VALUE;
+      if (productSelected.Status != statusVal)
+        newUpdate.Status = rowData.Status = statusVal;
 
-      if (productSelected.Oem != OEM_CATEGORY_VALUE)
-        newUpdate.Oem = rowData.Oem = OEM_CATEGORY_VALUE;
+      if (productSelected.Oem != oemTypeVal)
+        newUpdate.Oem = rowData.Oem = oemTypeVal;
 
       // exit if no changes were made
       if (Object.keys(newUpdate).length === 0) {
@@ -704,35 +642,17 @@ $(async function () {
 
   // Event handler for when ID is ready to be created
   $("#newForm").on("input", function () {
-    var make = $("#newMake").val();
-    var model = $("#newModel").val();
-    var partType = $("#newType").val();
-    // Check if all input fields are non-empty and have at least 3 characters
-    if (
-      areAllFieldsFilled() &&
-      (make.substring(0, 3) !== prevMake ||
-        model.substring(0, 3) !== prevModel ||
-        partType.substring(0, 3) !== prevPartType)
-    ) {
-      // Update the previous values
-      prevMake = make.substring(0, 3);
-      prevModel = model.substring(0, 3);
-      prevPartType = partType.substring(0, 3);
-
+    const icNum = $("#newMake").val();
+    const typeCode = $("#newNum").val();
+    if ($("#ID").text() && $("#ID").text().split("-")[1] == icNum + typeCode)
+      return;
+    if (icNum.length > 0 && typeCode.length > 0) {
+      // Check if all input fields are non-empty and have at least 3 characters
       // Generate and display the product ID
-      var productID = generateProductID([make], [model], [partType]);
-      prevID = productID;
-      $("#ID").text(productID);
-    } else if (
-      areAllFieldsFilled() &&
-      make.substring(0, 3) == prevMake &&
-      model.substring(0, 3) == prevModel &&
-      partType.substring(0, 3) == prevPartType
-    ) {
-      $("#ID").text(prevID);
-    } else {
+      $("#ID").text(generateProductID(icNum, typeCode));
+    } else if (icNum.length == 0 || typeCode.length == 0) {
       // Clear the product ID if any input field is empty or has less than 3 characters
-      $("#ID").text("Fill the form to make an ID");
+      $("#ID").text(researchIdPlaceHolder);
     }
   });
 
@@ -743,37 +663,16 @@ $(async function () {
 /**
  * Generate the product ID using first 3 letters of Make, Model and Part Type,
  * followed by an 8 character UUID
- * @param {String[]} make Product's Make value
- * @param {String[]} model Product's Model value
- * @param {String[]} partType Product's Part Type value
+ * @param {String} icNumber Product's IC Number value
+ * @param {String} PartTypeCode Product's Part Type Code value
  * @returns {String} Product ID
  */
-function generateProductID(make, model, partType) {
-  // Extract the first 3 letters from make, model, and partType
-  let makePrefix =
-    make.length == 1
-      ? make[0].substring(0, 3).toUpperCase()
-      : make
-          .map(([v]) => v)
-          .join("")
-          .toUpperCase();
-  let modelPrefix =
-    model.length == 1
-      ? model[0].substring(0, 3).toUpperCase()
-      : model
-          .map(([v]) => v)
-          .join("")
-          .toUpperCase();
-  let partTypePrefix =
-    partType.length == 1
-      ? partType[0].substring(0, 3).toUpperCase()
-      : partType
-          .map(([v]) => v)
-          .join("")
-          .toUpperCase();
-
+function generateProductID(icNumber, PartTypeCode) {
   // Combine the prefixes and shortened UUID to create the product ID
-  return `R-${makePrefix}${modelPrefix}${partTypePrefix}-${generateShortUUID().toUpperCase()}`;
+  return `R-${icNumber.replace(
+    /\s+/g,
+    ""
+  )}${PartTypeCode}-${generateShortUUID().toUpperCase()}`;
 }
 
 /**
@@ -786,17 +685,6 @@ function generateShortUUID() {
     return ((Math.random() * 16) | 0).toString(16);
   });
   return uuid;
-}
-
-/**
- * Check if all input fields are filled with at least 3 characters
- * @returns {Boolean} True if all input fields are filled with at least 3 characters, False otherwise
- */
-function areAllFieldsFilled() {
-  let make = $("#newMake").val();
-  let model = $("#newModel").val();
-  let partType = $("#newType").val();
-  return make.length >= 3 && model.length >= 3 && partType.length >= 3;
 }
 
 /**
@@ -875,4 +763,38 @@ async function fetchAltIndexFromDatabase() {
       }
     });
   });
+}
+
+/**
+ * Insert New Product in Workflow to the SQL Database
+ * @param {Socket<DefaultEventsMap, DefaultEventsMap>} socket
+ * @param {ProductDto[]} productAddingToDatabase Array of new Products
+ * @returns {Promise<void>}
+ */
+async function insertNewWorkflowProductToDatabase(
+  socket,
+  productAddingToDatabase
+) {
+  const sqlInsertLimit = 1000;
+  const totalProducts = productAddingToDatabase.length;
+
+  if (totalProducts === 0) return;
+
+  const updateLoops = Math.ceil(totalProducts / sqlInsertLimit);
+
+  for (let i = 0; i < updateLoops; i++) {
+    const startIndex = i * sqlInsertLimit;
+    const endIndex = startIndex + sqlInsertLimit;
+    const productsToInsert = productAddingToDatabase.slice(startIndex, endIndex);
+
+    const changes = new Map([
+      ["type", "new"],
+      ["table", "Product"],
+      ["user", "product-research-tool"],
+      ["changes", productsToInsert],
+    ]);
+
+    updateChanges([changes]);
+    await saveChanges(socket);
+  }
 }

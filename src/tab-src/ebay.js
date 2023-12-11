@@ -1,5 +1,5 @@
 import DataTable from "datatables.net-dt";
-import dt_css from "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
+import "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
 import {
   showAlert,
   showPopUpForm,
@@ -14,6 +14,8 @@ import {
   saveChanges,
 } from "../utils/tab-utils.js";
 import { createEmptyRow, exportDataTable } from "../utils/table-utils.js";
+import io from "socket.io-client";
+const socket = io();
 
 $(function () {
   const defaultColumnAmount = 1;
@@ -103,7 +105,7 @@ $(function () {
   // Save changes Button
   $('button[name="saveBtn"]').on("click", function () {
     // on successful save to Server-side
-    if (saveChanges()) {
+    if (saveChanges(socket)) {
       updateHasChanges(false);
     }
   });

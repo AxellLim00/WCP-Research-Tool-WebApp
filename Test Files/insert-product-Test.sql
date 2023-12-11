@@ -1,5 +1,5 @@
 INSERT INTO
-    Product (
+    [Product] (
         ID,
         UserID,
         ResearchID,

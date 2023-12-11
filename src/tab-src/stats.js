@@ -1,5 +1,5 @@
 import DataTable from "datatables.net-dt";
-import dt_css from "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
+import "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
 import {
   showAlert,
   showPopUpForm,
@@ -19,6 +19,8 @@ import {
   exportDataTable,
   readFileToJson,
 } from "../utils/table-utils.js";
+import io from "socket.io-client";
+const socket = io();
 
 $(function () {
   const defaultColumnAmount = 1;
@@ -126,6 +128,7 @@ $(function () {
   $("#estSalesVolValue").on("change", function () {
     estSalesChanges = $("#estSalesVolValue").val() != prevEstSales;
     updateHasChanges(estSalesChanges || notesChanges);
+
   });
 
   $("#note").on("change", function () {
@@ -157,19 +160,22 @@ $(function () {
 
   //#region Screen Button
 
-  // Save changes Button
+  // Save Button
   $('button[name="saveBtn"]').on("click", function () {
-    // find changes in textboxes
+    // Get values from textboxes
     const EST_SALES_VOLUME_VALUE = $("#estSalesVolValue").val();
     const NOTES_VALUE = $("#note").val();
     let update = {};
-
-    if (EST_SALES_VOLUME_VALUE != prevEstSales)
+    // Check if there are changes made to the textbox and update the changes
+    if (EST_SALES_VOLUME_VALUE !== prevEstSales) {
       update.EstSaleVol = prevEstSales = EST_SALES_VOLUME_VALUE;
+    }
+    // Check if there are changes made to the textbox and update the changes
+    if (NOTES_VALUE !== prevNote) {
+      update.Note = prevNote = NOTES_VALUE;
+    }
 
-    if (NOTES_VALUE != prevNote) update.Note = prevNote = NOTES_VALUE;
-
-    if (!jQuery.isEmptyObject(update))
+    if (!jQuery.isEmptyObject(update)) {
       updateChanges([
         new Map([
           ["type", "edit"],
@@ -178,20 +184,20 @@ $(function () {
           ["changes", update],
         ]),
       ]);
+    }
 
-    // on successful save to Server-side
-    if (saveChanges()) {
+    if (saveChanges(socket)) {
       updateHasChanges(false);
     }
   });
 
-  // Import product Button
+  // Import Button
   $('button[name="importBtn"]').on("click", function () {
     formSelected = "import";
     showPopUpForm(formSelected, "Import OEMs");
   });
 
-  // Export table Button
+  // Export Button
   $('button[name="exportBtn"]').on("click", function () {
     exportDataTable(
       "table",

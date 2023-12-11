@@ -101,6 +101,8 @@ export class AlternateIndexDto {
    * @param {String} supplierPartType
    * @param {String} wcpPartType
    * @param {Boolean} isMain
+   * @param {String} productID
+   * @param {String} supplierNumber
    */
   constructor(
     name,
@@ -112,7 +114,9 @@ export class AlternateIndexDto {
     quality,
     supplierPartType,
     wcpPartType,
-    isMain
+    isMain,
+    productID,
+    supplierNumber
   ) {
     this.Name = name;
     this.Number = String(number);
@@ -140,11 +144,13 @@ export class AlternateIndexDto {
         this.Quality = "bad";
         break;
       default:
-        this.Quality = null;
+        this.Quality = "";
     }
     this.SupplierPartType = supplierPartType ?? "";
     this.WcpPartType = wcpPartType ?? "";
     this.IsMain = isMain ?? false;
+    this.ProductID = productID;
+    this.SupplierNumber = supplierNumber;
   }
 }
 
