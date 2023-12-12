@@ -24,9 +24,10 @@ import {
   updateHasChanges,
   updateChanges,
   saveChanges,
+  updateProductRequestHistory,
+  addNewProductRequestHistory,
 } from "../utils/tab-utils.js";
-import io from "socket.io-client";
-const socket = io();
+import socket from "../utils/socket-utils.js";
 
 $(async function () {
   const defaultColumnAmount = 9;
@@ -39,101 +40,110 @@ $(async function () {
   var rowindexSelected = -1;
 
   //#region Initialize Page
-  
+
   showLoadingScreen("Loading All Products...");
+
+  // TO DO: FIX ME
+  const productDatabaseArray = updateProductRequestsWithDatabase();
+  const productDetails = productDatabaseArray.Product;
+  console.log(productDatabaseArray);
+  debugger;
+
   //Load table from API
   const productWorkflowArray = JSON.parse(
     sessionStorage.getItem("productRequestHistory")
   );
 
-  //Load Product from Database
-  const productDatabaseArray = await fetchProductDataFromDatabase().catch(
-    (error) => console.error(error)
-  );
-
+  // Check if both productWorkflowArray and productDatabaseArray are empty
   isEmptyData =
     !Boolean(productWorkflowArray) &&
     (!Boolean(productDatabaseArray) ||
       productDatabaseArray.NewProduct.length === 0);
-  // if loading from API empty
+
+  // If Data from API empty
   if (isEmptyData) {
     $(tableName).append(createEmptyRow(defaultRowAmount, defaultColumnAmount));
   } else {
+    const productAddingToDatabase = [];
+
     const productDtoArray = productWorkflowArray.map((object) =>
       Object.assign(new ProductRequestHistoryDto(), object)
     );
-    const productDetails = productDatabaseArray
-      ? productDatabaseArray.Product
-      : [];
-    const newProductSaved = productDatabaseArray
-      ? productDatabaseArray.NewProduct
-      : [];
-    const productAddingToDatabase = [];
 
-    productDtoArray.forEach((currDto) => {
-      var i = currDto.productStockNumber
+    // Add all product from productDtoArray to productObjectList
+    productDtoArray.forEach((currObject, idx, array) => {
+      // If current product's SKU is not empty,
+      var i = currObject.productStockNumber
         ? productObjectList.findIndex(
-            (x) => x.Sku == currDto.productStockNumber
+            (x) => x.Sku == currObject.productStockNumber
           )
         : -1;
       if (i != -1) {
-        if (!currDto.altIndexNumber) return;
+        // If current product's AltIndex is empty, exit
+        if (!currObject.altIndexNumber) return;
+        // Add current product's AltIndex to the supplier list of the product with the same SKU in the list
         productObjectList[i].SuppList.push(
-          currDto.altIndexNumber.toLowerCase()
+          currObject.altIndexNumber.toLowerCase()
         );
         return;
       }
 
-      if (!currDto.productStockNumber && !currDto.researchIdentifier) {
-        currDto.researchIdentifier = generateProductID(
-          `${currDto.interchangeNumber.trim()}${currDto.interchangeVersion}`,
-          currDto.partTypeCode
+      // If current product's SKU is empty, generate a Research ID
+      if (!currObject.productStockNumber) {
+        currObject.researchIdentifier = generateProductID(
+          `${currObject.interchangeNumber.trim()}${
+            currObject.interchangeVersion
+          }`,
+          currObject.partTypeCode
         );
       }
 
-      let productDetailMatch = productDetails.find((product) => {
-        // Check if SKU match or Research ID match in database with current product in workflow list (currDto)
-        let isSkuMatch = product.SKU
-          ? product.SKU == currDto.productStockNumber
-          : false;
-        let isResearchIdMatch = product.ResearchID
-          ? product.ResearchID.includes(
-              (
-                currDto.interchangeNumber +
-                currDto.interchangeVersion +
-                currDto.partTypeCode
-              ).replace(/\s+/g, "")
-            )
-          : false;
-        return isSkuMatch || isResearchIdMatch;
-      });
+      // Find productDetail Match in database
+      let productDetailMatch = findMatchingProductDetail(
+        productDetails,
+        currObject
+      );
+      // Assign ResearchID to currObject if productDetailMatch exist else assign New ResearchID
+      let researchId = productDetailMatch
+        ? productDetailMatch.ResearchID
+        : currObject.researchIdentifier;
 
+      // DEBUG
+      // if (researchId && researchId.includes("TEST")) console.log(researchId);
+
+      // Update productDtoArray researchIdentifier here based on productDetailMatch's Values
+      array[idx].researchIdentifier = researchId;
       productObjectList.push(
         new ProductDto(
-          productDetailMatch
-            ? productDetailMatch.ResearchID
-            : currDto.researchIdentifier,
-          currDto.productStockNumber,
-          currDto.vehicleManufacturers.split("\r").join("; "),
-          currDto.vehicleModels.split("\r").join("; "),
-          currDto.partTypeFriendlyName,
-          currDto.interchangeVersion
-            ? `${currDto.interchangeNumber.trim()} ${
-                currDto.interchangeVersion
+          researchId,
+          currObject.productStockNumber,
+          currObject.vehicleManufacturers.split("\r").join("; "),
+          currObject.vehicleModels.split("\r").join("; "),
+          currObject.partTypeFriendlyName,
+          currObject.interchangeVersion
+            ? `${currObject.interchangeNumber.trim()} ${
+                currObject.interchangeVersion
               }`
-            : currDto.interchangeNumber.trim(),
-          currDto.interchangeDescriptions
-            ? currDto.interchangeDescriptions.split("\r").join("; ")
+            : currObject.interchangeNumber.trim(),
+          currObject.interchangeDescriptions
+            ? currObject.interchangeDescriptions.split("\r").join("; ")
             : "",
           productDetailMatch
             ? productDetailMatch.Status
-            : currDto.productStockNumber &&
-              currDto.productStockNumber.includes("P-")
+            : currObject.productStockNumber &&
+              currObject.productStockNumber.includes("P-")
             ? "catalogue"
             : "research",
           productDetailMatch ? productDetailMatch.OemType : "",
-          currDto.altIndexNumber ? [currDto.altIndexNumber.toLowerCase()] : [],
-          productDetailMatch ? [] : []
+          // TO DO: AltIndex and/or Oem-Supplier Pair place here (Database)
+          // Add AltIndex to Supplier List if AltIndex is not empty
+          currObject.altIndexNumber
+            ? [currObject.altIndexNumber.toLowerCase()]
+            : [],
+          // TO DO: oem place on left (Database)
+          // Add Oem to Oem List if productDetailMatch does exist
+          productDetailMatch ? [] : [],
+          currObject.partTypeCode
         )
       );
 
@@ -144,10 +154,8 @@ $(async function () {
         );
       }
     });
-    console.log(
-      `productAddingToDatabase array length: ${productAddingToDatabase.length}`
-    );
 
+    // Insert all prodcut in productDtoArray that has no productDetailMatch to the database
     insertNewWorkflowProductToDatabase(socket, productAddingToDatabase);
 
     // Update product with new Generated Research ID
@@ -399,8 +407,11 @@ $(async function () {
   $(`${tableName} tbody`).on("dblclick", "tr", function () {
     // Find the ID cell in the clicked row and extract its text
     productSelected = new ProductDto(...Object.values(table.row(this).data()));
-    let id =
-      productSelected.Sku != "" ? productSelected.Sku : productSelected.Id;
+    // ID is either the SKU first or the Research ID if SKU is empty
+    let id = Boolean(productSelected.Sku)
+      ? productSelected.Sku
+      : productSelected.Id;
+    // If ID is not empty, save it in sessionStorage and go to tab2
     if (id.length > 0) {
       sessionStorage.setItem("productIDSelected", id);
       sessionStorage.setItem(
@@ -435,7 +446,7 @@ $(async function () {
     const changesMade = [];
     const user = sessionStorage.getItem("username");
 
-    const incompleteMessage = "Please complete all non-optional fields";
+    let incompleteMessage = "Please complete all non-optional fields";
     // Check if all input mandatory fields are non-empty
     let isFormFilled = Boolean(
       makeVal && modelVal && partTypeVal && icNumVal && icDescVal
@@ -446,10 +457,8 @@ $(async function () {
         // 18 is length of ID generated
         statusVal && oemTypeVal && idVal != researchIdPlaceHolder
       );
-
     // Extra validation on import product form (File is uploaded)
     else if (formSelected == "import") isFormFilled &= Boolean(fileVal);
-      
     // Extra validation on edit product form (ID is not empty)
     else if (formSelected == "edit") {
       isFormFilled = Boolean(statusVal && oemTypeVal);
@@ -462,7 +471,7 @@ $(async function () {
       return;
     }
 
-    // Import Form Save 
+    // Import Form Save
     if (formSelected == "import") {
       // Optional Column header name
       let isSkuEmpty = skuVal.trim().length == 0;
@@ -482,7 +491,7 @@ $(async function () {
       columnHeaders.filter((n) => n);
       const SHEET_JSON = await readFileToJson("#importFile", columnHeaders);
 
-      // Check if file is empty or blank (no data), exit and alert if true 
+      // Check if file is empty or blank (no data), exit and alert if true
       if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {
         showAlert(
           `<strong>Error!</strong> <i>${$("input[type=file]")
@@ -525,7 +534,10 @@ $(async function () {
           row[icNumVal],
           row[icDescVal],
           isStatusEmtpy ? "" : row[statusVal],
-          isOemCategoryEmtpy ? "" : row[oemTypeVal]
+          isOemCategoryEmtpy ? "" : row[oemTypeVal],
+          [],
+          [],
+          row[partTypeCodeVal]
         );
 
         if (newObject.Status === null) {
@@ -571,14 +583,17 @@ $(async function () {
     else if (formSelected == "new") {
       let newProduct = new ProductDto(
         $("#ID").text(),
-        skuVal,
-        makeVal,
-        modelVal,
-        partTypeVal,
-        icNumVal,
-        icDescVal,
+        skuVal.toUpperCase(),
+        makeVal.toUpperCase(),
+        modelVal.toUpperCase(),
+        partTypeVal.toUpperCase(),
+        icNumVal.toUpperCase(),
+        icDescVal.toUpperCase(),
         statusVal,
-        oemTypeVal
+        oemTypeVal,
+        [],
+        [],
+        partTypeCodeVal.toUpperCase()
       );
       // Empty Table if DataTable previosly was empty
       if (isEmptyData) {
@@ -595,8 +610,12 @@ $(async function () {
           ["changes", [newProduct]],
         ])
       );
+
       // Add data to table
       table.row.add(newProduct).draw();
+
+      // Add NewProduct to sessionStorage's ("productRequestHistory")
+      addNewProductRequestHistory(newProduct);
     }
     // Edit Form Save
     else if (formSelected == "edit") {
@@ -642,8 +661,8 @@ $(async function () {
 
   // Event handler for when ID is ready to be created
   $("#newForm").on("input", function () {
-    const icNum = $("#newMake").val();
-    const typeCode = $("#newNum").val();
+    const icNum = $("#newNum").val().toUpperCase();
+    const typeCode = $("#newTypeCode").val().toUpperCase();
     if ($("#ID").text() && $("#ID").text().split("-")[1] == icNum + typeCode)
       return;
     if (icNum.length > 0 && typeCode.length > 0) {
@@ -698,12 +717,12 @@ async function fetchProductDataFromDatabase() {
         resolve(ackData.result);
       } else {
         console.log(
-          `Error Occurred on getting Period data from Database: ${ackData.error
+          `Error Occurred on getting Product data from Database: ${ackData.error
             .map((err) => `${err.code}: ${err.name}`)
             .join("\n")}`
         );
         showAlert(
-          `Error Occurred on getting Period data from Database: ${ackData.error
+          `Error Occurred on getting Product data from Database: ${ackData.error
             .map((err) => `${err.code}: ${err.name}`)
             .join("\n")}`
         );
@@ -785,7 +804,10 @@ async function insertNewWorkflowProductToDatabase(
   for (let i = 0; i < updateLoops; i++) {
     const startIndex = i * sqlInsertLimit;
     const endIndex = startIndex + sqlInsertLimit;
-    const productsToInsert = productAddingToDatabase.slice(startIndex, endIndex);
+    const productsToInsert = productAddingToDatabase.slice(
+      startIndex,
+      endIndex
+    );
 
     const changes = new Map([
       ["type", "new"],
@@ -797,4 +819,40 @@ async function insertNewWorkflowProductToDatabase(
     updateChanges([changes]);
     await saveChanges(socket);
   }
+}
+
+function findMatchingProductDetail(productDetailsArray, currObject) {
+  return productDetailsArray.find((product) => {
+    // Check if SKU match match in database with current product in workflow list (currObject)
+    let isSkuMatch = product.SKU
+      ? product.SKU == currObject.productStockNumber
+      : false;
+    // Check if Research ID match in database with current product in workflow list (currObject)
+    let isResearchIdMatch = product.ResearchID
+      ? product.ResearchID.includes(
+          (
+            currObject.interchangeNumber +
+            currObject.interchangeVersion +
+            currObject.partTypeCode
+          ).replace(/\s+/g, "")
+        )
+      : false;
+    // Return true if either SKU or Research ID match
+    return isSkuMatch || isResearchIdMatch;
+  });
+}
+
+/**
+ * Update product request history with new products
+ * @returns {Promise<Object>} Return Array of Product and NewProduct data from database
+ */
+
+async function updateProductRequestsWithDatabase() {
+  //Load Product from Database
+  let { Product: productDetails, NewProduct: newProductSaved } =
+    await fetchProductDataFromDatabase().catch((error) => console.error(error));
+
+  // Update productRequestHistory in StorageSession with new productDetails
+  updateProductRequestHistory(newProductSaved, productDetails);
+  return { Product: productDetails, NewProduct: newProductSaved };
 }

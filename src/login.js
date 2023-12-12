@@ -1,10 +1,9 @@
 import $ from "jquery";
-import io from "socket.io-client";
+import socket from "./utils/socket-utils.js";
 import { showAlert } from "./utils/html-utils.js";
 
 $(function () {
   console.log("Starting");
-  const socket = io();
   const $loginButton = $("#loginBtn");
   const $usernameInput = $(".login_form input[name=user]");
   const $passwordInput = $(".login_form input[name=password]");

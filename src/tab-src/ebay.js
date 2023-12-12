@@ -14,8 +14,7 @@ import {
   saveChanges,
 } from "../utils/tab-utils.js";
 import { createEmptyRow, exportDataTable } from "../utils/table-utils.js";
-import io from "socket.io-client";
-const socket = io();
+import socket from "../utils/socket-utils.js";
 
 $(function () {
   const defaultColumnAmount = 1;

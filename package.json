@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "nodemon src/app.js",
     "start": "node src/app.js",
+    "build-dev": "webpack --config webpack.config.cjs && nodemon src/app.js",
     "build": "webpack --config webpack.config.cjs"
   },
   "keywords": [],

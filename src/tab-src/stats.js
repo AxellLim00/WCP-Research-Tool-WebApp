@@ -19,8 +19,7 @@ import {
   exportDataTable,
   readFileToJson,
 } from "../utils/table-utils.js";
-import io from "socket.io-client";
-const socket = io();
+import socket from "../utils/socket-utils.js";
 
 $(function () {
   const defaultColumnAmount = 1;
@@ -62,14 +61,15 @@ $(function () {
     productIdSelected != "undefined" &&
     productIdSelected != "null"
   ) {
-    let productSelectedDto = [];
+    let productSelectedDto;
+
     if (productIdSelected.slice(0, 2) == "R-") {
       // Filter existing ones with interchangeNumber, interchangeNumber and partTypeFriendlyName/partTypeCode
-      productSelectedDto = productDtoArray.filter(
+      productSelectedDto = productDtoArray.find(
         (x) => x.researchIdentifier == productIdSelected
       );
     } else {
-      productSelectedDto = productDtoArray.filter(
+      productSelectedDto = productDtoArray.find(
         (x) => x.productStockNumber == productIdSelected
       );
     }
@@ -77,10 +77,7 @@ $(function () {
     vinList = [
       // Remove duplicates
       ...new Set(
-        productSelectedDto
-          .map((obj) => obj.vehicleIdentificationNumbers)
-          .map((str) => str.split("\r"))
-          .flat()
+        productSelectedDto.vehicleIdentificationNumbers.split("\r").flat()
       ),
       // Return Data Table format
     ].map((vin) => {
@@ -88,11 +85,11 @@ $(function () {
     });
 
     // Fill in text fields
-    $("#requestValue").val(productSelectedDto[0].totalNumberOfRequests);
-    $("#nfValue").val(productSelectedDto[0].totalNumberOfNotFoundRequests);
-    $("#stdValue").val(productSelectedDto[0].averageConditionPrice);
-    $("#salesValue").val(productSelectedDto[0].totalNumberOfRequests);
-    $("#estSalesVolValue").val(productSelectedDto[0].totalNumberOfRequests);
+    $("#requestValue").val(productSelectedDto.totalNumberOfRequests);
+    $("#nfValue").val(productSelectedDto.totalNumberOfNotFoundRequests);
+    $("#stdValue").val(productSelectedDto.averageConditionPrice);
+    $("#salesValue").val(productSelectedDto.totalNumberOfRequests);
+    $("#estSalesVolValue").val(productSelectedDto.totalNumberOfRequests);
   }
 
   isVinEmpty = vinList.length == 0;
@@ -128,7 +125,6 @@ $(function () {
   $("#estSalesVolValue").on("change", function () {
     estSalesChanges = $("#estSalesVolValue").val() != prevEstSales;
     updateHasChanges(estSalesChanges || notesChanges);
-
   });
 
   $("#note").on("change", function () {

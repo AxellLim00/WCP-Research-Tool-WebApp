@@ -1,4 +1,5 @@
 import { showAlert, selectTab } from "./html-utils.js";
+import { ProductRequestHistoryDto } from "./class/apiDto.js";
 import $ from "jquery";
 
 /**
@@ -225,4 +226,86 @@ async function updateDataOnDatabase(socket, changes) {
       }
     });
   });
+}
+
+/**
+ * Update product request history with new products
+ * @param {Object[]} newProductArray - Array of New Product from Database
+ * @param {Object[]} productArray - Array of Product from Database
+ */
+export function updateProductRequestHistory(newProductArray, productArray) {
+  let productRequestHistoryArray = JSON.parse(
+    sessionStorage.getItem("productRequestHistory")
+  );
+
+  newProductArray.forEach((product) => {
+    if (
+      !productRequestHistoryArray.find(
+        (p) => p.researchIdentifier === product.ResearchID
+      )
+    ) {
+      let productDetailMatch = productArray.find(
+        (p) => p.ResearchID === product.ResearchID
+      );
+      let newProduct = new ProductRequestHistoryDto(
+        null,
+        product.PartTypeCode,
+        product.PartType,
+        product.IcNumber,
+        "",
+        product.Request,
+        product.RequestNF,
+        product.UnitSold,
+        product.Make,
+        product.Model,
+        "",
+        product.IcDescription,
+        productDetailMatch ? productDetailMatch.SKU : "",
+        "",
+        "",
+        product.AveragePrice,
+        0
+      );
+      newProduct.researchIdentifier = product.ResearchID;
+      productRequestHistoryArray.push({ ...newProduct });
+    }
+  });
+
+  sessionStorage.setItem(
+    "productRequestHistory",
+    JSON.stringify(productRequestHistoryArray)
+  );
+}
+
+export function addNewProductRequestHistory(newProduct) {
+  let productRequestHistoryArray = JSON.parse(
+    sessionStorage.getItem("productRequestHistory")
+  );
+
+  let productToAdd = new ProductRequestHistoryDto(
+    "",
+    newProduct.TypeCode,
+    newProduct.Type,
+    newProduct.Num,
+    "",
+    0,
+    0,
+    0,
+    newProduct.Make,
+    newProduct.Model,
+    "",
+    newProduct.Desc,
+    newProduct.Sku,
+    "",
+    "",
+    0,
+    0
+  );
+  productToAdd.researchIdentifier = newProduct.ResearchID;
+  productRequestHistoryArray.push({ ...productToAdd });
+
+  sessionStorage.setItem(
+    "productRequestHistory",
+    JSON.stringify(productRequestHistoryArray)
+  );
 }

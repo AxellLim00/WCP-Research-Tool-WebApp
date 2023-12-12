@@ -362,7 +362,7 @@ export async function insertProduct(mapChange) {
     console.log("Connected to SQL");
     console.log("Inserting product details...");
 
-    let query = `INSERT INTO Product (ID, UserID, ResearchID, SKU, Status, OemType, LastUpdate)
+    const query = `INSERT INTO Product (ID, UserID, ResearchID, SKU, Status, OemType, LastUpdate)
       VALUES
         ${mapChange
           .map((changeMap) =>
@@ -408,8 +408,7 @@ export async function insertNewProduct(mapChange) {
     console.log("Connected to SQL");
 
     console.log("Inserting new product information...");
-    let result = await pool.query(
-      `INSERT INTO Product (ID, UserID, ResearchID, SKU, Status, OemType, LastUpdate)
+    const query = `INSERT INTO Product (ID, UserID, ResearchID, SKU, Status, OemType, LastUpdate)
       VALUES
         ${mapChange
           .map((changeMap) =>
@@ -424,7 +423,7 @@ export async function insertNewProduct(mapChange) {
             )
           )
           .join(",\n")};
-      INSERT INTO NewProduct (ResearchID, Make, Model, PartType, IcNumber, IcDescription, ProductID)
+      INSERT INTO NewProduct (ResearchID, Make, Model, PartType, IcNumber, IcDescription, ProductID, PartTypeCode, Request, RequestNF, UnitSold, AveragePrice)
       VALUES
         ${mapChange
           .map((changeMap) =>
@@ -436,11 +435,12 @@ export async function insertNewProduct(mapChange) {
               '${product.Num}', '${product.Desc}', 
               (SELECT TOP 1 ID 
                 FROM Product 
-                WHERE ResearchID = '${changeMap.get("id")}'))`
+                WHERE ResearchID = '${changeMap.get("id")}'),
+              '${product.TypeCode}', 0, 0, 0, 0)`
             )
           )
-          .join(",\n")};`
-    );
+          .join(",\n")};`;
+    const result = await pool.query(query);
     console.log("Inserted new product information");
 
     console.log("Result: ", result.rowsAffected);
@@ -696,7 +696,9 @@ export async function insertAltIndexBySupplier(mapChange) {
           .map(
             (altIndex) => `(NEWID(), ${altIndex.Moq}, ${altIndex.CostAud},
             '${new Date().toISOString().slice(0, 19).replace("T", " ")}',
-            ${ValueDictionary.Quality[altIndex.Quality]}, '${altIndex.SupplierPartType}', 
+            ${ValueDictionary.Quality[altIndex.Quality]}, '${
+              altIndex.SupplierPartType
+            }', 
             '${altIndex.WcpPartType}', 
             (SELECT TOP 1 ID FROM Product
               WHERE SKU = '${altIndex.ProductID}' 
@@ -1044,7 +1046,9 @@ export async function updateAltIndex(mapChange) {
       if ("CostAud" in changes) setUpdates.push(`CostAud = ${changes.CostAud}`);
 
       if ("Quality" in changes)
-        setUpdates.push(`Quality = ${ValueDictionary.Quality[changes.Quality]}`);
+        setUpdates.push(
+          `Quality = ${ValueDictionary.Quality[changes.Quality]}`
+        );
 
       if ("IsMain" in changes)
         setUpdates.push(`IsMain = ${Number(changes.IsMain)}`);

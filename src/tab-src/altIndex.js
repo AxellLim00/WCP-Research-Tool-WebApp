@@ -2,8 +2,7 @@ import DataTable from "datatables.net-dt";
 import "datatables.net-datetime";
 // require("datatables.net-responsive-dt");
 import dt_css from "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
-import io from "socket.io-client";
-const socket = io();
+import socket from "../utils/socket-utils.js";
 import { AlternateIndexDto } from "../utils/class/dataTableDto.js";
 import {
   productSelectedChanged,

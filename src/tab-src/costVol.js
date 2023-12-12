@@ -20,8 +20,7 @@ import {
   readFileToJson,
 } from "../utils/table-utils.js";
 import "../utils/tableExport-utils/tableExport.js";
-import io from "socket.io-client";
-const socket = io();
+import socket from "../utils/socket-utils.js";
 
 $(function () {
   const tableName = "#costVolTable";

@@ -12,6 +12,7 @@ export class ProductDto {
    * @param {String} oem OEM Type
    * @param {String[]} suppList Supplier Number List
    * @param {String[]} oemList OEM Number List
+   * @param {String} typeCode Part Type Code
    */
   constructor(
     id,
@@ -24,7 +25,8 @@ export class ProductDto {
     status,
     oem,
     suppList,
-    oemList
+    oemList,
+    typeCode
   ) {
     this.Id = id;
     this.Sku = sku;
@@ -82,9 +84,9 @@ export class ProductDto {
       default:
         this.Oem = null;
     }
-
     this.SuppList = suppList ?? [];
     this.OemList = oemList ?? [];
+    this.TypeCode = typeCode;
   }
 }
 

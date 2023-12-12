@@ -1,6 +1,5 @@
 import $ from "jquery";
-import io from "socket.io-client";
-const socket = io();
+import socket from "./utils/socket-utils.js";
 
 import {
   showLoadingScreen,
@@ -11,7 +10,6 @@ import {
 
 $(async function () {
   const token = sessionStorage.getItem("token");
-  const user = sessionStorage.getItem("username");
   const productJsonString = sessionStorage.getItem("productRequestHistory");
   var tabChosen = "";
   var menuToggle = true;
@@ -20,41 +18,14 @@ $(async function () {
     location.href = location.origin;
     return;
   }
-  sessionStorage.clear();
-  sessionStorage.setItem("token", token);
-  sessionStorage.setItem("username", user);
-  sessionStorage.setItem("productRequestHistory", productJsonString);
   sessionStorage.setItem("hasChanges", false);
+  sessionStorage.removeItem("productIDSelected");
 
+  // TO DO: get products from NewProduct and add them to productJsonString
   let jsonArray = JSON.parse(productJsonString);
-  if (jsonArray === null) {
+  if (jsonArray === null || jsonArray.length === 0) {
     showLoadingScreen("Loading Products from system");
-    const socketPromise = new Promise((resolve) => {
-      console.log("Getting Product from system");
-      socket.emit("get all products", token, resolve);
-    });
-
-    socketPromise.then((response) => {
-      switch (response.status) {
-        case 200:
-          sessionStorage.setItem(
-            "productRequestHistory",
-            JSON.stringify(response.data)
-          );
-          hideLoadingScreen();
-          selectTab("tab0");
-          break;
-        case 401:
-          console.log(response.message);
-          this.location.href -= "research-tool";
-          break;
-        default:
-          showAlert(response.message);
-          console.error(response.message);
-          console.error(response.error);
-          break;
-      }
-    });
+    jsonArray = [];
 
     socket.on("loading progress", (data) => {
       console.log(
@@ -64,6 +35,9 @@ $(async function () {
         `Loading Products from system</br>~~ ${data.productsLoaded}/${data.totalProducts} products loaded ~~`
       );
     });
+
+    await handleSocketResponse(socket, token, jsonArray);
+    sessionStorage.setItem("productRequestHistory", JSON.stringify(jsonArray));
   } else {
     selectTab("tab0");
   }
@@ -125,7 +99,6 @@ $(async function () {
     $("#darkLayer").hide();
     $("#darkLayer").css("position", "absolute");
     $("#productSelected").val($("#productSelected").attr("oldvalue"));
-    // $("#productSelected").attr("oldvalue", "");
   });
 
   //#endregion
@@ -161,4 +134,37 @@ function menuCollapse() {
   $(".tab-layout").removeClass("tab-layout-extended");
   $(".tab-name").removeClass("tab-name-extended");
   $("#sidebar").removeClass("side-extended");
+}
+
+/**
+ * Get all products from the system
+ * @param {SocketIO.Socket} socket SocketIO socket
+ * @param {String} token User token
+ * @param {Array} jsonArray Array to push all products to
+ */
+async function handleSocketResponse(socket, token, jsonArray) {
+  return new Promise((resolve) => {
+    console.log("Getting Product from system");
+    socket.emit("get all products", token, (response) => {
+      switch (response.status) {
+        case 200:
+          jsonArray.push(...response.data);
+          hideLoadingScreen();
+          selectTab("tab0");
+          resolve();
+          break;
+        case 401:
+          console.log(response.message);
+          this.location.href -= "research-tool";
+          resolve();
+          break;
+        default:
+          showAlert(response.message);
+          console.error(response.message);
+          console.error(response.error);
+          resolve();
+          break;
+      }
+    });
+  });
 }

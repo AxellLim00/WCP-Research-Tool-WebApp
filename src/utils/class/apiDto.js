@@ -58,5 +58,3 @@ export class ProductRequestHistoryDto {
     this.researchIdentifier = "";
   }
 }
-
-// export default { ProductRequestHistoryDto };

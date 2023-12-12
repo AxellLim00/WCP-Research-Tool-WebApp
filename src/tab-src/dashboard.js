@@ -10,9 +10,12 @@ import {
 } from "../utils/html-utils.js";
 import $ from "jquery";
 import "../utils/tableExport-utils/tableExport.js";
-import io from "socket.io-client";
-import { saveChanges, updateChanges } from "../utils/tab-utils.js";
-const socket = io();
+import {
+  saveChanges,
+  updateChanges,
+  updateProductRequestHistory,
+} from "../utils/tab-utils.js";
+import socket from "../utils/socket-utils.js";
 
 $(async function () {
   const defaulClumnAmountUser = 2;
@@ -67,11 +70,15 @@ $(async function () {
     }
   }
 
-  if (!periodTableData || jQuery.isEmptyObject(periodTableData.Product))
+  if (!periodTableData || jQuery.isEmptyObject(periodTableData.Product)) {
     $(periodTableName + " > tbody:last-child").append(
       createEmptyRow(defaultRowAmount, defaulColumnAmountPeriod)
     );
-  else {
+    updateProductRequestHistory(
+      periodTableData.NewProduct,
+      periodTableData.Product
+    );
+  } else {
     // $(periodTableName + ' > tbody:last-child').append(
     //   // HTML for period table data here
     // );
