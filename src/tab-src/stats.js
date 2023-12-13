@@ -30,8 +30,8 @@ $(function () {
     sessionStorage.getItem("productIDSelected")
   );
 
-  var formSelected;
-  var isOemEmpty = true;
+  let formSelected;
+  let isOemEmpty = true;
   var isVinEmpty = true;
   var productIdSelected = sessionStorage.getItem("productIDSelected");
   var rowindexSelected = -1;

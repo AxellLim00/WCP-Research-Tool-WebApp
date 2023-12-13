@@ -44,10 +44,9 @@ $(async function () {
   showLoadingScreen("Loading All Products...");
 
   // TO DO: FIX ME
-  const productDatabaseArray = updateProductRequestsWithDatabase();
+  const productDatabaseArray = await updateProductRequestsWithDatabase();
   const productDetails = productDatabaseArray.Product;
   console.log(productDatabaseArray);
-  debugger;
 
   //Load table from API
   const productWorkflowArray = JSON.parse(
