@@ -34,16 +34,15 @@ $(async function () {
   const defaultRowAmount = 10;
   const tableName = "#productTable";
   const productObjectList = [];
-  var formSelected;
-  var isEmptyData = true;
-  var productSelected = new ProductDto();
-  var rowindexSelected = -1;
+  let formSelected;
+  let isEmptyData = true;
+  let productSelected = new ProductDto();
+  let rowindexSelected = -1;
 
   //#region Initialize Page
 
   showLoadingScreen("Loading All Products...");
 
-  // TO DO: FIX ME
   const productDatabaseArray = await updateProductRequestsWithDatabase();
   const productDetails = productDatabaseArray.Product;
   console.log(productDatabaseArray);
@@ -448,7 +447,12 @@ $(async function () {
     let incompleteMessage = "Please complete all non-optional fields";
     // Check if all input mandatory fields are non-empty
     let isFormFilled = Boolean(
-      makeVal && modelVal && partTypeVal && icNumVal && icDescVal
+      makeVal &&
+        modelVal &&
+        partTypeVal &&
+        icNumVal &&
+        icDescVal &&
+        partTypeCodeVal
     );
     // Extra validation on new product form (ID is generated)
     if (formSelected == "new")
@@ -521,9 +525,9 @@ $(async function () {
         return;
       }
 
-      errorMessage = [];
+      let errorMessage = [];
       // Put map data into Object List
-      let importProducts = SHEET_JSON.map((row) => {
+      const importProducts = SHEET_JSON.map((row) => {
         let newObject = new ProductDto(
           generateProductID(row[icNumVal], row[partTypeCodeVal]),
           isSkuEmpty ? "" : row[skuVal],

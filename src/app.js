@@ -43,6 +43,7 @@ import {
 } from "./utils/sql-utils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+let connectedClients = {};
 // run server using "npm run dev"
 app.use(express.static(path.join(__dirname + "/../public")));
 
@@ -65,6 +66,14 @@ io.on("connect", async function (socket) {
     if (response.status == "authenticated") {
       console.log(`User ${credentials.username} has been Authenticated`);
       socket.emit("authenticated", response.token);
+
+      // If the user is already connected, disconnect the previous connection
+      if (connectedClients[credentials.username]) {
+        connectedClients[credentials.username].disconnect();
+      }
+
+      // Store the new connection
+      connectedClients[credentials.username] = socket;
     } else {
       console.log(`User ${credentials.username} has Fail to be Authenticated`);
       socket.emit("fail authenticated", response.error);
@@ -73,6 +82,13 @@ io.on("connect", async function (socket) {
 
   socket.on("disconnect", () => {
     console.log("A user disconnected.");
+    // Remove the user from the connected clients map
+    for (let username in connectedClients) {
+      if (connectedClients[username] === socket) {
+        delete connectedClients[username];
+        break;
+      }
+    }
   });
 
   socket.on("get all products", async (token, callback) => {
