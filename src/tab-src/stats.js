@@ -46,6 +46,9 @@ $(function () {
   var prevEstSales = "";
   var prevNote = "";
 
+  // TODO: Test this edit changes
+  // TODO: Make all editable if product is from NewProduct
+
   //#region Initialization
 
   // Fill in ID search box

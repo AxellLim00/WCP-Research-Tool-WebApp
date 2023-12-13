@@ -35,6 +35,9 @@ $(function () {
   var costVolSelected = new CostVolumeDto();
   var productData = null;
 
+  // TODO: Test this edit changes
+  // TODO: Make all editable if product is from NewProduct
+
   //Load table from API
   if (productIdSelected) {
     if (productIdSelected.slice(0, 2) == "R-") {

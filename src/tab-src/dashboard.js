@@ -29,6 +29,9 @@ $(async function () {
   dateFrom.setMonth(dateFrom.getMonth() - 1);
   var userTableData, periodTableData;
 
+  // TODO: Import data to Period Table
+  // TODO: Make sure Date filter works
+
   //#region Setup Default Values
   // $("#teamAmount").text(~ insert text here ~);
 

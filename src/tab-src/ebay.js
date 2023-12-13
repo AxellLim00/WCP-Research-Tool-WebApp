@@ -16,6 +16,9 @@ import {
 import { createEmptyRow, exportDataTable } from "../utils/table-utils.js";
 import socket from "../utils/socket-utils.js";
 
+// TODO: Test this edit changes
+// TODO: Make all editable if product is from NewProduct
+
 $(function () {
   const defaultColumnAmount = 1;
   const defaultRowAmount = 10;

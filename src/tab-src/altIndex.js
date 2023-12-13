@@ -1,7 +1,7 @@
 import DataTable from "datatables.net-dt";
 import "datatables.net-datetime";
 // require("datatables.net-responsive-dt");
-import dt_css from "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
+import "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
 import socket from "../utils/socket-utils.js";
 import { AlternateIndexDto } from "../utils/class/dataTableDto.js";
 import {
@@ -29,6 +29,8 @@ import {
   hidePopUpForm,
   exitPopUpForm,
 } from "../utils/html-utils.js";
+
+// TODO: Test this edit changes
 
 $(function () {
   const columnDefaultAmount = 10;

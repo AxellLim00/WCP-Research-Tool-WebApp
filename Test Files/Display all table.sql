@@ -6,6 +6,3 @@ Select * from [EPID]
 Select * from [Supplier]
 Select * from [AlternateIndex]
 Select * from [Oem]
-
-Select * from [Product] WHERE ResearchID LIKE '%TEST%'
-Select * from [NewProduct] 

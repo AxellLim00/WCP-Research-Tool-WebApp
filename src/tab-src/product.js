@@ -147,10 +147,12 @@ $(async function () {
 
       // If product is not in database, add to database
       if (!productDetailMatch) {
+        // TODO: set last update to minimal date 01-01-1900
         productAddingToDatabase.push(
           productObjectList[productObjectList.length - 1]
         );
       }
+      // TODO: Find ProductDetails with minimal date that is not in productRequestHistory anymore and delete them
     });
 
     // Insert all prodcut in productDtoArray that has no productDetailMatch to the database
@@ -526,6 +528,10 @@ $(async function () {
       }
 
       let errorMessage = [];
+      // TODO: Make preview display of imported data
+      // TODO: Inform user if there are any duplicate SKU in file
+      // TODO: Inform user if there are any duplicate IC Number + Part Type Code in the file
+      // TODO: Inform user for changes/updates to values. (e.g. Status, OEM, etc.) can be done with colors and tooltips.
       // Put map data into Object List
       const importProducts = SHEET_JSON.map((row) => {
         let newObject = new ProductDto(
@@ -553,13 +559,14 @@ $(async function () {
             `OEM type <i>${row[oemTypeVal]}</i> must be a valid value`
           );
         }
+        // TODO: Check if imported data is in ProductHistoryRequest, if yes, change type to update and table to Product
         // Store each new row locally
         changesMade.push(
           new Map([
             ["type", "new"],
             ["id", newObject.Id],
             ["user", user],
-            [("table", "Product")],
+            ["table", "NewProduct"],
             ["changes", [newObject]],
           ])
         );
