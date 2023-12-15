@@ -62,6 +62,7 @@
           <thead>
             <tr>
               <th>OEMs</th>
+              <th></th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -96,6 +97,11 @@
             <br />
             <input id="importOem" type="text" />
           </label>
+          <label name="Supplier Number Header">
+            Supplier Number Header<b style="color: red">*</b>
+            <br />
+            <input id="importNumber" type="text" />
+          </label>
         </section>
         <section
           id="editForm"
@@ -107,11 +113,31 @@
             <br />
             <input id="editOem" type="text" />
           </label>
+          <label>
+            Supplier Number
+            <br />
+            <p id="editNumber">-</p>
+          </label>
+          <!-- <label>
+            Supplier Number
+            <br />
+            <input id="editNumber" type="text" list="supplierNumberList" />
+            <datalist id="supplierNumberList"> </datalist>
+          </label>
+          <label>
+            Supplier Name
+            <br />
+            <input id="editName" type="text" list="supplierNameList" />
+            <datalist id="supplierNameList"> </datalist>
+          </label> -->
         </section>
         <section class="flex-buttons form-button">
           <button type="button" name="saveForm">Save</button>
           <button type="button" name="cancelForm" class="cancel">Cancel</button>
         </section>
+        <!-- <div id="supplierNotKnown" class="warning" style="display: none">
+          This Supplier is not known by the this tool!
+        </div> -->
       </form>
     </div>
   </body>

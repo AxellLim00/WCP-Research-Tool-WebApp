@@ -5,6 +5,8 @@ import {
   showPopUpForm,
   hidePopUpForm,
   exitPopUpForm,
+  showLoadingScreen,
+  hideLoadingScreen,
 } from "../utils/html-utils.js";
 import {
   productSelectedChanged,
@@ -20,45 +22,49 @@ import {
   readFileToJson,
 } from "../utils/table-utils.js";
 import socket from "../utils/socket-utils.js";
+import {
+  fetchOemFromDatabase,
+  fetchProductDetailFromDatabase,
+} from "../utils/fetchSQL-utils.js";
 
-$(function () {
-  const defaultColumnAmount = 1;
+$(async function () {
+  const defaultVinColumnAmount = 1;
+  const defaultOemColumnAmount = 2;
   const defaultRowAmount = 10;
   const vinTableName = "#vinTable";
   const oemTableName = "#oemTable";
   const isProductEditable = Boolean(
     sessionStorage.getItem("productIDSelected")
   );
+  const vinList = [];
+  const oemList = [];
 
   let formSelected;
   let isOemEmpty = true;
-  var isVinEmpty = true;
-  var productIdSelected = sessionStorage.getItem("productIDSelected");
-  var rowindexSelected = -1;
-  var oemSelected = "";
-  var estSalesChanges = false;
-  var notesChanges = false;
-  var productDtoArray = JSON.parse(
+  let isVinEmpty = true;
+  let productIdSelected = sessionStorage.getItem("productIDSelected");
+  let rowIndexSelected = -1;
+  let oemSelected = {};
+  let estSalesChanges = false;
+  let notesChanges = false;
+  let productDtoArray = JSON.parse(
     sessionStorage.getItem("productRequestHistory")
   );
-  var productIdArray = getProductIdentifier(productDtoArray);
+  let productIdArray = getProductIdentifier(productDtoArray);
   // Temporary previous values variables
-  var prevEstSales = "";
-  var prevNote = "";
+  let prevEstSales = "";
+  let prevNote = "";
 
-  // TODO: Test this edit changes
-  // TODO: Make all editable if product is from NewProduct
+  // TODO: (Level: 2) Make all editable if product is from NewProduct
 
   //#region Initialization
 
+  showLoadingScreen("Loading Stats...");
   // Fill in ID search box
   $.each(productIdArray, function (_, item) {
     $("#productList").append($("<option>").attr("value", item).text(item));
   });
 
-  //Load table from ProductList
-  var vinList = [];
-  var oemList = [];
   if (
     productIdSelected &&
     productIdSelected != "undefined" &&
@@ -77,50 +83,113 @@ $(function () {
       );
     }
 
-    vinList = [
-      // Remove duplicates
-      ...new Set(
-        productSelectedDto.vehicleIdentificationNumbers.split("\r").flat()
-      ),
-      // Return Data Table format
-    ].map((vin) => {
-      return { data: vin };
-    });
+    // Load vinList from ProductList
+    const vinNumbers = productSelectedDto.vehicleIdentificationNumbers
+      .split("\r")
+      .filter(Boolean);
+    vinList.push(...vinNumbers.map((vin) => ({ data: vin })));
+
+    // load oemList from database
+    try {
+      const oemDatabaseArray = await fetchOemFromDatabase(
+        socket,
+        productIdSelected
+      );
+      if (oemDatabaseArray.length > 0) {
+        oemList.push([
+          ...oemDatabaseArray.map((dbObject) => ({
+            data: dbObject.Oem,
+            supplierNumber: dbObject.Supplier,
+          })),
+        ]);
+      }
+    } catch {
+      // error is already shown and handled in fetchOemFromDatabase function
+      return;
+    }
+
+    let productDetail;
+    try {
+      const productDetailArray = await fetchProductDetailFromDatabase(
+        socket,
+        productIdSelected
+      );
+      if (productDetailArray.length > 0) {
+        productDetail = productDetailArray[0];
+        prevEstSales = productDetail.EstSaleVol;
+        prevNote = productDetail.Note;
+      } else {
+        showAlert(
+          `<strong>Error!</strong> Product ID <i>${productIdSelected}</i> does not exist in database.`
+        );
+        return;
+      }
+    } catch {
+      // error is already shown and handled in fetchProductDetailFromDatabase function
+      return;
+    }
 
     // Fill in text fields
     $("#requestValue").val(productSelectedDto.totalNumberOfRequests);
     $("#nfValue").val(productSelectedDto.totalNumberOfNotFoundRequests);
     $("#stdValue").val(productSelectedDto.averageConditionPrice);
     $("#salesValue").val(productSelectedDto.totalNumberOfRequests);
-    $("#estSalesVolValue").val(productSelectedDto.totalNumberOfRequests);
+    // Put the value of EstSales if it exist, else put the value of totalNumberOfRequests
+    $("#estSalesVolValue").val(
+      productDetail.EstSales
+        ? productDetail.EstSales
+        : productSelectedDto.totalNumberOfRequests
+    );
+    $("#note").val(productDetail ? productDetail.Note : "");
   }
 
   isVinEmpty = vinList.length == 0;
   isOemEmpty = oemList.length == 0;
+  console.log("isVinEmpty", isVinEmpty);
+  console.log("length", vinList.length);
+  console.log("isOemEmpty", isOemEmpty);
+  console.log("length", oemList.length);
+  // debugger;
+
   // Fill in Table if loading from API empty
   if (isVinEmpty)
     $(vinTableName).append(
-      createEmptyRow(defaultRowAmount, defaultColumnAmount)
+      createEmptyRow(defaultRowAmount, defaultVinColumnAmount)
     );
   if (isOemEmpty)
     $(oemTableName).append(
-      createEmptyRow(defaultRowAmount, defaultColumnAmount)
+      createEmptyRow(defaultRowAmount, defaultOemColumnAmount)
     );
 
-  // initialize DataTable
-  let tableOptions = {
+  // Initialize DataTable
+  const vinTableOptions = {
     columns: [{ data: "data" }],
     orderCellsTop: true,
     stateSave: true,
   };
-  var vinTable = new DataTable(vinTableName, tableOptions);
-  var oemTable = new DataTable(oemTableName, tableOptions);
+  const oemTableOptions = {
+    columns: [{ data: "data" }, { data: "supplierNumber" }],
+    orderCellsTop: true,
+    stateSave: true,
+  };
+  var vinTable = new DataTable(vinTableName, vinTableOptions);
+  var oemTable = new DataTable(oemTableName, oemTableOptions);
+
+  // Hide Supplier Number column
+  const supplierNumberIndex = 1;
+  oemTable.column(supplierNumberIndex).visible(false, false);
+  oemTable.columns.adjust().draw(false);
 
   $(".dataTables_length").css("padding-bottom", "2%");
 
-  vinTable.rows.add(vinList).draw();
+  // debugger;
+  // If List is not empty, fill in DataTable
+  if (!isVinEmpty) vinTable.rows.add(vinList).draw();
+  if (!isOemEmpty) oemTable.rows.add(oemList).draw();
+  // Write productIdSelected to #productSelected textbox
   $("#productSelected").val(productIdSelected);
 
+  hideLoadingScreen();
   //#endregion
 
   //#region textbox event
@@ -161,7 +230,7 @@ $(function () {
 
   // Save Button
   $('button[name="saveBtn"]').on("click", function () {
-    // Get values from textboxes
+    // Get values from TextBoxes
     const EST_SALES_VOLUME_VALUE = $("#estSalesVolValue").val();
     const NOTES_VALUE = $("#note").val();
     let update = {};
@@ -209,7 +278,8 @@ $(function () {
   // Edit button
   $('button[name="editBtn"]').on("click", function () {
     formSelected = "edit";
-    $(`#${formSelected}Oem`).val(oemSelected);
+    $(`#${formSelected}Oem`).val(oemSelected.data);
+    $(`#${formSelected}Number`).val(oemSelected.supplierNumber);
     showPopUpForm(formSelected, "Edit Product");
   });
 
@@ -219,13 +289,13 @@ $(function () {
 
   $(`${oemTableName} tbody`).on("click", "tr", function () {
     if (isOemEmpty) return;
-    // Clear highlight of all row in Datatable
+    // Clear highlight of all rows in DataTable
     oemTable.rows().nodes().to$().css("background-color", "");
-    // highlight clicked row
+    // Highlight clicked row
     $(this).css("background-color", "#D5F3FE");
-    // Assign row to productSelected
-    oemSelected = Object.values(oemTable.row(this).data())[0];
-    rowindexSelected = oemTable.row(this).index();
+    // Assign row values to oemSelected object
+    oemSelected = { ...Object.values(oemTable.row(this).data()) };
+    rowIndexSelected = oemTable.row(this).index();
     if (isProductEditable)
       // Enable Edit button
       $('button[name="editBtn"]').prop("disabled", false);
@@ -237,12 +307,14 @@ $(function () {
 
   $('button[name="saveForm"]').on("click", async function () {
     //check if mandatory field
-    const FILE_VALUE = $(`#${formSelected}File`).val();
-    const OEM_VALUE = $(`#${formSelected}Oem`).val();
+    const fileVal = $(`#${formSelected}File`).val();
+    const oemVal = $(`#${formSelected}Oem`).val();
+    const supplierVal = $(`#${formSelected}Number`).val();
     let changesMade = [];
-    let isFormFilled = Boolean(OEM_VALUE);
+    let isFormFilled = Boolean(oemVal);
 
-    if (formSelected == "import") isFormFilled &= Boolean(FILE_VALUE);
+    if (formSelected == "import")
+      isFormFilled &= Boolean(fileVal && supplierVal);
 
     // Successful Save
     if (!isFormFilled) {
@@ -252,10 +324,10 @@ $(function () {
     // Import Form Save
     if (formSelected == "import") {
       let sheetJson;
-      sheetJson = await readFileToJson("#importFile", [OEM_VALUE]);
+      sheetJson = await readFileToJson("#importFile", [oemVal, supplierVal]);
 
       let missingHeader = "";
-      // If has erros from reading
+      // If has errors from reading
       if (sheetJson === undefined) return;
       // If file is empty or blank
       if (sheetJson.length == 0) {
@@ -268,7 +340,10 @@ $(function () {
         return;
       }
 
-      missingHeader = findMissingColumnHeader(sheetJson[0], [OEM_VALUE]);
+      missingHeader = findMissingColumnHeader(sheetJson[0], [
+        oemVal,
+        supplierVal,
+      ]);
 
       // Check if all headers from input are inside the file
       if (Boolean(missingHeader)) {
@@ -278,18 +353,21 @@ $(function () {
         return;
       }
 
-      let importOems = sheetJson.map(function (row) {
-        let newObject = { data: row[OEM_VALUE] };
-        changesMade.push(
-          new Map([
-            ["type", "new"],
-            ["id", productIdSelected],
-            ["table", "oem"],
-            ["changes", newObject],
-          ])
-        );
+      const editChanges = [];
+      const importOems = sheetJson.map(function (row) {
+        const newObject = { Oem: row[oemVal], Supplier: row[supplierVal] };
+        editChanges.push(newObject);
         return newObject;
       });
+
+      changesMade.push(
+        new Map([
+          ["type", "newProduct"],
+          ["id", productIdSelected],
+          ["table", "Oem"],
+          ["changes", editChanges],
+        ])
+      );
 
       // Add data to table
       if (isOemEmpty) {
@@ -300,9 +378,9 @@ $(function () {
     }
     // Edit Form Save
     else if (formSelected == "edit") {
-      let rowData = oemTable.row(rowindexSelected).data();
+      let rowData = oemTable.row(rowIndexSelected).data();
 
-      if (oemSelected != OEM_VALUE) {
+      if (oemSelected.data != oemVal) {
         // Get all OEMs without special characters
         oemArray = oemTable
           .columns(0)
@@ -312,13 +390,11 @@ $(function () {
             return String(item).replace(/[-_.,#~:;]]/g, "");
           });
         // Check if the number is the same as existing ones
-        if (oemArray.includes(OEM_VALUE)) {
-          showAlert(
-            `<b>ERROR!</b> OEM Number <i>${OEM_VALUE}</i> already exist`
-          );
+        if (oemArray.includes(oemVal)) {
+          showAlert(`<b>ERROR!</b> OEM Number <i>${oemVal}</i> already exist`);
           return;
         }
-        rowData.data = OEM_VALUE;
+        rowData.data = oemVal;
       } else {
         // exit if no changes were made
         exitPopUpForm(formSelected);
@@ -330,13 +406,13 @@ $(function () {
           ["type", "edit"],
           ["id", productIdSelected],
           ["table", "Oem"],
-          ["oldValue", oemSelected],
-          ["newValue", OEM_VALUE],
+          ["oldValue", oemSelected.data],
+          ["newValue", oemVal],
         ])
       );
       // Redraw the table to reflect the changes
-      oemTable.row(rowindexSelected).data(rowData).invalidate().draw();
-      oemSelected = OEM_VALUE;
+      oemTable.row(rowIndexSelected).data(rowData).invalidate().draw();
+      oemSelected.data = oemVal;
     }
 
     // Save new rows into Session Storage

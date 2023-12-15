@@ -28,6 +28,11 @@ import {
   addNewProductRequestHistory,
 } from "../utils/tab-utils.js";
 import socket from "../utils/socket-utils.js";
+import {
+  fetchProductDataFromDatabase,
+  fetchOemFromDatabase,
+  fetchAltIndexFromDatabase,
+} from "../utils/fetchSQL-utils.js";
 
 $(async function () {
   const defaultColumnAmount = 9;
@@ -37,23 +42,22 @@ $(async function () {
   let formSelected;
   let isEmptyData = true;
   let productSelected = new ProductDto();
-  let rowindexSelected = -1;
+  let rowIndexSelected = -1;
 
   //#region Initialize Page
 
   showLoadingScreen("Loading All Products...");
 
-  const productDatabaseArray = await updateProductRequestsWithDatabase();
+  const productDatabaseArray = await updateProductRequestsWithDatabase(socket);
   const productDetails = productDatabaseArray.Product;
-  console.log(productDatabaseArray);
+  // console.log(productDatabaseArray);
 
   //Load table from API
   const productWorkflowArray = JSON.parse(
     sessionStorage.getItem("productRequestHistory")
   );
 
-  // Check if both productWorkflowArray and productDatabaseArray are empty
-  isEmptyData =
+  // Check if both productWorkflowArray and productDatabaseArray a 
     !Boolean(productWorkflowArray) &&
     (!Boolean(productDatabaseArray) ||
       productDatabaseArray.NewProduct.length === 0);
@@ -155,7 +159,7 @@ $(async function () {
       // TODO: Find ProductDetails with minimal date that is not in productRequestHistory anymore and delete them
     });
 
-    // Insert all prodcut in productDtoArray that has no productDetailMatch to the database
+    // Insert all product in productDtoArray that has no productDetailMatch to the database
     insertNewWorkflowProductToDatabase(socket, productAddingToDatabase);
 
     // Update product with new Generated Research ID
@@ -174,7 +178,7 @@ $(async function () {
       );
     });
 
-    // TO DO: Get list of unique OEM after symbols have been removed
+    // TODO: Get list of unique OEM after symbols have been removed
     let oemUniqueArray = [];
     $.each(oemUniqueArray, function (i, item) {
       $("#supplierList").append($("<option>").attr("value", item).text(item));
@@ -275,10 +279,13 @@ $(async function () {
     stateSave: true,
     paging: true,
   };
-
   var table = new DataTable(tableName, tableOptions);
+
   // Hide Supplier and OEM List Column
-  for (var i = 9; i <= 10; i++) table.column(i).visible(false, false);
+  const supplierListIndex = 9;
+  const oemListIndex = 10;
+  table.column(supplierListIndex).visible(false, false);
+  table.column(oemListIndex).visible(false, false);
   table.columns.adjust().draw(false);
 
   $(`${tableName}_filter`).remove();
@@ -388,7 +395,7 @@ $(async function () {
     if (isEmptyData) return;
     // Assign row to productSelected
     productSelected = new ProductDto(...Object.values(table.row(this).data()));
-    rowindexSelected = table.row(this).index();
+    rowIndexSelected = table.row(this).index();
 
     // Clear highlight of all row in Datatable
     table.rows().nodes().to$().css("background-color", "");
@@ -629,7 +636,7 @@ $(async function () {
     }
     // Edit Form Save
     else if (formSelected == "edit") {
-      let rowData = table.row(rowindexSelected).data();
+      let rowData = table.row(rowIndexSelected).data();
       // Save if there are any changes compared to old value (can be found in productSelected)
       let newUpdate = {};
       if (productSelected.Status != statusVal)
@@ -653,7 +660,7 @@ $(async function () {
       );
       productSelected = updateObject(productSelected, newUpdate);
       // Redraw the table to reflect the changes
-      table.row(rowindexSelected).data(rowData).invalidate().draw();
+      table.row(rowIndexSelected).data(rowData).invalidate().draw();
     }
     // save changes in rows into sessionStorage
     updateChanges(changesMade);
@@ -714,84 +721,6 @@ function generateShortUUID() {
     return ((Math.random() * 16) | 0).toString(16);
   });
   return uuid;
-}
-
-/**
- * Fetch All Product Details from SQL Database
- * @returns {Promise<Object>} Return Array of product data or Array of error
- */
-async function fetchProductDataFromDatabase() {
-  return new Promise((resolve, reject) => {
-    socket.emit("get object database", "Product", "", (ackData) => {
-      if (ackData.status === "OK") {
-        resolve(ackData.result);
-      } else {
-        console.log(
-          `Error Occurred on getting Product data from Database: ${ackData.error
-            .map((err) => `${err.code}: ${err.name}`)
-            .join("\n")}`
-        );
-        showAlert(
-          `Error Occurred on getting Product data from Database: ${ackData.error
-            .map((err) => `${err.code}: ${err.name}`)
-            .join("\n")}`
-        );
-        reject(ackData.error);
-      }
-    });
-  });
-}
-
-/**
- * Fetch All Oem from SQL Database
- * @returns {Promise<Object>} Return Array of OEM or Array of error
- */
-async function fetchOemFromDatabase() {
-  return new Promise((resolve, reject) => {
-    socket.emit("get object database", "Oem", "All", (ackData) => {
-      if (ackData.status === "OK") {
-        resolve(ackData.result);
-      } else {
-        console.log(
-          `Error Occurred on getting Period data from Database: ${ackData.error
-            .map((err) => `${err.code}: ${err.name}`)
-            .join("\n")}`
-        );
-        showAlert(
-          `Error Occurred on getting Period data from Database: ${ackData.error
-            .map((err) => `${err.code}: ${err.name}`)
-            .join("\n")}`
-        );
-        reject(ackData.error);
-      }
-    });
-  });
-}
-
-/**
- * Fetch All Alternate Index from SQL Database
- * @returns {Promise<Object>} Return Array of Alternate Index data or Array of error
- */
-async function fetchAltIndexFromDatabase() {
-  return new Promise((resolve, reject) => {
-    socket.emit("get object database", "AlternateIndex", "All", (ackData) => {
-      if (ackData.status === "OK") {
-        resolve(ackData.result);
-      } else {
-        console.log(
-          `Error Occurred on getting Period data from Database: ${ackData.error
-            .map((err) => `${err.code}: ${err.name}`)
-            .join("\n")}`
-        );
-        showAlert(
-          `Error Occurred on getting Period data from Database: ${ackData.error
-            .map((err) => `${err.code}: ${err.name}`)
-            .join("\n")}`
-        );
-        reject(ackData.error);
-      }
-    });
-  });
 }
 
 /**
@@ -857,10 +786,10 @@ function findMatchingProductDetail(productDetailsArray, currObject) {
  * @returns {Promise<Object>} Return Array of Product and NewProduct data from database
  */
 
-async function updateProductRequestsWithDatabase() {
+async function updateProductRequestsWithDatabase(socket) {
   //Load Product from Database
-  let { Product: productDetails, NewProduct: newProductSaved } =
-    await fetchProductDataFromDatabase().catch((error) => console.error(error));
+  const { Product: productDetails, NewProduct: newProductSaved } =
+    await fetchProductDataFromDatabase(socket).catch((error) => console.error(error));
 
   // Update productRequestHistory in StorageSession with new productDetails
   updateProductRequestHistory(newProductSaved, productDetails);

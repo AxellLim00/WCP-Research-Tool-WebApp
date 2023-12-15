@@ -21,7 +21,6 @@ $(async function () {
   sessionStorage.setItem("hasChanges", false);
   sessionStorage.removeItem("productIDSelected");
 
-  // TO DO: get products from NewProduct and add them to productJsonString
   let jsonArray = JSON.parse(productJsonString);
   if (jsonArray === null || jsonArray.length === 0) {
     showLoadingScreen("Loading Products from system");
@@ -36,6 +35,7 @@ $(async function () {
       );
     });
 
+    // TODO: (Level 5) Get unique Supplier Set Array and insert them to the database
     await handleSocketResponse(socket, token, jsonArray);
     sessionStorage.setItem("productRequestHistory", JSON.stringify(jsonArray));
   } else {

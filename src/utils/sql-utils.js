@@ -80,13 +80,17 @@ export async function getUsersProduct() {
  * Get all Products saved in the SQL Database.
  * @returns {Object | } Status ("OK" or "ERROR"), and List of Product object according to Product Table Columns OR Error Object.
  */
-export async function getProduct() {
+export async function getProduct(productID) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Getting Product...");
-    let result = await pool.query("SELECT * FROM Product");
+    let query = "SELECT * FROM Product";
+    if (productID) {
+      query += ` WHERE ResearchID = '${productID}' OR SKU = '${productID}'`;
+    }
+    const result = await pool.query(query);
     console.log("Got Product");
     console.log("Result: ", result.rowsAffected);
     // Translate SQL int to DataTable Value
@@ -149,11 +153,15 @@ export async function getOem(productID) {
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Getting Oems...");
-    let query = `SELECT * FROM Oem 
+    let query = `SELECT Oem, SupplierNumber, Product.ResearchID, Product.SKU 
+      FROM Oem 
       JOIN Product on Oem.ProductID = Product.ID
-      WHERE Product.ResearchID = ${productID} 
-        OR Product.SKU = ${productID}`;
-    if (productID === "All") query = "SELECT * from Oem";
+      WHERE Product.ResearchID = '${productID}' 
+        OR Product.SKU = '${productID}'`;
+    if (productID === "All")
+      query = `SELECT Oem, SupplierNumber, Product.ResearchID, Product.SKU 
+        FROM Oem
+        JOIN Product on Oem.ProductID = Product.ID`;
     const result = await pool.query(query);
     console.log("Got Oem");
     console.log("Result: ", result.rowsAffected);
@@ -216,7 +224,7 @@ export async function getAltIndex(productID) {
       FROM AlternateIndex 
       JOIN Product ON AlternateIndex.ProductID = Product.ID 
       JOIN Supplier ON AlternateIndex.SupplierNumber = Supplier.SupplierNumber 
-      WHERE Product.ResearchID = ${productID} OR Product.SKU = ${productID}`;
+      WHERE Product.ResearchID = '${productID}' OR Product.SKU = '${productID}'`;
     if (productID === "All") query = `Select * from AlternateIndex`;
     const result = await pool.query(query);
     console.log("Got Alt Index");
@@ -256,7 +264,7 @@ export async function getKeyType(productID) {
       `SELECT KeyType
       FROM KeyType 
       JOIN Product ON KeyType.ProductID = Product.ID 
-      WHERE Product.ResearchID = ${productID} OR Product.SKU = ${productID}`
+      WHERE Product.ResearchID = '${productID}' OR Product.SKU = '${productID}'`
     );
     console.log("Got KType");
     console.log("Result: ", result.rowsAffected);
@@ -290,7 +298,7 @@ export async function getEpid(productID) {
       `SELECT EPID
       FROM EPID 
       JOIN Product ON EPID.ProductID = Product.ID 
-      WHERE Product.ResearchID = ${productID} OR Product.SKU = ${productID}`
+      WHERE Product.ResearchID = '${productID}' OR Product.SKU = '${productID}'`
     );
     console.log("Got ePID");
     console.log("Result: ", result.rowsAffected);
@@ -789,7 +797,7 @@ export async function updateProduct(mapChange) {
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
-    var updateQueries = [];
+    const updateQueries = [];
     mapChange.forEach((item) => {
       let changes = item.get("changes");
       let productID = item.get("id");
@@ -804,7 +812,7 @@ export async function updateProduct(mapChange) {
       if ("EstSaleVol" in changes)
         setUpdates.push(`EstSales = ${changes.EstSaleVol}`);
 
-      if ("Note" in changes) setUpdates.push(`Notes = '${changes.Note}'`);
+      if ("Note" in changes) setUpdates.push(`Note = '${changes.Note}'`);
 
       if ("EstimateCostAUD" in changes)
         setUpdates.push(`EstCostAud = ${changes.EstimateCostAUD}`);
@@ -823,9 +831,10 @@ export async function updateProduct(mapChange) {
         .replace("T", " ")}'
       WHERE SKU = '${productID}' OR ResearchID = '${productID}';`);
     });
-
+    const query = updateQueries.join("\n");
+    console.log(query);
     console.log("Updating Product...");
-    let result = await pool.query(updateQueries.join("\n"));
+    let result = await pool.query(query);
     console.log("Updated Product");
 
     console.log("Result: ", result.rowsAffected);

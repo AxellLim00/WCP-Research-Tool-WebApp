@@ -308,6 +308,10 @@ form h2,
   color: black;
 }
 
+.warning {
+  color: rgb(130, 0, 0);
+}
+
 /* Dashboard Tab specific */
 
 .split-layout-dashboard {

@@ -158,6 +158,9 @@ io.on("connect", async function (socket) {
           if (newProduct.status == "ERROR") result.error.push(newProduct.error);
         }
         break;
+      case "Product Detail":
+        result = await getProduct(productID);
+        break;
       case "KeyType":
         result = await getKeyType(productID);
         break;
