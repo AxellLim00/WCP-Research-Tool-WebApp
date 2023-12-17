@@ -259,13 +259,12 @@ export async function getKeyType(productID) {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
-    console.log("Getting KTypes...");
-    let result = await pool.query(
-      `SELECT KeyType
+    const query = `SELECT KeyType
       FROM KeyType 
       JOIN Product ON KeyType.ProductID = Product.ID 
-      WHERE Product.ResearchID = '${productID}' OR Product.SKU = '${productID}'`
-    );
+      WHERE Product.ResearchID = '${productID}' OR Product.SKU = '${productID}'`;
+    console.log("Getting KTypes...");
+    const result = await pool.query(query);
     console.log("Got KType");
     console.log("Result: ", result.rowsAffected);
     return {
@@ -293,13 +292,12 @@ export async function getEpid(productID) {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
-    console.log("Getting ePID...");
-    let result = await pool.query(
-      `SELECT EPID
+    const query = `SELECT EPID
       FROM EPID 
       JOIN Product ON EPID.ProductID = Product.ID 
-      WHERE Product.ResearchID = '${productID}' OR Product.SKU = '${productID}'`
-    );
+      WHERE Product.ResearchID = '${productID}' OR Product.SKU = '${productID}'`;
+    console.log("Getting ePID...");
+    const result = await pool.query(query);
     console.log("Got ePID");
     console.log("Result: ", result.rowsAffected);
     return {
@@ -368,7 +366,6 @@ export async function insertProduct(mapChange) {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
-    console.log("Inserting product details...");
 
     const query = `INSERT INTO Product (ID, UserID, ResearchID, SKU, Status, OemType, LastUpdate)
       VALUES
@@ -385,6 +382,8 @@ export async function insertProduct(mapChange) {
             )
           )
           .join(",\n")};`;
+
+    console.log("Inserting product details...");
     const result = await pool.query(query);
     console.log("Inserted product details");
     console.log("Result: ", result.rowsAffected);
@@ -480,8 +479,7 @@ export async function insertSupplier(mapChange) {
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new supplier...");
-    let result = await pool.query(
-      `INSERT INTO Supplier (SupplierNumber, SupplierName, Currency)
+    const query = `INSERT INTO Supplier (SupplierNumber, SupplierName, Currency)
       VALUES 
       ${mapChange
         .map((changeMap) =>
@@ -492,8 +490,8 @@ export async function insertSupplier(mapChange) {
                 `('${supplier.SupplierNumber}', '${supplier.SupplierName}', '${supplier.Currency}')`
             )
         )
-        .join(",\n")};`
-    );
+        .join(",\n")};`;
+    const result = await pool.query(query);
     console.log("Inserted new supplier");
     console.log("Result: ", result.rowsAffected);
     return {
@@ -620,16 +618,16 @@ export async function insertKType(mapChange) {
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new KType...");
-    let query = `INSERT INTO KeyType (KeyType, ProductID)
+    const query = `INSERT INTO KeyType (KTypeKey, KeyType, ProductID)
       VALUES 
       ${mapChange.map(
         (Map) =>
-          `('${Map.get("changes").KType}', 
+          `(NEWID(), '${Map.get("changes").KType}', 
             (SELECT TOP 1 ID FROM Product
               WHERE Product.ResearchID = '${Map.get("id")}' 
               OR Product.SKU = '${Map.get("id")}'));`
       )}`;
-    let result = await pool.query(query);
+    const result = await pool.query(query);
     console.log("Inserted new KType");
     console.log("Result: ", result.rowsAffected);
     return {
@@ -813,6 +811,8 @@ export async function updateProduct(mapChange) {
         setUpdates.push(`EstSales = ${changes.EstSaleVol}`);
 
       if ("Note" in changes) setUpdates.push(`Note = '${changes.Note}'`);
+
+      if ("CostUSD" in changes) setUpdates.push(`CostUSD = ${changes.CostUSD}`);
 
       if ("EstimateCostAUD" in changes)
         setUpdates.push(`EstCostAud = ${changes.EstimateCostAUD}`);

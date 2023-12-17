@@ -75,6 +75,7 @@ async function searchProduct(
     throw error;
   }
 }
+
 const _searchProduct = searchProduct;
 export { _searchProduct as searchProduct };
 
@@ -89,41 +90,71 @@ export async function getAllProduct(
   let pageNo = 1;
   var allProducts = [];
 
-  while (true) {
-    try {
-      const response = await searchProduct(
-        token,
-        pageNo,
-        defaultPageSize,
-        partTypeCode,
-        interchangeNumber,
-        interchangeVersion
+  try {
+    const firstResponse = await searchProduct(
+      token,
+      pageNo,
+      defaultPageSize,
+      partTypeCode,
+      interchangeNumber,
+      interchangeVersion
+    );
+
+    // Append the products from the first page to the result array
+    allProducts.push(...firstResponse.data.records);
+
+    const totalPages = Math.ceil(
+      firstResponse.data.recordCount / defaultPageSize
+    );
+
+    socket.emit("loading progress", {
+      page: pageNo,
+      totalPages: totalPages,
+      productsLoaded: allProducts.length,
+      totalProducts: firstResponse.data.recordCount,
+    });
+    console.log(
+      `Loaded page ${pageNo} of ${totalPages} with ${allProducts.length} of ${firstResponse.data.recordCount} products`
+    );
+
+    const promises = [];
+    // Start from the second page
+    pageNo++;
+
+    // Create promises for each subsequent page
+    while (pageNo <= totalPages) {
+      promises.push(
+        searchProduct(
+          token,
+          pageNo,
+          defaultPageSize,
+          partTypeCode,
+          interchangeNumber,
+          interchangeVersion
+        )
       );
-
-      // Append the products from the current page to the result array
-      allProducts.push(...response.data.records);
-
-      const totalPages = Math.ceil(response.data.recordCount / defaultPageSize);
-
-      socket.emit("loading progress", {
-        page: pageNo,
-        totalPages: totalPages,
-        productsLoaded: allProducts.length,
-        totalProducts: response.data.recordCount,
-      });
-      console.log(
-        `Loaded page ${pageNo} of ${totalPages} with ${allProducts.length} of ${response.data.recordCount} products`
-      );
-      // Check if there are more pages
-      if (response.data.records.length < defaultPageSize) {
-        break; // Exit the loop if no more pages
-      }
-
-      // Move on to the next page
       pageNo++;
-    } catch (error) {
-      throw error;
     }
+    pageNo--;
+    // Wait for all promises to resolve
+    const responses = await Promise.all(promises);
+
+    // Append the products from each response to the result array
+    responses.forEach((response) => {
+      allProducts.push(...response.data.records);
+    });
+
+    socket.emit("loading progress", {
+      page: pageNo,
+      totalPages: totalPages,
+      productsLoaded: allProducts.length,
+      totalProducts: firstResponse.data.recordCount,
+    });
+    console.log(
+      `Loaded page ${pageNo} of ${totalPages} with ${allProducts.length} of ${firstResponse.data.recordCount} products`
+    );
+  } catch (error) {
+    throw error;
   }
 
   return allProducts;

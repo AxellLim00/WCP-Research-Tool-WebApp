@@ -18,11 +18,11 @@ export function productSelectedChanged(
   showError = false
 ) {
   var hasChanges = sessionStorage.getItem("hasChanges") == "true";
-  $("#productSelected").attr("oldvalue", currentId);
+  $("#productSelected").attr("oldValue", currentId);
   if (!idList.includes(newId) || newId == currentId) {
     if (!showError) return;
     showAlert(`Error: Product ID ${newId} not found`);
-    $("#productSelected").val($("#productSelected").attr("oldvalue"));
+    $("#productSelected").val($("#productSelected").attr("oldValue"));
     return;
   }
   if (hasChanges) {
@@ -35,6 +35,46 @@ export function productSelectedChanged(
   selectTab(tabId);
 }
 
+/**
+ * Update "currencyRate" in Session Storage to have currency rates to AUD
+ * and get conversion rates from API
+ * @param {SocketIO.Socket} socket SocketIO socket
+ * @returns {Map} of currencies to its currency rates
+ */
+export async function getCurrencyRates(socket) {
+  try {
+    const currencyRate = JSON.parse(localStorage.getItem("currencyRate"));
+    const lastUpdate = new Date(currencyRate?.last_updated_at);
+    const Rates = new Date(currencyRate?.data);
+    const currentDate = new Date();
+    // If currencyRate is not null and last updated is within 7 days
+    if (
+      currencyRate &&
+      Rates &&
+      lastUpdate &&
+      lastUpdate.getTime() > currentDate.getTime() - 7 * 24 * 60 * 60 * 1000
+    ) {
+      return currencyRate;
+    }
+
+    const response = await new Promise((resolve) => {
+      console.log("Getting Currencies from system");
+      socket.emit("get all currency", resolve);
+    });
+
+    const updatedCurrencyRate = {
+      data: response.data,
+      last_updated_at: currentDate.toString(),
+    };
+    // Save to local storage
+    localStorage.setItem("currencyRate", JSON.stringify(updatedCurrencyRate));
+
+    return updatedCurrencyRate;
+  } catch (error) {
+    console.error("Error retrieving currency rates:", error);
+    throw error;
+  }
+}
 /**
  * Convert local currency to AUD currency
  * @param {String} costCurrency currency name
@@ -207,7 +247,7 @@ export async function saveChanges(socket) {
  * @param {Map[]} changes array of changes to update
  * @returns {Promise<boolean>} true if all works well, false when there is an error
  */
-async function updateDataOnDatabase(socket, changes) {
+export async function updateDataOnDatabase(socket, changes) {
   const serializedChanges = changes.map((map) =>
     JSON.stringify(Array.from(map.entries()))
   );

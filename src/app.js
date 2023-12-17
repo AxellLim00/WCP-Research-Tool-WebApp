@@ -40,7 +40,7 @@ import {
   insertOemBySupplier,
   updateOem,
   deleteOem,
-} from "./utils/sql-utils.js";
+} from "./utils/sql-utils-server.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let connectedClients = {};
@@ -128,6 +128,7 @@ io.on("connect", async function (socket) {
 
   socket.on("get all currency", async (callback) => {
     var responseJSON;
+    console.log("Fetching currency exchange rate...");
     await freeCurrencyAPI
       .latest({
         base_currency: "AUD",
@@ -135,6 +136,7 @@ io.on("connect", async function (socket) {
       .then((response) => {
         responseJSON = response;
       });
+    console.log("Fetching successful");
     callback(responseJSON);
   });
 
@@ -188,7 +190,7 @@ io.on("connect", async function (socket) {
 
   socket.on("update database", async (updateList, callback) => {
     // TO DO: Change from using map to just Objects
-    // Use reduce to split the list based on tablename and action
+    // Use reduce to split the list based on table Name and action
     updateList = updateList.map((obj) => new Map(JSON.parse(obj)));
     const separatedLists = updateList.reduce((acc, item) => {
       const key = `${item.get("table")}_${item.get("type")}`;

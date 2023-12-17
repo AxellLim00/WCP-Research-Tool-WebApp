@@ -7,6 +7,8 @@ import {
   selectTab,
   showAlert,
 } from "./utils/html-utils.js";
+import { fetchSupplierFromDatabase } from "./utils/fetchSQL-utils.js";
+import { updateDataOnDatabase } from "./utils/tab-utils.js";
 
 $(async function () {
   const token = sessionStorage.getItem("token");
@@ -35,9 +37,14 @@ $(async function () {
       );
     });
 
-    // TODO: (Level 5) Get unique Supplier Set Array and insert them to the database
     await handleSocketResponse(socket, token, jsonArray);
     sessionStorage.setItem("productRequestHistory", JSON.stringify(jsonArray));
+    // TODO: (Level 5) Get unique Supplier Set Array and insert them to the database
+    // let isSuccessful = await updateSuppliers(socket, jsonArray);
+    // console.log("isSuccessful", isSuccessful);
+    // if (!isSuccessful) {
+    //   return;
+    // }
   } else {
     selectTab("tab0");
   }
@@ -66,7 +73,7 @@ $(async function () {
     }
   });
 
-  //#region Comfirmation Button Events
+  //#region Confirmation Button Events
 
   // Switch Tab confirmation
   $('#switchConfirmation button[name="yes"]').on("click", function () {
@@ -98,7 +105,7 @@ $(async function () {
     $("#searchConfirmation.confirmation").hide();
     $("#darkLayer").hide();
     $("#darkLayer").css("position", "absolute");
-    $("#productSelected").val($("#productSelected").attr("oldvalue"));
+    $("#productSelected").val($("#productSelected").attr("oldValue"));
   });
 
   //#endregion
@@ -167,4 +174,51 @@ async function handleSocketResponse(socket, token, jsonArray) {
       }
     });
   });
+}
+
+/**
+ * Update the suppliers in the database
+ * @param {SocketIO.Socket} socket SocketIO socket
+ * @param {Array} jsonArray Array of products
+ * @returns {Promise<Boolean>} Return true if successful, false otherwise
+ */
+async function updateSuppliers(socket, jsonArray) {
+  try {
+    let supplierList = await fetchSupplierFromDatabase(socket);
+    let filteredNewSupplier = Array.from(
+      new Set(
+        jsonArray
+          .filter(
+            (product) =>
+              product.altIndexNumber &&
+              !supplierList.some(
+                (supplier) => supplier.SupplierNumber === product.altIndexNumber
+              )
+          )
+          .map((product) => ({
+            SupplierNumber: product.altIndexNumber,
+            SupplierName: product.vendorName,
+            Currency: "AUD",
+          }))
+      )
+    );
+    if (filteredNewSupplier.length > 0) {
+      console.log("Inserting new suppliers into database");
+      let changes = [
+        new Map([
+          ["table", "Supplier"],
+          ["type", "new"],
+          ["changes", filteredNewSupplier],
+        ]),
+      ];
+      debugger;
+      let isSuccessful = await updateDataOnDatabase(socket, changes);
+      return isSuccessful;
+    }
+    return true;
+  } catch (error) {
+    // Error already handled in fetchAltIndexFromDatabase
+    console.error(error);
+    return false;
+  }
 }

@@ -16,6 +16,7 @@ import {
   updateHasChanges,
   updateChanges,
   saveChanges,
+  getCurrencyRates,
 } from "../utils/tab-utils.js";
 import {
   createEmptyRow,
@@ -28,35 +29,39 @@ import {
   showPopUpForm,
   hidePopUpForm,
   exitPopUpForm,
+  showLoadingScreen,
+  hideLoadingScreen,
 } from "../utils/html-utils.js";
 
 // TODO: Test this edit changes
 
-$(function () {
+$(async function () {
   const columnDefaultAmount = 10;
   const rowDefaultAmount = 10;
   const tableName = "#altIndexTable";
   const $dateFromFilter = $('input[type="date"][name="from"]');
-  const $dateToFitler = $('input[type="date"][name="to"]');
-
-  var isTableEmpty = true;
-  var formSelected;
-  var currencyRate = new Map();
-  var currencySupplierMap = new Map();
-  var altIndexSelected = new AlternateIndexDto();
-  var altIndexValueDictionary = [];
-  var mainSupplier = null;
-  var productIdSelected = sessionStorage.getItem("productIDSelected");
-  var rowindexSelected = -1;
-  var productDtoArray = JSON.parse(
+  const $dateToFilter = $('input[type="date"][name="to"]');
+  const productDtoArray = JSON.parse(
     sessionStorage.getItem("productRequestHistory")
   );
-  var productIdArray = getProductIdentifier(productDtoArray);
-  var altIndexObjectArray = [];
+
+  let isTableEmpty = true;
+  let formSelected;
+  let currencyRate = new Map();
+  let currencySupplierMap = new Map();
+  let altIndexSelected = new AlternateIndexDto();
+  let altIndexValueDictionary = [];
+  let mainSupplier = null;
+  let productIdSelected = sessionStorage.getItem("productIDSelected");
+  let rowIndexSelected = -1;
+  let productIdArray = getProductIdentifier(productDtoArray);
+  let altIndexObjectArray = [];
   // temporary variable to store previous values
-  var prevMainSupplier = null;
+  let prevMainSupplier = null;
 
   //#region Initialization
+
+  showLoadingScreen("Loading Alternate Index Table...");
 
   // Load table from API and TO DO: Server-side?
   if (productIdSelected) {
@@ -89,7 +94,7 @@ $(function () {
       $dateFromFilter.val() ? $dateFromFilter.val() : -8640000000000000
     );
     let end = new Date(
-      $dateToFitler.val() ? $dateToFitler.val() : -8640000000000000
+      $dateToFilter.val() ? $dateToFilter.val() : -8640000000000000
     );
     let date = new Date(
       data[columnIndex] ? data[columnIndex] : -8640000000000000
@@ -107,20 +112,26 @@ $(function () {
   });
 
   // Fill in options for alternative index Name and ID
+
   $.each(Object.keys(altIndexValueDictionary), function (i, item) {
     $("#altIndexNumList").append($("<option>").attr("value", item).text(item));
   });
 
   //#endregion
 
-  // TO DO: get all currency and supplier pair from Server-side
-  // currencySupplierMap =
-
-  // Check if all currency is in currencyRates
-  currencyRate = getCurrencyRates();
+  try {
+    // TO DO: get all currency and supplier pair from Server-side
+    // currencySupplierMap =
+    // Check if all currency is in currencyRates
+    currencyRate = await getCurrencyRates(socket);
+  } catch (error) {
+    showAlert(error.message);
+    return;
+  }
 
   // Check if alternative index list is empty
   isTableEmpty = altIndexObjectArray.length == 0;
+
   // Scenario of when data loaded is empty
   if (isTableEmpty) {
     $(tableName).append(createEmptyRow(rowDefaultAmount, columnDefaultAmount));
@@ -128,7 +139,7 @@ $(function () {
 
   // Disable/Enable date picker
   $dateFromFilter.attr("disabled", isTableEmpty);
-  $dateToFitler.attr("disabled", isTableEmpty);
+  $dateToFilter.attr("disabled", isTableEmpty);
 
   let tableOptions = {
     orderCellsTop: true,
@@ -161,7 +172,7 @@ $(function () {
     stateSave: true,
     paging: true,
   };
-  var table = new DataTable(tableName, tableOptions);
+  let table = new DataTable(tableName, tableOptions);
 
   $(`${tableName}_filter`).remove();
   $(".dataTables_length").css("padding-bottom", "1%");
@@ -206,14 +217,16 @@ $(function () {
   });
 
   $dateFromFilter.on("input", function () {
-    if ($dateToFitler.val() == "") $dateToFitler.val($(this).val());
+    if ($dateToFilter.val() == "") $dateToFilter.val($(this).val());
     table.draw();
   });
 
-  $dateToFitler.on("input", function () {
+  $dateToFilter.on("input", function () {
     if ($dateFromFilter.val() == "") $dateFromFilter.val($(this).val());
     table.draw();
   });
+
+  hideLoadingScreen();
 
   //#endregion
 
@@ -289,7 +302,7 @@ $(function () {
   //#region Row Click event
   $(`${tableName} tbody`).on("click", "tr", function () {
     if (isTableEmpty) return;
-    // Clear highlight of all row in Datatable
+    // Clear highlight of all row in DataTable
     table.rows().nodes().to$().css("background-color", "");
     // highlight clicked row
     $(this).css("background-color", "#D5F3FE");
@@ -297,7 +310,7 @@ $(function () {
     altIndexSelected = new AlternateIndexDto(
       ...Object.values(table.row(this).data())
     );
-    rowindexSelected = table.row(this).index();
+    rowIndexSelected = table.row(this).index();
     // Enable Edit button
     $('button[name="editBtn"]').prop("disabled", false);
   });
@@ -391,7 +404,7 @@ $(function () {
         let Currency = "AUD"; // TEMP
         let costAud = calculateAUD(Currency, row[COST_CURRENCY_VALUE]);
 
-        // If converting currency occured an error
+        // If converting currency occurred an error
         if (typeof costAud === "string" || costAud instanceof String) {
           errorMessage.push(costAud);
           return null;
@@ -446,7 +459,7 @@ $(function () {
         showAlert(`<strong>ERROR!</strong> ${errorMessage.join(".\n")}`);
         return;
       }
-      let rowData = table.row(rowindexSelected).data();
+      let rowData = table.row(rowIndexSelected).data();
       // Save if there are any changes compared to old value (can be found in productSelected)
       let newUpdate = {};
 
@@ -498,7 +511,7 @@ $(function () {
       );
       altIndexSelected = updateObject(altIndexSelected, newUpdate);
       // Redraw the table to reflect the changes
-      table.row(rowindexSelected).data(rowData).invalidate().draw();
+      table.row(rowIndexSelected).data(rowData).invalidate().draw();
     }
     // save new rows into sessionStorage
     updateChanges(changesMade);
@@ -560,35 +573,3 @@ $(function () {
 
   //#endregion
 });
-
-/**
- * Update "currencyRate" in Session Storage to have currency rates to AUD
- * and get converison rates from API
- * @returns {Map} of currencies to its currency rates
- */
-async function getCurrencyRates() {
-  var currencyRate;
-  if (localStorage["currencyRate"]) {
-    currencyRate = JSON.parse(localStorage.getItem("currencyRate"));
-    let lastUpdate = new Date(currencyRate["last_updated_at"]);
-    // Check if currency Rate was updated within this week
-    if (getWeekNumber(lastUpdate) == getWeekNumber(new Date())) {
-      return currencyRate;
-    }
-  }
-  // Get the currency rates from System
-  // socket is constant from script.js
-  const socketPromise = new Promise((resolve) => {
-    console.log("Getting Currencies from system");
-    socket.emit("get all currency", resolve);
-  });
-  await socketPromise.then((response) => {
-    currencyRate = response.data;
-  });
-  let currentDate = new Date();
-  currencyRate["last_updated_at"] = currentDate.toString();
-
-  localStorage.setItem("currencyRate", JSON.stringify(currencyRate));
-
-  return currencyRate;
-}

@@ -5,6 +5,8 @@ import {
   showPopUpForm,
   hidePopUpForm,
   exitPopUpForm,
+  hideLoadingScreen,
+  showLoadingScreen,
 } from "../utils/html-utils.js";
 import {
   productSelectedChanged,
@@ -13,47 +15,74 @@ import {
   updateChanges,
   saveChanges,
 } from "../utils/tab-utils.js";
+import {
+  fetchKTypeFromDatabase,
+  fetchEpidFromDatabase,
+} from "../utils/fetchSQL-utils.js";
 import { createEmptyRow, exportDataTable } from "../utils/table-utils.js";
 import socket from "../utils/socket-utils.js";
 
 // TODO: Test this edit changes
-// TODO: Make all editable if product is from NewProduct
 
-$(function () {
+$(async function () {
   const defaultColumnAmount = 1;
   const defaultRowAmount = 10;
   const kTypeTableName = "#kTypeTable";
   const epidTableName = "#ePIDTable";
-  var isEmptyData = true;
-  var formSelected;
-  var itemSelected = { table: "", value: "" };
-  var productIdSelected = sessionStorage.getItem("productIDSelected");
-  var rowindexSelected = -1;
-  var productDtoArray = JSON.parse(
+  const productDtoArray = JSON.parse(
     sessionStorage.getItem("productRequestHistory")
   );
-  var productIdArray = getProductIdentifier(productDtoArray);
-  //Load table from API/Server-side
 
-  // if loading is empty
-  if (isEmptyData) {
+  const kTypeList = [];
+  const ePIDList = [];
+  let isKTypeEmpty = true;
+  let isEpidEmpty = true;
+  let formSelected;
+  let itemSelected = { table: "", value: "" };
+  let productIdSelected = sessionStorage.getItem("productIDSelected");
+  let rowIndexSelected = -1;
+  let productIdArray = getProductIdentifier(productDtoArray);
+
+  //#region Initialization
+
+  showLoadingScreen("Loading eBay Compatibility Table...");
+
+  if (productIdSelected) {
+    try {
+      //Load table from Server-side
+      // Fetch Key Type data from database
+      const kTypeArray = await fetchKTypeFromDatabase(
+        socket,
+        productIdSelected
+      );
+      kTypeList.push(
+        ...kTypeArray.map((item) => {
+          return { item: item.KeyType };
+        })
+      );
+      // Fetch ePID data from database
+      const ePIDArray = await fetchEpidFromDatabase(socket, productIdSelected);
+      ePIDList.push(
+        ...ePIDArray.map((item) => {
+          return { item: item.EPID };
+        })
+      );
+    } catch {
+      // Rejection handled in fetchKTypeFromDatabase and fetchEpidFromDatabase
+      return;
+    }
+  }
+  debugger;
+  isKTypeEmpty = kTypeList.length == 0;
+  isEpidEmpty = ePIDList.length == 0;
+  if (isKTypeEmpty)
     $(kTypeTableName).append(
       createEmptyRow(defaultRowAmount, defaultColumnAmount)
     );
+  if (isEpidEmpty)
     $(epidTableName).append(
       createEmptyRow(defaultRowAmount, defaultColumnAmount)
     );
-  } else {
-    let kTypeTable_Data, ePIDTable_Data;
-    //fill in table with the data
-
-    // $("#kTypeTable > tbody:last-child").append(
-    // html here
-    // );
-    // $("#ePIDTable > tbody:last-child").append(
-    // html here
-    // );
-  }
 
   //#region Fill in textbox Datalist
 
@@ -71,12 +100,20 @@ $(function () {
     paging: true,
   };
 
-  var kTypeTable = new DataTable(kTypeTableName, tableOptions);
-  var ePIDTable = new DataTable(epidTableName, tableOptions);
+  let kTypeTable = new DataTable(kTypeTableName, tableOptions);
+  let ePIDTable = new DataTable(epidTableName, tableOptions);
 
   $(".dataTables_length").css("padding-bottom", "1%");
 
+  // If List is not empty, fill in DataTable
+  if (!isKTypeEmpty) kTypeTable.rows.add(kTypeList).draw();
+  if (!isEpidEmpty) ePIDTable.rows.add(ePIDList).draw();
+
   $("#productSelected").val(productIdSelected);
+
+  hideLoadingScreen();
+
+  //#endregion
 
   //#region textbox event
 
@@ -126,7 +163,7 @@ $(function () {
   $('button[name="newBtn"]').on("click", function () {
     formSelected = "new";
     $("#default").prop("checked", true);
-    $("#newKtypeField").show();
+    $("#newKTypeField").show();
     $("#newEPIDField").hide();
     showPopUpForm(formSelected, "New Item");
   });
@@ -152,11 +189,11 @@ $(function () {
 
   // Click on K-Type table
   $(`${kTypeTableName} tbody`).on("click", "tr", function () {
-    if (isEmptyData) return;
-    // Clear highlight of all row in Datatable
+    if (isKTypeEmpty) return;
+    // Clear highlight of all row in DataTable
     itemSelected.table = "K-Type";
     itemSelected.value = Object.values(kTypeTable.row(this).data())[0];
-    rowindexSelected = kTypeTable.row(this).index();
+    rowIndexSelected = kTypeTable.row(this).index();
     kTypeTable.rows().nodes().to$().css("background-color", "");
     ePIDTable.rows().nodes().to$().css("background-color", "");
     // highlight clicked row
@@ -167,11 +204,11 @@ $(function () {
 
   // Click on EPID table
   $(`${epidTableName} tbody`).on("click", "tr", function () {
-    if (isEmptyData) return;
-    // Clear highlight of all row in Datatable
+    if (isEpidEmpty) return;
+    // Clear highlight of all row in DataTable
     itemSelected.table = "EPID";
     itemSelected.value = Object.values(ePIDTable.row(this).data())[0];
-    rowindexSelected = ePIDTable.row(this).index();
+    rowIndexSelected = ePIDTable.row(this).index();
     kTypeTable.rows().nodes().to$().css("background-color", "");
     ePIDTable.rows().nodes().to$().css("background-color", "");
     // highlight clicked row
@@ -189,7 +226,7 @@ $(function () {
     const K_TYPE_VALUE = $(`#${formSelected}KType`).val();
     const EPID_VALUE = $(`#${formSelected}EPID`).val();
     const EDIT_VALUE = $(`#${formSelected}Item`).val();
-    var table;
+    let table;
     let changesMade = [];
     let isFormFilled = false;
     // validation on new
@@ -228,24 +265,28 @@ $(function () {
 
     // New Form Save
     if (formSelected == "new") {
-      let newItem = [];
+      let newItem = {};
       let tableDatabaseName;
       switch (ITEM_CHOSEN_VALUE) {
         case "K-Type":
           newItem.KType = K_TYPE_VALUE;
           tableDatabaseName = "KeyType";
+          // Empty Table if DataTable previously was empty
+          if (isKTypeEmpty) {
+            isKTypeEmpty = false;
+            kTypeTable.clear().draw();
+          }
           break;
+
         case "EPID":
           newItem.EPID = EPID_VALUE;
           tableDatabaseName = "EPID";
+          // Empty Table if DataTable previously was empty
+          if (isEpidEmpty) {
+            isEpidEmpty = false;
+            ePIDTable.clear().draw();
+          }
           break;
-      }
-
-      // Empty Table if DataTable previosly was empty
-      if (isEmptyData) {
-        isEmptyData = false;
-        kTypeTable.clear().draw();
-        ePIDTable.clear().draw();
       }
 
       changesMade.push(
@@ -257,27 +298,27 @@ $(function () {
         ])
       );
       // Add data to table
-      table.row.add(newItem).draw();
+      table.row.add({ item: Object.values(newItem)[0] }).draw();
     }
     // Edit Form Save
     else if (formSelected == "edit") {
-      let rowData = table.row(rowindexSelected).data();
+      let rowData = table.row(rowIndexSelected).data();
       let tableDatabaseName;
-      let newUpdate;
+      let newUpdateValue;
       if (itemSelected.value != EDIT_VALUE)
         switch (itemSelected.table) {
           case "K-Type":
-            rowData.item = newUpdate = EDIT_VALUE;
+            rowData.item = newUpdateValue = EDIT_VALUE;
             tableDatabaseName = "KeyType";
             break;
           case "EPID":
-            rowData.item = newUpdate = EDIT_VALUE;
+            rowData.item = newUpdateValue = EDIT_VALUE;
             tableDatabaseName = "EPID";
             break;
         }
 
       // exit if no changes were made
-      if (Object.keys(newUpdate).length === 0) {
+      if (Object.keys(newUpdateValue).length === 0) {
         exitPopUpForm(formSelected);
         return;
       }
@@ -287,12 +328,12 @@ $(function () {
           ["id", productIdSelected],
           ["table", tableDatabaseName],
           ["oldValue", itemSelected.value],
-          ["newValue", newUpdate],
+          ["newValue", newUpdateValue],
         ])
       );
       itemSelected.value = EDIT_VALUE;
       // Redraw the table to reflect the changes
-      table.row(rowindexSelected).data(rowData).invalidate().draw();
+      table.row(rowIndexSelected).data(rowData).invalidate().draw();
     }
     // save changes in rows into sessionStorage
     updateChanges(changesMade);
@@ -310,11 +351,11 @@ $(function () {
   $('input[name="newItem"]').on("click", function () {
     switch ($(this).val()) {
       case "K-Type":
-        $("#newKtypeField").show();
+        $("#newKTypeField").show();
         $("#newEPIDField").hide();
         break;
       case "EPID":
-        $("#newKtypeField").hide();
+        $("#newKTypeField").hide();
         $("#newEPIDField").show();
         break;
     }

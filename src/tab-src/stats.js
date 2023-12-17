@@ -145,11 +145,10 @@ $(async function () {
 
   isVinEmpty = vinList.length == 0;
   isOemEmpty = oemList.length == 0;
-  console.log("isVinEmpty", isVinEmpty);
-  console.log("length", vinList.length);
-  console.log("isOemEmpty", isOemEmpty);
-  console.log("length", oemList.length);
-  // debugger;
+  // console.log("isVinEmpty", isVinEmpty);
+  // console.log("length", vinList.length);
+  // console.log("isOemEmpty", isOemEmpty);
+  // console.log("length", oemList.length);
 
   // Fill in Table if loading from API empty
   if (isVinEmpty)

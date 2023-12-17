@@ -57,7 +57,8 @@ $(async function () {
     sessionStorage.getItem("productRequestHistory")
   );
 
-  // Check if both productWorkflowArray and productDatabaseArray a 
+  // Check if both productWorkflowArray and productDatabaseArray are empty
+  isEmptyData =
     !Boolean(productWorkflowArray) &&
     (!Boolean(productDatabaseArray) ||
       productDatabaseArray.NewProduct.length === 0);
@@ -397,7 +398,7 @@ $(async function () {
     productSelected = new ProductDto(...Object.values(table.row(this).data()));
     rowIndexSelected = table.row(this).index();
 
-    // Clear highlight of all row in Datatable
+    // Clear highlight of all row in DataTable
     table.rows().nodes().to$().css("background-color", "");
     // highlight clicked row
     $(this).css("background-color", "#D5F3FE");
@@ -487,8 +488,8 @@ $(async function () {
     if (formSelected == "import") {
       // Optional Column header name
       let isSkuEmpty = skuVal.trim().length == 0;
-      let isStatusEmtpy = statusVal.trim().length == 0;
-      let isOemCategoryEmtpy = oemTypeVal.trim().length == 0;
+      let isStatusEmpty = statusVal.trim().length == 0;
+      let isOemCategoryEmpty = oemTypeVal.trim().length == 0;
       let columnHeaders = [
         skuVal,
         makeVal,
@@ -522,8 +523,8 @@ $(async function () {
         partTypeVal,
         icNumVal,
         icDescVal,
-        isStatusEmtpy ? null : statusVal,
-        isOemCategoryEmtpy ? null : oemTypeVal,
+        isStatusEmpty ? null : statusVal,
+        isOemCategoryEmpty ? null : oemTypeVal,
       ]);
 
       // Check if all headers from input are inside the file
@@ -549,8 +550,8 @@ $(async function () {
           row[partTypeVal],
           row[icNumVal],
           row[icDescVal],
-          isStatusEmtpy ? "" : row[statusVal],
-          isOemCategoryEmtpy ? "" : row[oemTypeVal],
+          isStatusEmpty ? "" : row[statusVal],
+          isOemCategoryEmpty ? "" : row[oemTypeVal],
           [],
           [],
           row[partTypeCodeVal]
@@ -586,7 +587,7 @@ $(async function () {
         );
         return;
       }
-      // Empty Table if DataTable previosly was empty
+      // Empty Table if DataTable previously was empty
       if (isEmptyData) {
         isEmptyData = false;
         table.clear().draw();
@@ -612,7 +613,7 @@ $(async function () {
         [],
         partTypeCodeVal.toUpperCase()
       );
-      // Empty Table if DataTable previosly was empty
+      // Empty Table if DataTable previously was empty
       if (isEmptyData) {
         isEmptyData = false;
         table.clear().draw();
@@ -789,7 +790,9 @@ function findMatchingProductDetail(productDetailsArray, currObject) {
 async function updateProductRequestsWithDatabase(socket) {
   //Load Product from Database
   const { Product: productDetails, NewProduct: newProductSaved } =
-    await fetchProductDataFromDatabase(socket).catch((error) => console.error(error));
+    await fetchProductDataFromDatabase(socket).catch((error) =>
+      console.error(error)
+    );
 
   // Update productRequestHistory in StorageSession with new productDetails
   updateProductRequestHistory(newProductSaved, productDetails);

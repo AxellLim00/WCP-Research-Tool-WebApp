@@ -11,12 +11,12 @@ export async function fetchOemFromDatabase(socket, productID = "All") {
         resolve(ackData.result);
       } else {
         console.log(
-          `Error Occurred on getting Period data from Database: ${ackData.error
+          `Error Occurred on getting Oem data from Database: ${ackData.error
             .map((err) => `${err.code}: ${err.name}`)
             .join("\n")}`
         );
         showAlert(
-          `Error Occurred on getting Period data from Database: ${ackData.error
+          `Error Occurred on getting OEM data from Database: ${ackData.error
             .map((err) => `${err.code}: ${err.name}`)
             .join("\n")}`
         );
@@ -69,13 +69,13 @@ export async function fetchAltIndexFromDatabase(socket, productID = "All") {
         if (ackData.status === "OK") {
           resolve(ackData.result);
         } else {
-          console.log(
-            `Error Occurred on getting Period data from Database: ${ackData.error
+          console.error(
+            `Error Occurred on getting Alt Index data from Database: ${ackData.error
               .map((err) => `${err.code}: ${err.name}`)
               .join("\n")}`
           );
           showAlert(
-            `Error Occurred on getting Period data from Database: ${ackData.error
+            `Error Occurred on getting Alternate Index data from Database: ${ackData.error
               .map((err) => `${err.code}: ${err.name}`)
               .join("\n")}`
           );
@@ -102,12 +102,12 @@ export async function fetchProductDetailFromDatabase(socket, productID) {
           resolve(ackData.result);
         } else {
           console.log(
-            `Error Occurred on getting Product data from Database: ${ackData.error
+            `Error Occurred on getting Product Detail data from Database: ${ackData.error
               .map((err) => `${err.code}: ${err.name}`)
               .join("\n")}`
           );
           showAlert(
-            `Error Occurred on getting Product data from Database: ${ackData.error
+            `Error Occurred on getting Product Detail data from Database: ${ackData.error
               .map((err) => `${err.code}: ${err.name}`)
               .join("\n")}`
           );
@@ -115,5 +115,89 @@ export async function fetchProductDetailFromDatabase(socket, productID) {
         }
       }
     );
+  });
+}
+
+/**
+ * Fetch All Supplier from SQL Database
+ * @param {SocketIO.Socket} socket SocketIO socket
+ * @param {String} productID Product ID to fetch from database (default: All)
+ * @returns {Promise<Object>} Return Array of Alternate Index data or Array of error
+ */
+export async function fetchSupplierFromDatabase(socket) {
+  return new Promise((resolve, reject) => {
+    socket.emit("get object database", "Supplier", "", (ackData) => {
+      if (ackData.status === "OK") {
+        resolve(ackData.result);
+      } else {
+        console.error(
+          `Error Occurred on getting Supplier data from Database: ${ackData.error
+            .map((err) => `${err.code}: ${err.name}`)
+            .join("\n")}`
+        );
+        showAlert(
+          `Error Occurred on getting Supplier data from Database: ${ackData.error
+            .map((err) => `${err.code}: ${err.name}`)
+            .join("\n")}`
+        );
+        reject(ackData.error);
+      }
+    });
+  });
+}
+
+/**
+ * Fetch All KType from SQL Database
+ * @param {SocketIO.Socket} socket SocketIO socket
+ * @param {String} productID Product ID to fetch from database (default: All)
+ * @returns {Promise<Object>} Return Array of KType or Array of error
+ */
+export async function fetchKTypeFromDatabase(socket, productID) {
+  return new Promise((resolve, reject) => {
+    socket.emit("get object database", "KeyType", productID, (ackData) => {
+      if (ackData.status === "OK") {
+        resolve(ackData.result);
+      } else {
+        console.log(
+          `Error Occurred on getting Key Type data from Database: ${ackData.error
+            .map((err) => `${err.code}: ${err.name}`)
+            .join("\n")}`
+        );
+        showAlert(
+          `Error Occurred on getting Key Type data from Database: ${ackData.error
+            .map((err) => `${err.code}: ${err.name}`)
+            .join("\n")}`
+        );
+        reject(ackData.error);
+      }
+    });
+  });
+}
+
+/**
+ * Fetch All EPID from SQL Database
+ * @param {SocketIO.Socket} socket SocketIO socket
+ * @param {String} productID Product ID to fetch from database (default: All)
+ * @returns {Promise<Object>} Return Array of EPID or Array of error
+ */
+export async function fetchEpidFromDatabase(socket, productID) {
+  return new Promise((resolve, reject) => {
+    socket.emit("get object database", "EPID", productID, (ackData) => {
+      if (ackData.status === "OK") {
+        resolve(ackData.result);
+      } else {
+        console.log(
+          `Error Occurred on getting ePID data from Database: ${ackData.error
+            .map((err) => `${err.code}: ${err.name}`)
+            .join("\n")}`
+        );
+        showAlert(
+          `Error Occurred on getting ePID data from Database: ${ackData.error
+            .map((err) => `${err.code}: ${err.name}`)
+            .join("\n")}`
+        );
+        reject(ackData.error);
+      }
+    });
   });
 }

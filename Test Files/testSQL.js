@@ -23,7 +23,7 @@ import {
   deleteEpid,
   deleteOem,
   deleteAltIndex,
-} from "../src/utils/sql-utils.js";
+} from "../src/utils/sql-utils-server.js";
 
 async function getProduct_Test() {
   var result = await getProduct();
@@ -582,7 +582,7 @@ async function insertEpid_Test() {
   await insertEpid([
     new Map([
       ["id", "SKU-001"],
-      ["changes", { KType: "Test-EPID1" }],
+      ["changes", { EPID: "Test-EPID1" }],
     ]),
   ]);
   await deleteEpid([

@@ -3,6 +3,8 @@ import {
   showPopUpForm,
   hidePopUpForm,
   exitPopUpForm,
+  showLoadingScreen,
+  hideLoadingScreen,
 } from "../utils/html-utils.js";
 import { CostVolumeDto } from "../utils/class/dataTableDto.js";
 import {
@@ -14,45 +16,86 @@ import {
   updateHasChanges,
   updateChanges,
   saveChanges,
+  isFloat,
+  getCurrencyRates,
 } from "../utils/tab-utils.js";
 import {
   findMissingColumnHeader,
   readFileToJson,
 } from "../utils/table-utils.js";
+import $ from "jquery";
 import "../utils/tableExport-utils/tableExport.js";
 import socket from "../utils/socket-utils.js";
+import { fetchProductDetailFromDatabase } from "../utils/fetchSQL-utils.js";
 
-$(function () {
+$(async function () {
   const tableName = "#costVolTable";
   const $table = $("#costVolTable");
-  var formSelected;
-  var isTableEmpty = true;
-  var productIdSelected = sessionStorage.getItem("productIDSelected");
-  var productDtoArray = JSON.parse(
+  const productRequestArray = JSON.parse(
     sessionStorage.getItem("productRequestHistory")
   );
-  var productIdArray = getProductIdentifier(productDtoArray);
-  var costVolSelected = new CostVolumeDto();
-  var productData = null;
+  const productIdArray = getProductIdentifier(productRequestArray);
+  let formSelected;
+  let isTableEmpty = true;
+  let productIdSelected = sessionStorage.getItem("productIDSelected");
+  let costVolSelected = new CostVolumeDto();
+  let productData = null;
+  let productIdAlias;
 
-  // TODO: Test this edit changes
-  // TODO: Make all editable if product is from NewProduct
+  //#region Initialization
+
+  showLoadingScreen("Loading Cost & Volume Table...");
+
+  try {
+    // Get Currency Rates from API if empty
+    await getCurrencyRates(socket);
+  } catch (error) {
+    showAlert(error.message);
+    return;
+  }
 
   //Load table from API
   if (productIdSelected) {
     if (productIdSelected.slice(0, 2) == "R-") {
       // Filter existing ones with interchangeNumber, interchangeNumber and partTypeFriendlyName/partTypeCode
-      productData = JSON.parse(
-        sessionStorage.getItem("productRequestHistory")
-      ).filter((x) => x.researchIdentifier == productIdSelected);
+      productData = productRequestArray.filter(
+        (x) => x.researchIdentifier == productIdSelected
+      );
+      productIdAlias = productData[0].productStockNumber;
     } else {
-      productData = JSON.parse(
-        sessionStorage.getItem("productRequestHistory")
-      ).filter((x) => x.productStockNumber == productIdSelected);
+      productData = productRequestArray.filter(
+        (x) => x.productStockNumber == productIdSelected
+      );
+      productIdAlias = productData[0].researchIdentifier;
     }
     costVolSelected.Id = productData[0].researchIdentifier
       ? productData[0].researchIdentifier
       : "No Research ID Assigned";
+
+    // Fetch Product Detail from Database
+    try {
+      let productDetail = await fetchProductDetailFromDatabase(
+        socket,
+        productIdSelected
+      );
+      if (productDetail.length > 0) {
+        productDetail = productDetail[0];
+        if (productDetail.CostUsd) {
+          costVolSelected.CostUSD = productDetail.CostUsd;
+          costVolSelected.CostAUD = calculateAUD("USD", productDetail.CostUsd);
+        } else {
+          costVolSelected.CostUSD = 0;
+          costVolSelected.CostAUD = 0;
+        }
+        costVolSelected.EstimateCostAUD = productDetail.EstCostAud ?? 0;
+        costVolSelected.EstimateSell = productDetail.EstSell ?? 0;
+        costVolSelected.Postage = productDetail.Postage ?? 0;
+        costVolSelected.ExtGP = productDetail.ExtGp ?? 0;
+      }
+    } catch {
+      // Error already handled in fetchProductDetailFromDatabase
+      return;
+    }
   }
 
   //#region Fill in textbox Datalist
@@ -63,8 +106,6 @@ $(function () {
   });
 
   //#endregion
-
-  // TO-DO: Load Data from Server-side
 
   // if loading from API/Server-side empty
   isTableEmpty = !Boolean(productData);
@@ -79,7 +120,11 @@ $(function () {
 
   $("#productSelected").val(productIdSelected);
 
-  //#region textbox event
+  hideLoadingScreen();
+
+  //#endregion
+
+  //#region TextBox event
 
   // Search Product ID events
   $("#productSelected").on("keydown", function (event) {
@@ -179,10 +224,10 @@ $(function () {
     // Import Form Save
     if (formSelected == "import") {
       let isEstCostAudEmpty = EST_COST_AUD_VALUE.trim().length == 0;
-      let isEstSellEmtpy = EST_SELL_VALUE.trim().length == 0;
-      let isPostageEmtpy = POSTAGE_VALUE.trim().length == 0;
-      let isExtGpEmtpy = EXT_GP_VALUE.trim().length == 0;
-      let columnHeader = [
+      let isEstSellEmpty = EST_SELL_VALUE.trim().length == 0;
+      let isPostageEmpty = POSTAGE_VALUE.trim().length == 0;
+      let isExtGpEmpty = EXT_GP_VALUE.trim().length == 0;
+      let columnHeaders = [
         ID_VALUE,
         COST_USD_VALUE,
         EST_COST_AUD_VALUE,
@@ -191,7 +236,7 @@ $(function () {
         EXT_GP_VALUE,
       ];
       columnHeaders.filter((n) => n);
-      const SHEET_JSON = await readFileToJson("#importFile", columnHeader);
+      const SHEET_JSON = await readFileToJson("#importFile", columnHeaders);
 
       // Check if file is empty or blank
       if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {
@@ -208,9 +253,9 @@ $(function () {
         ID_VALUE,
         COST_USD_VALUE,
         isEstCostAudEmpty ? null : EST_COST_AUD_VALUE,
-        isEstSellEmtpy ? null : EST_SELL_VALUE,
-        isPostageEmtpy ? null : POSTAGE_VALUE,
-        isExtGpEmtpy ? null : EXT_GP_VALUE,
+        isEstSellEmpty ? null : EST_SELL_VALUE,
+        isPostageEmpty ? null : POSTAGE_VALUE,
+        isExtGpEmpty ? null : EXT_GP_VALUE,
       ]);
 
       // Check if all headers from input are inside the file
@@ -236,32 +281,30 @@ $(function () {
           calculateAUD("USD", parseFloat(row[COST_USD_VALUE]))
         ).toFixed(2);
 
-        newObject = new CostVolumeDto(
+        const newObject = new CostVolumeDto(
           row[ID_VALUE],
           parseFloat(row[COST_USD_VALUE]).toFixed(2),
           convertedAud,
           isEstCostAudEmpty
             ? 0
             : parseFloat(row[EST_COST_AUD_VALUE]).toFixed(2),
-          isEstSellEmtpy ? 0 : parseFloat(row[EST_SELL_VALUE]).toFixed(2),
-          isPostageEmtpy ? 0 : parseFloat(row[POSTAGE_VALUE]).toFixed(2),
-          isExtGpEmtpy ? 0 : parseFloat(row[EXT_GP_VALUE]).toFixed(2)
+          isEstSellEmpty ? 0 : parseFloat(row[EST_SELL_VALUE]).toFixed(2),
+          isPostageEmpty ? 0 : parseFloat(row[POSTAGE_VALUE]).toFixed(2),
+          isExtGpEmpty ? 0 : parseFloat(row[EXT_GP_VALUE]).toFixed(2)
         );
 
         // Store each new row locally
         changesMade.push(
           new Map([
-            ["type", "new"],
+            ["type", "edit"],
             ["id", newObject.Id],
-            ["table", "CostVolume"],
+            ["table", "Product"],
             ["changes", newObject],
           ])
         );
         return newObject;
       });
 
-      // for testing purpose TO DO: DELETE
-      productIdSelected = "test";
       if (errorMessage.length) {
         showAlert(`<strong>ERROR!</strong> ${errorMessage.join(".\n")}`);
         return;
@@ -269,8 +312,9 @@ $(function () {
 
       // Find current product in import cost and volume list
       let foundCostVol = importCosVol.find(
-        (obj) => obj.Id === productIdSelected
+        (obj) => obj.Id === productIdSelected || obj.Id === productIdAlias
       );
+      debugger;
       if (foundCostVol) {
         // Add data to table
         $.each(Object.keys(foundCostVol), function (i, val) {
@@ -298,18 +342,18 @@ $(function () {
         return;
       }
       // Save if there are any changes compared to old value (can be found in costVolSelected)
-      newUpdate = {};
-      let costAud = parseFloat(EST_COST_AUD_VALUE).toFixed(2);
+      const newUpdate = {};
+      const costAud = parseFloat(EST_COST_AUD_VALUE).toFixed(2);
       if (costVolSelected.EstimateCostAUD != costAud)
         newUpdate.EstimateCostAUD = costAud;
 
-      let sell = parseFloat(EST_SELL_VALUE).toFixed(2);
+      const sell = parseFloat(EST_SELL_VALUE).toFixed(2);
       if (costVolSelected.EstimateSell != sell) newUpdate.EstimateSell = sell;
 
-      let post = parseFloat(POSTAGE_VALUE).toFixed(2);
+      const post = parseFloat(POSTAGE_VALUE).toFixed(2);
       if (costVolSelected.Postage != post) newUpdate.Postage = post;
 
-      let extGP = parseFloat(EXT_GP_VALUE).toFixed(2);
+      const extGP = parseFloat(EXT_GP_VALUE).toFixed(2);
       if (costVolSelected.ExtGP != extGP) newUpdate.ExtGP = extGP;
 
       // exit if no changes were made
