@@ -181,7 +181,6 @@ $(async function () {
 
   $(".dataTables_length").css("padding-bottom", "2%");
 
-  // debugger;
   // If List is not empty, fill in DataTable
   if (!isVinEmpty) vinTable.rows.add(vinList).draw();
   if (!isOemEmpty) oemTable.rows.add(oemList).draw();

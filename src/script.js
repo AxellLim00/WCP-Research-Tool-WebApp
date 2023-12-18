@@ -39,12 +39,13 @@ $(async function () {
 
     await handleSocketResponse(socket, token, jsonArray);
     sessionStorage.setItem("productRequestHistory", JSON.stringify(jsonArray));
-    // TODO: (Level 5) Get unique Supplier Set Array and insert them to the database
-    // let isSuccessful = await updateSuppliers(socket, jsonArray);
-    // console.log("isSuccessful", isSuccessful);
-    // if (!isSuccessful) {
-    //   return;
-    // }
+
+    // Get unique Supplier Set Array and insert them to the database
+    let isSuccessful = await updateSuppliers(socket, jsonArray);
+    console.log("isSuccessful", isSuccessful);
+    // if updateSuppliers is not successful, do not continue
+    if (!isSuccessful) return;
+    
   } else {
     selectTab("tab0");
   }
@@ -185,23 +186,29 @@ async function handleSocketResponse(socket, token, jsonArray) {
 async function updateSuppliers(socket, jsonArray) {
   try {
     let supplierList = await fetchSupplierFromDatabase(socket);
-    let filteredNewSupplier = Array.from(
-      new Set(
-        jsonArray
-          .filter(
-            (product) =>
-              product.altIndexNumber &&
-              !supplierList.some(
-                (supplier) => supplier.SupplierNumber === product.altIndexNumber
-              )
+    let uniqueSuppliers = new Map();
+    let filteredNewSupplier = jsonArray
+      .filter(
+        (product) =>
+          product.vendorId &&
+          !supplierList.some(
+            (supplier) => supplier.SupplierNumber === product.vendorId
           )
-          .map((product) => ({
-            SupplierNumber: product.altIndexNumber,
-            SupplierName: product.vendorName,
-            Currency: "AUD",
-          }))
       )
-    );
+      .map((product) => ({
+        SupplierNumber: product.vendorId,
+        SupplierName: product.vendorName,
+        Currency: "AUD",
+      }))
+      .filter((supplier) => {
+        const key = `${supplier.SupplierNumber}-${supplier.SupplierName}`;
+        if (!uniqueSuppliers.has(key)) {
+          uniqueSuppliers.set(key, true);
+          return true;
+        }
+        return false;
+      });
+
     if (filteredNewSupplier.length > 0) {
       console.log("Inserting new suppliers into database");
       let changes = [
@@ -211,7 +218,6 @@ async function updateSuppliers(socket, jsonArray) {
           ["changes", filteredNewSupplier],
         ]),
       ];
-      debugger;
       let isSuccessful = await updateDataOnDatabase(socket, changes);
       return isSuccessful;
     }

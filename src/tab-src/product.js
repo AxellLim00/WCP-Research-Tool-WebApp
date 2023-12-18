@@ -30,6 +30,7 @@ import {
 import socket from "../utils/socket-utils.js";
 import {
   fetchProductDataFromDatabase,
+  fetchSupplierFromDatabase,
   fetchOemFromDatabase,
   fetchAltIndexFromDatabase,
 } from "../utils/fetchSQL-utils.js";
@@ -83,10 +84,10 @@ $(async function () {
         : -1;
       if (i != -1) {
         // If current product's AltIndex is empty, exit
-        if (!currObject.altIndexNumber) return;
+        if (!currObject.vendorId) return;
         // Add current product's AltIndex to the supplier list of the product with the same SKU in the list
         productObjectList[i].SuppList.push(
-          currObject.altIndexNumber.toLowerCase()
+          String(currObject.vendorId).toLowerCase()
         );
         return;
       }
@@ -140,8 +141,8 @@ $(async function () {
           productDetailMatch ? productDetailMatch.OemType : "",
           // TO DO: AltIndex and/or Oem-Supplier Pair place here (Database)
           // Add AltIndex to Supplier List if AltIndex is not empty
-          currObject.altIndexNumber
-            ? [currObject.altIndexNumber.toLowerCase()]
+          currObject.vendorId
+            ? [String(currObject.vendorId).toLowerCase()]
             : [],
           // TO DO: oem place on left (Database)
           // Add Oem to Oem List if productDetailMatch does exist
@@ -169,13 +170,20 @@ $(async function () {
       JSON.stringify(productDtoArray)
     );
 
+    let supplierList;
+    try {
+      supplierList = await fetchSupplierFromDatabase(socket);
+    } catch {
+      // Error handled in fetchSupplierFromDatabase
+      return;
+    }
+
     // Fill in Search by Bars
-    let altIndexValueDictionary = getAltIndexValueDictionary(productDtoArray);
-    $.each(Object.keys(altIndexValueDictionary), function (i, item) {
+    supplierList.forEach((supplier) => {
       $("#supplierList").append(
         $("<option>")
-          .attr("value", item)
-          .text(`${item} : ${altIndexValueDictionary[item]}`)
+          .attr("value", supplier.SupplierNumber)
+          .text(`${supplier.SupplierNumber} : ${supplier.SupplierName}`)
       );
     });
 

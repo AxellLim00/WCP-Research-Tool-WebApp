@@ -9,9 +9,7 @@ import {
   calculateAUD,
   isFloat,
   toTitleCase,
-  getWeekNumber,
   getProductIdentifier,
-  getAltIndexValueDictionary,
   updateObject,
   updateHasChanges,
   updateChanges,
@@ -32,6 +30,7 @@ import {
   showLoadingScreen,
   hideLoadingScreen,
 } from "../utils/html-utils.js";
+import { fetchSupplierFromDatabase } from "../utils/fetchSQL-utils.js";
 
 // TODO: Test this edit changes
 
@@ -50,7 +49,7 @@ $(async function () {
   let currencyRate = new Map();
   let currencySupplierMap = new Map();
   let altIndexSelected = new AlternateIndexDto();
-  let altIndexValueDictionary = [];
+  let supplierList = [];
   let mainSupplier = null;
   let productIdSelected = sessionStorage.getItem("productIDSelected");
   let rowIndexSelected = -1;
@@ -63,30 +62,28 @@ $(async function () {
 
   showLoadingScreen("Loading Alternate Index Table...");
 
-  // Load table from API and TO DO: Server-side?
+  // Load table from API
+  // TODO: Load table Server-side?
   if (productIdSelected) {
     let selectedProductData = [];
     if (productIdSelected.slice(0, 2) == "R-") {
       // Filter existing ones with interchangeNumber, interchangeNumber and partTypeFriendlyName/partTypeCode
       selectedProductData = productDtoArray.filter(
-        (x) => x.researchIdentifier == productIdSelected && x.altIndexNumber
+        (x) => x.researchIdentifier == productIdSelected && x.vendorId
       );
     } else {
       selectedProductData = productDtoArray.filter(
-        (x) => x.productStockNumber == productIdSelected && x.altIndexNumber
+        (x) => x.productStockNumber == productIdSelected && x.vendorId
       );
     }
     altIndexObjectArray = selectedProductData.map(
       (product) =>
         new AlternateIndexDto(
           String(product.vendorName),
-          String(product.altIndexNumber)
+          String(product.vendorId)
         )
     );
-
-    altIndexValueDictionary = getAltIndexValueDictionary(productDtoArray);
   }
-
   // Custom range date filtering function
   DataTable.ext.search.push(function (_, data) {
     let columnIndex = $dateFromFilter.data("column");
@@ -111,13 +108,30 @@ $(async function () {
     $("#productList").append($("<option>").attr("value", item).text(item));
   });
 
-  // Fill in options for alternative index Name and ID
+  debugger;
 
-  $.each(Object.keys(altIndexValueDictionary), function (i, item) {
-    $("#altIndexNumList").append($("<option>").attr("value", item).text(item));
+  // Fill in options for alternative index Name and ID
+  try {
+    supplierList = await fetchSupplierFromDatabase(socket);
+  } catch {
+    // Error handled in fetchSupplierFromDatabase
+    return;
+  }
+
+  debugger;
+
+  // Fill in Search by Bars
+  supplierList.forEach((supplier) => {
+    $("#altIndexNumList").append(
+      $("<option>")
+        .attr("value", supplier.SupplierNumber)
+        .text(`${supplier.SupplierNumber}: ${supplier.SupplierName}`)
+    );
   });
 
   //#endregion
+
+  debugger;
 
   try {
     // TO DO: get all currency and supplier pair from Server-side
@@ -128,6 +142,7 @@ $(async function () {
     showAlert(error.message);
     return;
   }
+  debugger;
 
   // Check if alternative index list is empty
   isTableEmpty = altIndexObjectArray.length == 0;
@@ -181,6 +196,9 @@ $(async function () {
   table.columns().search("").draw(false);
 
   $("#productSelected").val(productIdSelected);
+  debugger;
+
+  hideLoadingScreen();
 
   //#endregion
 
@@ -225,8 +243,6 @@ $(async function () {
     if ($dateFromFilter.val() == "") $dateFromFilter.val($(this).val());
     table.draw();
   });
-
-  hideLoadingScreen();
 
   //#endregion
 
@@ -318,16 +334,16 @@ $(async function () {
 
   //#region Form Events
   $('button[name="saveForm"]').on("click", async function () {
-    const FILE_VALUE = $(`#${formSelected}File`).val();
-    const SUPPLIER_NUMBER_VALUE = $(`#${formSelected}Num`).val();
-    const SUPPLIER_NAME_VALUE = $(`#${formSelected}Name`).text();
-    const MOQ_VALUE = $(`#${formSelected}Moq`).val();
-    const COST_CURRENCY_VALUE = $(`#${formSelected}CostCur`).val();
-    const SUPPLIER_PART_TYPE_VALUE = $(`#${formSelected}SupPartType`).val();
-    const WCP_PART_TYPE_VALUE = $(`#${formSelected}WcpPartType`).val();
-    const QUALITY_VALUE = $(`#${formSelected}Quality`).val();
-    const COST_AUD_VALUE = $(`#${formSelected}Aud`).val();
-    const IS_MAIN_VALUE = $(`#${formSelected}Main`).is(":checked");
+    const fileVal = $(`#${formSelected}File`).val();
+    const supNumVal = $(`#${formSelected}Num`).val();
+    const supNameVal = $(`#${formSelected}Name`).text();
+    const moqVal = $(`#${formSelected}Moq`).val();
+    const costCurVal = $(`#${formSelected}CostCur`).val();
+    const supPartTypeVal = $(`#${formSelected}SupPartType`).val();
+    const wcpPartTypeVal = $(`#${formSelected}WcpPartType`).val();
+    const QualityVal = $(`#${formSelected}Quality`).val();
+    const costAUDVal = $(`#${formSelected}Aud`).val();
+    const isMainVal = $(`#${formSelected}Main`).is(":checked");
     let isFormFilled = false;
     let changesMade = [];
     let errorMessage = [];
@@ -336,15 +352,15 @@ $(async function () {
     if (formSelected == "import") {
       isFormFilled =
         Boolean(
-          FILE_VALUE &&
-            SUPPLIER_NUMBER_VALUE &&
-            MOQ_VALUE &&
-            COST_CURRENCY_VALUE &&
-            SUPPLIER_PART_TYPE_VALUE &&
-            WCP_PART_TYPE_VALUE
-        ) && SUPPLIER_NAME_VALUE != "-";
+          fileVal &&
+            supNumVal &&
+            moqVal &&
+            costCurVal &&
+            supPartTypeVal &&
+            wcpPartTypeVal
+        ) && supNameVal != "-";
     } else if (formSelected == "edit") {
-      isFormFilled = Boolean(COST_AUD_VALUE && QUALITY_VALUE);
+      isFormFilled = Boolean(costAUDVal && QualityVal);
     }
     // On Form being filled Incompletely
     if (!isFormFilled) {
@@ -356,13 +372,13 @@ $(async function () {
 
     // Import Form Save
     if (formSelected == "import") {
-      let isQualityEmpty = QUALITY_VALUE.trim().length == 0;
+      let isQualityEmpty = QualityVal.trim().length == 0;
       let columnHeader = [
-        MOQ_VALUE,
-        COST_CURRENCY_VALUE,
-        SUPPLIER_PART_TYPE_VALUE,
-        WCP_PART_TYPE_VALUE,
-        QUALITY_VALUE,
+        moqVal,
+        costCurVal,
+        supPartTypeVal,
+        wcpPartTypeVal,
+        QualityVal,
       ];
       columnHeader.filter((n) => n);
 
@@ -381,11 +397,11 @@ $(async function () {
       }
 
       missingHeader = findMissingColumnHeader(SHEET_JSON[0], [
-        MOQ_VALUE,
-        COST_CURRENCY_VALUE,
-        SUPPLIER_PART_TYPE_VALUE,
-        WCP_PART_TYPE_VALUE,
-        isQualityEmpty ? null : QUALITY_VALUE,
+        moqVal,
+        costCurVal,
+        supPartTypeVal,
+        wcpPartTypeVal,
+        isQualityEmpty ? null : QualityVal,
       ]);
 
       // Check if all headers from input are inside the file
@@ -401,8 +417,11 @@ $(async function () {
         // the currency the supplier quotes in against the supplier and the import will just be a $ value
         // TO DO: Find currency from Supplier Number
         // let Currency = currencySupplierMap[SUPPLIER_NUMBER_VALUE];
-        let Currency = "AUD"; // TEMP
-        let costAud = calculateAUD(Currency, row[COST_CURRENCY_VALUE]);
+        let supplierFound = supplierList.find(
+          (supplier) => supplier.SupplierNumber == supNumVal
+        );
+        let Currency = supplierFound ? supplierFound.Currency : "AUD";
+        let costAud = calculateAUD(Currency, row[costCurVal]);
 
         // If converting currency occurred an error
         if (typeof costAud === "string" || costAud instanceof String) {
@@ -412,14 +431,14 @@ $(async function () {
 
         let newObject = new AlternateIndexDto(
           SUPPLIER_NAME_VALUE_VALUE,
-          SUPPLIER_NUMBER_VALUE,
-          row[MOQ_VALUE],
-          String(row[COST_CURRENCY_VALUE]) + ` ${Currency}`,
+          supNumVal,
+          row[moqVal],
+          String(row[costCurVal]) + ` ${Currency}`,
           costAud,
           new Date(),
-          isQualityEmpty ? "" : row[QUALITY_VALUE],
-          row[SUPPLIER_PART_TYPE_VALUE],
-          row[WCP_PART_TYPE_VALUE],
+          isQualityEmpty ? "" : row[QualityVal],
+          row[supPartTypeVal],
+          row[wcpPartTypeVal],
           false
         );
 
@@ -450,9 +469,9 @@ $(async function () {
     }
     // Edit Form Save
     else if (formSelected == "edit") {
-      if (!isFloat(COST_AUD_VALUE))
+      if (!isFloat(costAUDVal))
         errorMessage.push(
-          `Cost AUD <i>${COST_AUD_VALUE}</i> is not a number value`
+          `Cost AUD <i>${costAUDVal}</i> is not a number value`
         );
 
       if (errorMessage.length) {
@@ -463,15 +482,15 @@ $(async function () {
       // Save if there are any changes compared to old value (can be found in productSelected)
       let newUpdate = {};
 
-      if (altIndexSelected.CostAud != COST_AUD_VALUE)
-        newUpdate.CostAud = rowData.CostAud = parseFloat(COST_AUD_VALUE);
+      if (altIndexSelected.CostAud != costAUDVal)
+        newUpdate.CostAud = rowData.CostAud = parseFloat(costAUDVal);
 
-      if (altIndexSelected.Quality != QUALITY_VALUE)
-        newUpdate.Quality = rowData.Quality = QUALITY_VALUE;
+      if (altIndexSelected.Quality != QualityVal)
+        newUpdate.Quality = rowData.Quality = QualityVal;
 
-      if (altIndexSelected.IsMain != IS_MAIN_VALUE) {
-        newUpdate.IsMain = rowData.IsMain = IS_MAIN_VALUE;
-        mainSupplier = IS_MAIN_VALUE ? rowData.Number : null;
+      if (altIndexSelected.IsMain != isMainVal) {
+        newUpdate.IsMain = rowData.IsMain = isMainVal;
+        mainSupplier = isMainVal ? rowData.Number : null;
 
         // Change previous Main Supplier into normal supplier in table
         if (prevMainSupplier && prevMainSupplier != altIndexSelected.Number) {
@@ -550,8 +569,11 @@ $(async function () {
 
   $("#importNum").on("focusout", function () {
     let altIndexNumber = $(this).val();
-    if (altIndexValueDictionary.hasOwnProperty(altIndexNumber)) {
-      $("#importName").text(altIndexValueDictionary[altIndexNumber]);
+    let supplierFound = supplierList.find(
+      (supplier) => supplier.SupplierNumber == altIndexNumber
+    );
+    if (supplierFound) {
+      $("#importName").text(supplierFound.SupplierName);
       return;
     }
     $("#importName").text("-");

@@ -161,20 +161,6 @@ export function getProductIdentifier(productDtoArray) {
 }
 
 /**
- * Get Alternate Index Dictiornary for their ID and Name
- * @param {ProductRequestHistoryDto[]} productDtoArray Array of ProductRequestHistoryDto as source of data
- * @return { Dictionary} Dictionary containing Alt Index Number as Keys and Name as Values
- */
-export function getAltIndexValueDictionary(productDtoArray) {
-  return productDtoArray.reduce((result, product) => {
-    if (product.altIndexNumber !== null && product.vendorName !== null) {
-      result[product.altIndexNumber] = product.vendorName;
-    }
-    return result;
-  }, {});
-}
-
-/**
  * Update object's values with the given updates's key value pair
  * @param {Object} object object to be updated
  * @param {Object} updates key value pair to update with

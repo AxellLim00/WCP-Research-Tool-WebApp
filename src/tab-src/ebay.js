@@ -22,8 +22,6 @@ import {
 import { createEmptyRow, exportDataTable } from "../utils/table-utils.js";
 import socket from "../utils/socket-utils.js";
 
-// TODO: Test this edit changes
-
 $(async function () {
   const defaultColumnAmount = 1;
   const defaultRowAmount = 10;
@@ -72,7 +70,6 @@ $(async function () {
       return;
     }
   }
-  debugger;
   isKTypeEmpty = kTypeList.length == 0;
   isEpidEmpty = ePIDList.length == 0;
   if (isKTypeEmpty)

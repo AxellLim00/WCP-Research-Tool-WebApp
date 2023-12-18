@@ -314,7 +314,6 @@ $(async function () {
       let foundCostVol = importCosVol.find(
         (obj) => obj.Id === productIdSelected || obj.Id === productIdAlias
       );
-      debugger;
       if (foundCostVol) {
         // Add data to table
         $.each(Object.keys(foundCostVol), function (i, val) {
