@@ -195,23 +195,23 @@ $(async function () {
 
   //#region Form Event
   $('button[name="saveForm"]').on("click", async function () {
-    const FILE_VALUE = $(`#${formSelected}File`).val();
-    const ID_VALUE = $(`#${formSelected}Id`).val();
-    const COST_USD_VALUE = $(`#${formSelected}CostUsd`).val();
-    const EST_COST_AUD_VALUE = $(`#${formSelected}EstCostAud`).val();
-    const EST_SELL_VALUE = $(`#${formSelected}EstSell`).val();
-    const POSTAGE_VALUE = $(`#${formSelected}Postage`).val();
-    const EXT_GP_VALUE = $(`#${formSelected}Ext`).val();
+    const fileVal = $(`#${formSelected}File`).val();
+    const idVal = $(`#${formSelected}Id`).val();
+    const costUsdVal = $(`#${formSelected}CostUsd`).val();
+    const estCostAudVal = $(`#${formSelected}EstCostAud`).val();
+    const estSellVal = $(`#${formSelected}EstSell`).val();
+    const postageVal = $(`#${formSelected}Postage`).val();
+    const extGPVal = $(`#${formSelected}Ext`).val();
     let changesMade = [];
     let isFormFilled = false;
     let incompleteMessage = "Please complete all non-optional fields";
     // validation on import
-    if (formSelected == "import")
-      isFormFilled = Boolean(ID_VALUE && COST_USD_VALUE && FILE_VALUE);
+    if (formSelected === "import")
+      isFormFilled = Boolean(idVal && costUsdVal && fileVal);
     // validation on edit
-    else if (formSelected == "edit") {
+    else if (formSelected === "edit") {
       isFormFilled = Boolean(
-        EST_COST_AUD_VALUE && EST_SELL_VALUE && POSTAGE_VALUE && EXT_GP_VALUE
+        estCostAudVal && estSellVal && postageVal && extGPVal
       );
       incompleteMessage = "Please have all fields filled before saving";
     }
@@ -222,24 +222,24 @@ $(async function () {
     }
 
     // Import Form Save
-    if (formSelected == "import") {
-      let isEstCostAudEmpty = EST_COST_AUD_VALUE.trim().length == 0;
-      let isEstSellEmpty = EST_SELL_VALUE.trim().length == 0;
-      let isPostageEmpty = POSTAGE_VALUE.trim().length == 0;
-      let isExtGpEmpty = EXT_GP_VALUE.trim().length == 0;
+    if (formSelected === "import") {
+      let isEstCostAudEmpty = estCostAudVal.trim().length === 0;
+      let isEstSellEmpty = estSellVal.trim().length === 0;
+      let isPostageEmpty = postageVal.trim().length === 0;
+      let isExtGpEmpty = extGPVal.trim().length === 0;
       let columnHeaders = [
-        ID_VALUE,
-        COST_USD_VALUE,
-        EST_COST_AUD_VALUE,
-        EST_SELL_VALUE,
-        POSTAGE_VALUE,
-        EXT_GP_VALUE,
+        idVal,
+        costUsdVal,
+        estCostAudVal,
+        estSellVal,
+        postageVal,
+        extGPVal,
       ];
       columnHeaders.filter((n) => n);
       const SHEET_JSON = await readFileToJson("#importFile", columnHeaders);
 
       // Check if file is empty or blank
-      if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {
+      if (SHEET_JSON === undefined || SHEET_JSON.length === 0) {
         showAlert(
           `<strong>Error!</strong> <i>${$("input[type=file]")
             .val()
@@ -250,12 +250,12 @@ $(async function () {
       }
 
       let missingHeader = findMissingColumnHeader(SHEET_JSON[0], [
-        ID_VALUE,
-        COST_USD_VALUE,
-        isEstCostAudEmpty ? null : EST_COST_AUD_VALUE,
-        isEstSellEmpty ? null : EST_SELL_VALUE,
-        isPostageEmpty ? null : POSTAGE_VALUE,
-        isExtGpEmpty ? null : EXT_GP_VALUE,
+        idVal,
+        costUsdVal,
+        isEstCostAudEmpty ? null : estCostAudVal,
+        isEstSellEmpty ? null : estSellVal,
+        isPostageEmpty ? null : postageVal,
+        isExtGpEmpty ? null : extGPVal,
       ]);
 
       // Check if all headers from input are inside the file
@@ -270,27 +270,27 @@ $(async function () {
       let importCosVol = SHEET_JSON.map((row) => {
         // Check if all value that in the row has the correct format
 
-        isFloatValue(row, COST_USD_VALUE, errorMessage);
-        isFloatValue(row, EST_COST_AUD_VALUE, errorMessage);
-        isFloatValue(row, EST_SELL_VALUE, errorMessage);
-        isFloatValue(row, POSTAGE_VALUE, errorMessage);
-        isFloatValue(row, EXT_GP_VALUE, errorMessage);
+        isFloatValue(row, costUsdVal, errorMessage);
+        isFloatValue(row, estCostAudVal, errorMessage);
+        isFloatValue(row, estSellVal, errorMessage);
+        isFloatValue(row, postageVal, errorMessage);
+        isFloatValue(row, extGPVal, errorMessage);
 
         // convert USD to AUD
         let convertedAud = parseFloat(
-          calculateAUD("USD", parseFloat(row[COST_USD_VALUE]))
+          calculateAUD("USD", parseFloat(row[costUsdVal]))
         ).toFixed(2);
 
         const newObject = new CostVolumeDto(
-          row[ID_VALUE],
-          parseFloat(row[COST_USD_VALUE]).toFixed(2),
+          row[idVal],
+          parseFloat(row[costUsdVal]).toFixed(2),
           convertedAud,
           isEstCostAudEmpty
             ? 0
-            : parseFloat(row[EST_COST_AUD_VALUE]).toFixed(2),
-          isEstSellEmpty ? 0 : parseFloat(row[EST_SELL_VALUE]).toFixed(2),
-          isPostageEmpty ? 0 : parseFloat(row[POSTAGE_VALUE]).toFixed(2),
-          isExtGpEmpty ? 0 : parseFloat(row[EXT_GP_VALUE]).toFixed(2)
+            : parseFloat(row[estCostAudVal]).toFixed(2),
+          isEstSellEmpty ? 0 : parseFloat(row[estSellVal]).toFixed(2),
+          isPostageEmpty ? 0 : parseFloat(row[postageVal]).toFixed(2),
+          isExtGpEmpty ? 0 : parseFloat(row[extGPVal]).toFixed(2)
         );
 
         // Store each new row locally
@@ -312,7 +312,7 @@ $(async function () {
 
       // Find current product in import cost and volume list
       let foundCostVol = importCosVol.find(
-        (obj) => obj.Id === productIdSelected || obj.Id === productIdAlias
+        (obj) => obj.Id == productIdSelected || obj.Id == productIdAlias
       );
       if (foundCostVol) {
         // Add data to table
@@ -325,14 +325,14 @@ $(async function () {
       }
     }
     // Edit Form Save
-    else if (formSelected == "edit") {
+    else if (formSelected === "edit") {
       // Check if all inputs are numbers or in float format.
       if (
         !(
-          isFloat(EST_COST_AUD_VALUE) &&
-          isFloat(EST_SELL_VALUE) &&
-          isFloat(POSTAGE_VALUE) &&
-          isFloat(EXT_GP_VALUE)
+          isFloat(estCostAudVal) &&
+          isFloat(estSellVal) &&
+          isFloat(postageVal) &&
+          isFloat(extGPVal)
         )
       ) {
         showAlert(
@@ -342,17 +342,17 @@ $(async function () {
       }
       // Save if there are any changes compared to old value (can be found in costVolSelected)
       const newUpdate = {};
-      const costAud = parseFloat(EST_COST_AUD_VALUE).toFixed(2);
+      const costAud = parseFloat(estCostAudVal).toFixed(2);
       if (costVolSelected.EstimateCostAUD != costAud)
         newUpdate.EstimateCostAUD = costAud;
 
-      const sell = parseFloat(EST_SELL_VALUE).toFixed(2);
+      const sell = parseFloat(estSellVal).toFixed(2);
       if (costVolSelected.EstimateSell != sell) newUpdate.EstimateSell = sell;
 
-      const post = parseFloat(POSTAGE_VALUE).toFixed(2);
+      const post = parseFloat(postageVal).toFixed(2);
       if (costVolSelected.Postage != post) newUpdate.Postage = post;
 
-      const extGP = parseFloat(EXT_GP_VALUE).toFixed(2);
+      const extGP = parseFloat(extGPVal).toFixed(2);
       if (costVolSelected.ExtGP != extGP) newUpdate.ExtGP = extGP;
 
       // exit if no changes were made

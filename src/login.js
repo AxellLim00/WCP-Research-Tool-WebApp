@@ -14,8 +14,8 @@ $(function () {
     let username = $usernameInput.val();
     let password = $passwordInput.val();
     if (!username || !password) {
-      if (username.length == 0) $("#no-username").show();
-      if (password.length == 0) $("#no-password").show();
+      if (username.length === 0) $("#no-username").show();
+      if (password.length === 0) $("#no-password").show();
       return;
     }
     try {

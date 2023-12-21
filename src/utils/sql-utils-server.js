@@ -378,7 +378,7 @@ export async function insertProduct(mapChange) {
               ${product.Sku ? "'" + product.Sku + "'" : "NULL"}, 
               ${ValueDictionary.Status[product.Status]}, 
               ${ValueDictionary.OemType[product.Oem]}, 
-              '${new Date().toISOString().slice(0, 19).replace("T", " ")}')`
+              '${product.LastUpdate}')`
             )
           )
           .join(",\n")};`;
@@ -1170,8 +1170,7 @@ export async function deleteProduct(mapChange) {
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
-    console.log("Deleting Product...");
-    let result = await pool.query(`DELETE FROM Product 
+    const query = `DELETE FROM Product 
     WHERE ResearchID in (${mapChange
       .map((Map) => {
         return `'${Map.get("id")}'`;
@@ -1180,7 +1179,10 @@ export async function deleteProduct(mapChange) {
       .map((Map) => {
         return `'${Map.get("id")}'`;
       })
-      .join()})`);
+      .join()})`;
+
+    console.log("Deleting Product...");
+    const result = await pool.query(query);
     console.log("Deleted Product");
 
     console.log("Result: ", result.rowsAffected);

@@ -42,8 +42,8 @@ import {
   deleteOem,
 } from "./utils/sql-utils-server.js";
 
+const connectedClients = [];
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-let connectedClients = {};
 // run server using "npm run dev"
 app.use(express.static(path.join(__dirname + "/../public")));
 
@@ -56,14 +56,15 @@ app.get("/research-tool", (_, res) => {
 });
 
 io.on("connect", async function (socket) {
-  console.log("A user has connected.");
+  console.log("A user has connected. :", socket.id);
+  console.log("Client :", socket.client.id);
   const credentials = socket.handshake.auth;
   if (Object.keys(credentials).length) {
     const response = await authenticate(
       credentials.username,
       credentials.password
     );
-    if (response.status == "authenticated") {
+    if (response.status === "authenticated") {
       console.log(`User ${credentials.username} has been Authenticated`);
       socket.emit("authenticated", response.token);
 
@@ -84,7 +85,7 @@ io.on("connect", async function (socket) {
     console.log("A user disconnected.");
     // Remove the user from the connected clients map
     for (let username in connectedClients) {
-      if (connectedClients[username] === socket) {
+      if (connectedClients[username] == socket) {
         delete connectedClients[username];
         break;
       }
@@ -149,15 +150,16 @@ io.on("connect", async function (socket) {
       case "Product":
         let product = await getProduct();
         let newProduct = await getNewProduct();
-        if (product.status == "OK" && newProduct.status == "OK")
+        if (product.status === "OK" && newProduct.status === "OK")
           result = {
             status: "OK",
             result: { Product: product.result, NewProduct: newProduct.result },
           };
         else {
           result = { status: "ERROR", error: [] };
-          if (product.status == "ERROR") result.error.push(product.error);
-          if (newProduct.status == "ERROR") result.error.push(newProduct.error);
+          if (product.status === "ERROR") result.error.push(product.error);
+          if (newProduct.status === "ERROR")
+            result.error.push(newProduct.error);
         }
         break;
       case "Product Detail":
@@ -285,8 +287,8 @@ io.on("connect", async function (socket) {
     if (separatedLists["Oem_delete"])
       resultArray.push(await deleteOem(separatedLists["Oem_delete"]));
 
-    let errors = resultArray.filter((result) => result.status == "ERROR");
-    let successes = resultArray.filter((result) => result.status == "OK");
+    let errors = resultArray.filter((result) => result.status === "ERROR");
+    let successes = resultArray.filter((result) => result.status === "OK");
     let status = "OK";
     if (errors.length > 0) {
       errors.forEach((err) => console.error(err.error));

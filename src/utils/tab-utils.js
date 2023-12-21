@@ -335,3 +335,57 @@ export function addNewProductRequestHistory(newProduct) {
     JSON.stringify(productRequestHistoryArray)
   );
 }
+
+/**
+ * Generate the product ID using first 3 letters of Make, Model and Part Type,
+ * followed by an 8 character UUID
+ * @param {String} icNumber Product's IC Number value
+ * @param {String} PartTypeCode Product's Part Type Code value
+ * @returns {String} Product ID
+ */
+export function generateProductID(icNumber, PartTypeCode) {
+  // Combine the prefixes and shortened UUID to create the product ID
+  return `R-${icNumber.replace(
+    /\s+/g,
+    ""
+  )}${PartTypeCode}-${generateShortUUID().toUpperCase()}`;
+}
+
+/**
+ * Generate a short 4 character UUID
+ * @returns {String} Short UUID
+ */
+function generateShortUUID() {
+  // A shorter UUID consisting of 4 hexadecimal digits
+  let uuid = "xxxx".replace(/[x]/g, function () {
+    return ((Math.random() * 16) | 0).toString(16);
+  });
+  return uuid;
+}
+
+/**
+ * Finds a matching product detail in an array based on SKU or Research ID.
+ * @param {Array} productDetailsArray - The array of product details to search.
+ * @param {Object} productReqHistDto - The current product in the workflow list.
+ * @returns {Object|undefined} - The matching product detail object, or undefined if no match is found.
+ */
+export function findMatchingProductDetail(productDetailsArray, productReqHistDto) {
+  return productDetailsArray.find((product) => {
+    // Check if SKU match match in database with current product in workflow list (productReqHistDto)
+    let isSkuMatch = product.SKU
+      ? product.SKU == productReqHistDto.productStockNumber
+      : false;
+    // Check if Research ID match in database with current product in workflow list (productReqHistDto)
+    let isResearchIdMatch = product.ResearchID
+      ? product.ResearchID.includes(
+          (
+            productReqHistDto.interchangeNumber +
+            productReqHistDto.interchangeVersion +
+            productReqHistDto.partTypeCode
+          ).replace(/\s+/g, "")
+        )
+      : false;
+    // Return true if either SKU or Research ID match
+    return isSkuMatch || isResearchIdMatch;
+  });
+}

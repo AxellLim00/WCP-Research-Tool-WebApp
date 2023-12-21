@@ -70,8 +70,8 @@ $(async function () {
       return;
     }
   }
-  isKTypeEmpty = kTypeList.length == 0;
-  isEpidEmpty = ePIDList.length == 0;
+  isKTypeEmpty = kTypeList.length === 0;
+  isEpidEmpty = ePIDList.length === 0;
   if (isKTypeEmpty)
     $(kTypeTableName).append(
       createEmptyRow(defaultRowAmount, defaultColumnAmount)
@@ -227,7 +227,7 @@ $(async function () {
     let changesMade = [];
     let isFormFilled = false;
     // validation on new
-    if (formSelected == "new") {
+    if (formSelected === "new") {
       switch (ITEM_CHOSEN_VALUE) {
         case "K-Type":
           table = kTypeTable;
@@ -240,7 +240,7 @@ $(async function () {
       }
     }
     // validation on edit
-    else if (formSelected == "edit") {
+    else if (formSelected === "edit") {
       isFormFilled = Boolean(EDIT_VALUE);
       switch (itemSelected.table) {
         case "K-Type":
@@ -261,7 +261,7 @@ $(async function () {
     }
 
     // New Form Save
-    if (formSelected == "new") {
+    if (formSelected === "new") {
       let newItem = {};
       let tableDatabaseName;
       switch (ITEM_CHOSEN_VALUE) {
@@ -298,7 +298,7 @@ $(async function () {
       table.row.add({ item: Object.values(newItem)[0] }).draw();
     }
     // Edit Form Save
-    else if (formSelected == "edit") {
+    else if (formSelected === "edit") {
       let rowData = table.row(rowIndexSelected).data();
       let tableDatabaseName;
       let newUpdateValue;

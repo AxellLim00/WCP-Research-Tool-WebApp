@@ -9,57 +9,57 @@ import {
   showPopUpForm,
 } from "../utils/html-utils.js";
 import $ from "jquery";
-import "../utils/tableExport-utils/tableExport.js";
+import { exportDataTable } from "../utils/table-utils.js";
 import {
   saveChanges,
   updateChanges,
   updateProductRequestHistory,
 } from "../utils/tab-utils.js";
+import {
+  fetchUserDataFromDatabase,
+  fetchProductDataFromDatabase,
+} from "../utils/fetchSQL-utils.js";
 import socket from "../utils/socket-utils.js";
 
 $(async function () {
-  const defaulClumnAmountUser = 2;
-  const defaulColumnAmountPeriod = 4;
+  const defaultColumnAmountUser = 2;
+  const defaultColumnAmountPeriod = 4;
   const defaultRowAmount = 10;
   const userTableName = "#userResearchTable";
   const periodTableName = "#periodResearchTable";
-  var isEmptyData = true;
-  var dateTo = new Date();
-  var dateFrom = new Date();
+  let dateTo = new Date();
+  let dateFrom = new Date();
   dateFrom.setMonth(dateFrom.getMonth() - 1);
-  var userTableData, periodTableData;
-
-  // TODO: Import data to Period Table
-  // TODO: Make sure Date filter works
-
-  //#region Setup Default Values
-  // $("#teamAmount").text(~ insert text here ~);
-
-  $("#dateTo").val(dateTo.toLocaleDateString("en-CA"));
-  $("#dateFrom").val(dateFrom.toLocaleDateString("en-CA"));
-
-  //#endregion
+  let userTableData = [],
+    periodTableData = [];
 
   //#region Initialization
 
-  // Load table from Server-side ~ ackData -> Acknowledgement Data
   showLoadingScreen("Loading User Data...");
-  userTableData = await fetchUserDataFromDatabase().catch((error) =>
-    console.error(error)
-  );
-  periodTableData = await fetchPeriodDataFromDatabase().catch((error) =>
-    console.error(error)
-  );
-  hideLoadingScreen();
+
+  // Load table from Server-side ~ ackData -> Acknowledgement Data
+  try {
+    userTableData = await fetchUserDataFromDatabase(socket);
+  } catch {
+    // Error handled in fetchUserDataFromDatabase function
+    return;
+  }
+
+  try {
+    periodTableData = await fetchProductDataFromDatabase(socket);
+  } catch {
+    // Error handled in fetchPeriodDataFromDatabase function
+    return;
+  }
 
   // if loading from Server-side empty
   if (!userTableData || jQuery.isEmptyObject(userTableData))
     $(userTableName + " > tbody:last-child").append(
-      createEmptyRow(defaultRowAmount, defaulClumnAmountUser)
+      createEmptyRow(defaultRowAmount, defaultColumnAmountUser)
     );
   else {
     const currentUser = userTableData.find(
-      (user) => user.UserID === sessionStorage.getItem("username")
+      (user) => user.UserID == sessionStorage.getItem("username")
     );
     if (currentUser) fillDashboardTexts(currentUser, userTableData);
     else {
@@ -75,16 +75,57 @@ $(async function () {
 
   if (!periodTableData || jQuery.isEmptyObject(periodTableData.Product)) {
     $(periodTableName + " > tbody:last-child").append(
-      createEmptyRow(defaultRowAmount, defaulColumnAmountPeriod)
+      createEmptyRow(defaultRowAmount, defaultColumnAmountPeriod)
     );
+  } else {
+    // Put New Products into Product Request History
     updateProductRequestHistory(
       periodTableData.NewProduct,
       periodTableData.Product
     );
-  } else {
-    // $(periodTableName + ' > tbody:last-child').append(
-    //   // HTML for period table data here
-    // );
+
+    let productHistoryData = JSON.parse(
+      sessionStorage.getItem("productRequestHistory")
+    );
+
+    productHistoryData = productHistoryData.filter(
+      (productHistory) =>
+        !productHistory.productStockNumber || productHistory.researchIdentifier
+    );
+
+    // TODO: (Do this last) Filter out Product that has product-research-tool as its User
+    periodTableData.Product = periodTableData.Product.filter(
+      (product) => !product.SKU || product.ResearchID
+    );
+
+    periodTableData = periodTableData.Product.map((product) => {
+      let matchProductDetail = productHistoryData.find(
+        (productDetail) =>
+          productDetail.researchIdentifier == product.ResearchID ||
+          `${productDetail.interchangeNumber.trim()}${
+            productDetail.interchangeVersion
+          }${productDetail.partTypeCode}` == product.ResearchID.split("-")[1]
+      );
+      if (!matchProductDetail) {
+        console.log(product);
+        return {
+          UserID: product.UserID,
+          Type: "",
+          Num: "",
+          Desc: "",
+          LastUpdate: product.LastUpdate,
+        };
+      }
+      return {
+        UserID: product.UserID,
+        Type: matchProductDetail.partTypeFriendlyName,
+        Num: `${matchProductDetail.interchangeNumber.trim()}${
+          matchProductDetail.interchangeVersion
+        }`,
+        Desc: matchProductDetail.interchangeDescriptions,
+        LastUpdate: product.LastUpdate,
+      };
+    });
   }
 
   const tableUser = new DataTable(userTableName, {
@@ -100,11 +141,58 @@ $(async function () {
       { data: "Type" },
       { data: "Num" },
       { data: "Desc" },
+      {
+        data: "LastUpdate",
+        render: (data, type) => {
+          const date = new Date(data);
+          if (type === "display") {
+            return date.toLocaleDateString("en-AU", {
+              month: "2-digit",
+              day: "2-digit",
+              year: "numeric",
+            });
+          }
+          return date;
+        },
+      },
     ],
   });
   tablePeriod.rows.add(periodTableData).draw();
 
   $(".dataTables_filter").css("padding-bottom", "20px");
+
+  $("#dateTo").val(dateTo.toLocaleDateString("en-CA"));
+  $("#dateFrom").val(dateFrom.toLocaleDateString("en-CA"));
+
+  hideLoadingScreen();
+
+  //#endregion
+
+  //#region Searchbar Logic
+
+  let dateToVal = new Date($("#dateTo").val());
+  let dateFromVal = new Date($("#dateFrom").val());
+  // Input event for DateTo and DateFrom inputs
+  $("#dateTo, #dateFrom").on("input", function () {
+    dateToVal = new Date($("#dateTo").val());
+    dateFromVal = new Date($("#dateFrom").val());
+    tablePeriod.draw();
+  });
+
+  // Add a custom search function to the array
+  $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+    let rowDate = new Date(data[4]); // Assuming the date is in the 5th column and is a Date object
+
+    if (
+      (isNaN(dateFromVal) || rowDate >= dateFromVal) &&
+      (isNaN(dateToVal) || rowDate <= dateToVal)
+    ) {
+      return true;
+    }
+    return false;
+  });
+
+  tablePeriod.draw();
 
   //#endregion
 
@@ -114,14 +202,11 @@ $(async function () {
   $('button[name="exportBtn"]').on("click", function () {
     const DATE_TO_VAL = $("#dateTo").val();
     const DATE_FROM_VAL = $("#dateFrom").val();
-    $(periodTableName).tableExport({
-      type: "excel",
-      fileName: `Product-User Research (${DATE_FROM_VAL} ~ ${DATE_TO_VAL})`,
-      mso: {
-        fileFormat: "xlsx",
-      },
-      ignoreRow: ["#searchRow"],
-    });
+    exportDataTable(
+      periodTableName,
+      `Product-User Research (${DATE_FROM_VAL} ~ ${DATE_TO_VAL})`,
+      !periodTableData
+    );
   });
 
   //#endregion
@@ -174,52 +259,8 @@ $(async function () {
   //#endregion
 });
 
-async function fetchUserDataFromDatabase() {
-  return new Promise((resolve, reject) => {
-    socket.emit("get object database", "Users", "", (ackData) => {
-      if (ackData.status === "OK") {
-        resolve(ackData.result);
-      } else {
-        console.log(
-          `Error Occurred on getting User data from Database: ${ackData.error.code}: ${ackData.error.name}`
-        );
-        showAlert(
-          `Error Occurred on getting User data from Database: ${ackData.error.code}: ${ackData.error.name}`
-        );
-        reject(ackData.error);
-      }
-    });
-  });
-}
-
 /**
- * Fetch All Product Details from SQL Database
- * @returns {Promise<Object>} Return Array of product or Array of error
- */
-async function fetchPeriodDataFromDatabase() {
-  return new Promise((resolve, reject) => {
-    socket.emit("get object database", "Product", "", (ackData) => {
-      if (ackData.status === "OK") {
-        resolve(ackData.result);
-      } else {
-        console.log(
-          `Error Occurred on getting Period data from Database: ${ackData.error
-            .map((err) => `${err.code}: ${err.name}`)
-            .join("\n")}`
-        );
-        showAlert(
-          `Error Occurred on getting Period data from Database: ${ackData.error
-            .map((err) => `${err.code}: ${err.name}`)
-            .join("\n")}`
-        );
-        reject(ackData.error);
-      }
-    });
-  });
-}
-
-/**
- * Fill html text in the dashboard tab with revelant data
+ * Fill html text in the dashboard tab with relevant data
  * @param {*} currentUser current user signed in
  * @param {*} allUsers all user in the platform to process
  */

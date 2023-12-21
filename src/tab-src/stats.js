@@ -143,8 +143,8 @@ $(async function () {
     $("#note").val(productDetail ? productDetail.Note : "");
   }
 
-  isVinEmpty = vinList.length == 0;
-  isOemEmpty = oemList.length == 0;
+  isVinEmpty = vinList.length === 0;
+  isOemEmpty = oemList.length === 0;
   // console.log("isVinEmpty", isVinEmpty);
   // console.log("length", vinList.length);
   // console.log("isOemEmpty", isOemEmpty);
@@ -311,7 +311,7 @@ $(async function () {
     let changesMade = [];
     let isFormFilled = Boolean(oemVal);
 
-    if (formSelected == "import")
+    if (formSelected === "import")
       isFormFilled &= Boolean(fileVal && supplierVal);
 
     // Successful Save
@@ -320,7 +320,7 @@ $(async function () {
       return;
     }
     // Import Form Save
-    if (formSelected == "import") {
+    if (formSelected === "import") {
       let sheetJson;
       sheetJson = await readFileToJson("#importFile", [oemVal, supplierVal]);
 
@@ -328,7 +328,7 @@ $(async function () {
       // If has errors from reading
       if (sheetJson === undefined) return;
       // If file is empty or blank
-      if (sheetJson.length == 0) {
+      if (sheetJson.length === 0) {
         showAlert(
           `<strong>Error!</strong> <i>${$("input[type=file]")
             .val()
@@ -375,7 +375,7 @@ $(async function () {
       oemTable.rows.add(importOems).draw();
     }
     // Edit Form Save
-    else if (formSelected == "edit") {
+    else if (formSelected === "edit") {
       let rowData = oemTable.row(rowIndexSelected).data();
 
       if (oemSelected.data != oemVal) {

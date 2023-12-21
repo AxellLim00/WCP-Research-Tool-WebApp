@@ -64,6 +64,7 @@ $(async function () {
 
   // Load table from API
   // TODO: Load table Server-side?
+  // TODO: Add AltIndexNumber to Alt Index Table
   if (productIdSelected) {
     let selectedProductData = [];
     if (productIdSelected.slice(0, 2) == "R-") {
@@ -108,8 +109,6 @@ $(async function () {
     $("#productList").append($("<option>").attr("value", item).text(item));
   });
 
-  debugger;
-
   // Fill in options for alternative index Name and ID
   try {
     supplierList = await fetchSupplierFromDatabase(socket);
@@ -117,8 +116,6 @@ $(async function () {
     // Error handled in fetchSupplierFromDatabase
     return;
   }
-
-  debugger;
 
   // Fill in Search by Bars
   supplierList.forEach((supplier) => {
@@ -131,8 +128,6 @@ $(async function () {
 
   //#endregion
 
-  debugger;
-
   try {
     // TO DO: get all currency and supplier pair from Server-side
     // currencySupplierMap =
@@ -142,10 +137,9 @@ $(async function () {
     showAlert(error.message);
     return;
   }
-  debugger;
 
   // Check if alternative index list is empty
-  isTableEmpty = altIndexObjectArray.length == 0;
+  isTableEmpty = altIndexObjectArray.length === 0;
 
   // Scenario of when data loaded is empty
   if (isTableEmpty) {
@@ -196,7 +190,6 @@ $(async function () {
   table.columns().search("").draw(false);
 
   $("#productSelected").val(productIdSelected);
-  debugger;
 
   hideLoadingScreen();
 
@@ -349,7 +342,7 @@ $(async function () {
     let errorMessage = [];
 
     //check mandatory fields
-    if (formSelected == "import") {
+    if (formSelected === "import") {
       isFormFilled =
         Boolean(
           fileVal &&
@@ -359,7 +352,7 @@ $(async function () {
             supPartTypeVal &&
             wcpPartTypeVal
         ) && supNameVal != "-";
-    } else if (formSelected == "edit") {
+    } else if (formSelected === "edit") {
       isFormFilled = Boolean(costAUDVal && QualityVal);
     }
     // On Form being filled Incompletely
@@ -371,8 +364,8 @@ $(async function () {
     }
 
     // Import Form Save
-    if (formSelected == "import") {
-      let isQualityEmpty = QualityVal.trim().length == 0;
+    if (formSelected === "import") {
+      let isQualityEmpty = QualityVal.trim().length === 0;
       let columnHeader = [
         moqVal,
         costCurVal,
@@ -382,11 +375,11 @@ $(async function () {
       ];
       columnHeader.filter((n) => n);
 
-      const SHEET_JSON = await readFileToJson("#importFile", columnHeader);
+      const jsonSheet = await readFileToJson("#importFile", columnHeader);
 
       let missingHeader = "";
       // Check if file is empty or blank
-      if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {
+      if (jsonSheet === undefined || jsonSheet.length === 0) {
         showAlert(
           `<strong>Error!</strong> <i>${$("input[type=file]")
             .val()
@@ -396,7 +389,7 @@ $(async function () {
         return;
       }
 
-      missingHeader = findMissingColumnHeader(SHEET_JSON[0], [
+      missingHeader = findMissingColumnHeader(jsonSheet[0], [
         moqVal,
         costCurVal,
         supPartTypeVal,
@@ -412,7 +405,7 @@ $(async function () {
         return;
       }
 
-      let importAltIndexes = SHEET_JSON.map((row) => {
+      let importAltIndexes = jsonSheet.map((row) => {
         // Change according to this: yes I think its probably easier to store
         // the currency the supplier quotes in against the supplier and the import will just be a $ value
         // TO DO: Find currency from Supplier Number
@@ -468,7 +461,7 @@ $(async function () {
       table.rows.add(importAltIndexes).draw();
     }
     // Edit Form Save
-    else if (formSelected == "edit") {
+    else if (formSelected === "edit") {
       if (!isFloat(costAUDVal))
         errorMessage.push(
           `Cost AUD <i>${costAUDVal}</i> is not a number value`

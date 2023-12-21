@@ -7,8 +7,19 @@ import {
   selectTab,
   showAlert,
 } from "./utils/html-utils.js";
-import { fetchSupplierFromDatabase } from "./utils/fetchSQL-utils.js";
-import { updateDataOnDatabase } from "./utils/tab-utils.js";
+import {
+  fetchSupplierFromDatabase,
+  fetchProductDataFromDatabase,
+} from "./utils/fetchSQL-utils.js";
+import {
+  updateDataOnDatabase,
+  updateProductRequestHistory,
+  generateProductID,
+  findMatchingProductDetail,
+} from "./utils/tab-utils.js";
+import { ProductDto } from "./utils/class/dataTableDto.js";
+import { updateChanges, saveChanges } from "./utils/tab-utils.js";
+import { ProductRequestHistoryDto } from "./utils/class/apiDto.js";
 
 $(async function () {
   const token = sessionStorage.getItem("token");
@@ -23,32 +34,42 @@ $(async function () {
   sessionStorage.setItem("hasChanges", false);
   sessionStorage.removeItem("productIDSelected");
 
-  let jsonArray = JSON.parse(productJsonString);
-  if (jsonArray === null || jsonArray.length === 0) {
-    showLoadingScreen("Loading Products from system");
-    jsonArray = [];
+  showLoadingScreen("Loading Products from system");
+  let productReqHistArray = JSON.parse(productJsonString);
+  if (productReqHistArray === null || productReqHistArray.length === 0) {
+    productReqHistArray = [];
 
-    socket.on("loading progress", (data) => {
-      console.log(
-        `Loaded page ${data.page} of ${data.totalPages} with ${data.productsLoaded} of ${data.totalProducts} products`
-      );
-      $(".loading p").html(
-        `Loading Products from system</br>~~ ${data.productsLoaded}/${data.totalProducts} products loaded ~~`
-      );
-    });
+    try {
+      socket.on("loading progress", (data) => {
+        console.log(
+          `Loaded page ${data.page} of ${data.totalPages} with ${data.productsLoaded} of ${data.totalProducts} products`
+        );
+        $(".loading p").html(
+          `Loading Products from system</br>~~ ${data.productsLoaded}/${data.totalProducts} products loaded ~~`
+        );
+      });
 
-    await handleSocketResponse(socket, token, jsonArray);
-    sessionStorage.setItem("productRequestHistory", JSON.stringify(jsonArray));
+      await handleSocketResponse(socket, token, productReqHistArray);
+      sessionStorage.setItem(
+        "productRequestHistory",
+        JSON.stringify(productReqHistArray)
+      );
+    } catch (error) {
+      console.error("An error occurred:", error);
+      return;
+    }
+    // Sync with database
+    await syncWorkflowDatabaseData();
 
     // Get unique Supplier Set Array and insert them to the database
-    let isSuccessful = await updateSuppliers(socket, jsonArray);
+    let isSuccessful = await updateSuppliers(socket, productReqHistArray);
     console.log("isSuccessful", isSuccessful);
     // if updateSuppliers is not successful, do not continue
     if (!isSuccessful) return;
-    
-  } else {
-    selectTab("tab0");
   }
+
+  hideLoadingScreen();
+  selectTab("tab0");
 
   $("#menu").on("click", function () {
     if (menuToggle) {
@@ -157,8 +178,6 @@ async function handleSocketResponse(socket, token, jsonArray) {
       switch (response.status) {
         case 200:
           jsonArray.push(...response.data);
-          hideLoadingScreen();
-          selectTab("tab0");
           resolve();
           break;
         case 401:
@@ -192,7 +211,7 @@ async function updateSuppliers(socket, jsonArray) {
         (product) =>
           product.vendorId &&
           !supplierList.some(
-            (supplier) => supplier.SupplierNumber === product.vendorId
+            (supplier) => supplier.SupplierNumber == product.vendorId
           )
       )
       .map((product) => ({
@@ -208,7 +227,7 @@ async function updateSuppliers(socket, jsonArray) {
         }
         return false;
       });
-
+    // Insert new suppliers into database if there is any
     if (filteredNewSupplier.length > 0) {
       console.log("Inserting new suppliers into database");
       let changes = [
@@ -221,10 +240,202 @@ async function updateSuppliers(socket, jsonArray) {
       let isSuccessful = await updateDataOnDatabase(socket, changes);
       return isSuccessful;
     }
+    console.log("No new supplier found");
     return true;
   } catch (error) {
     // Error already handled in fetchAltIndexFromDatabase
     console.error(error);
     return false;
   }
+}
+
+async function syncWorkflowDatabaseData() {
+  // Update productRequestHistory in StorageSession with new Product-Details from the New Product Table (Database)
+  // As well as fetching the ProductDetails from the database
+  const { Product: productDetailsFromDatabase, NewProduct: _ } =
+    await updateProductRequestsWithDatabase(socket);
+  const productAddingToDatabase = [];
+  const productObjectList = [];
+
+  const productReqHistArray = JSON.parse(
+    sessionStorage.getItem("productRequestHistory")
+  ).map((object) => Object.assign(new ProductRequestHistoryDto(), object));
+
+  productReqHistArray.forEach((currProdHistReq, idx, array) => {
+    // If productStockNumber is not empty and exist in productObjectList, skip this iteration
+    if (
+      currProdHistReq.productStockNumber &&
+      productObjectList.find((x) => x.Sku == currProdHistReq.productStockNumber)
+    )
+      return;
+
+    // If current product's SKU is empty, generate a Research ID
+    if (!currProdHistReq.productStockNumber) {
+      currProdHistReq.researchIdentifier = generateProductID(
+        `${currProdHistReq.interchangeNumber.trim()}${
+          currProdHistReq.interchangeVersion
+        }`,
+        currProdHistReq.partTypeCode
+      );
+    }
+
+    // Find productDetail Match in database
+    let productDetailMatch = findMatchingProductDetail(
+      productDetailsFromDatabase,
+      currProdHistReq
+    );
+    // Assign ResearchID to currObject if productDetailMatch exist else assign New ResearchID
+    let researchId = productDetailMatch
+      ? productDetailMatch.ResearchID
+      : currProdHistReq.researchIdentifier;
+
+    // FOR DEBUG
+    // if (researchId && researchId.includes("TEST")) console.log(researchId);
+
+    // Update productDtoArray researchIdentifier here based on productDetailMatch's Values
+    array[idx].researchIdentifier = researchId;
+    productObjectList.push({
+      Id: researchId,
+      Sku: currProdHistReq.productStockNumber,
+      Status: productDetailMatch
+        ? productDetailMatch.Status
+        : currProdHistReq.productStockNumber &&
+          currProdHistReq.productStockNumber.includes("P-")
+        ? "catalogue"
+        : "research",
+      Oem: productDetailMatch
+        ? productDetailMatch.OemType
+        : currProdHistReq.productStockNumber
+        ? ""
+        : "aftermarket",
+      LastUpdate: "1900-01-01",
+    });
+
+    // If product is not in database, add to database
+    if (!productDetailMatch) {
+      productAddingToDatabase.push(
+        productObjectList[productObjectList.length - 1]
+      );
+    }
+  });
+
+  // Insert all product in productDtoArray that has no productDetailMatch to the database
+  await insertNewWorkflowProductToDatabase(socket, productAddingToDatabase);
+
+  // Delete all productDetails that is not in productRequestHistory anymore
+  const productDetailsToDelete = findProductDetailsToDelete(
+    productDetailsFromDatabase,
+    productReqHistArray
+  );
+
+  if (productDetailsToDelete.length > 0) {
+    updateChanges(productDetailsToDelete);
+    await saveChanges(socket);
+  }
+
+  // Update product with new Generated Research ID
+  sessionStorage.setItem(
+    "productRequestHistory",
+    JSON.stringify(productReqHistArray)
+  );
+}
+
+/**
+ * Find ProductDetails with minimal date that is not in productRequestHistory anymore
+ * @param {ProductDetail[]} productDetailsFromDatabase Array of ProductDetails from the database
+ * @param {ProductRequestHistoryDto[]} productReqHistArray Array of ProductRequestHistoryDto objects
+ * @returns {ProductDetail[]} Array of ProductDetails to delete
+ */
+function findProductDetailsToDelete(
+  productDetailsFromDatabase,
+  productReqHistArray
+) {
+  const productDetailsToDelete = [];
+
+  productDetailsFromDatabase.forEach((productDetail) => {
+    const isProductInHistory = productReqHistArray.some((productReqHist) => {
+      return (
+        // Check if they have the same ResearchID
+        (productReqHist.researchIdentifier !== null &&
+          productDetail.ResearchID !== null &&
+          productReqHist.researchIdentifier === productDetail.ResearchID) ||
+        // Check if they have the same SKU
+        (productReqHist.productStockNumber !== null &&
+          productDetail.SKU !== null &&
+          productReqHist.productStockNumber === productDetail.SKU)
+      );
+    });
+
+    // Check if LastUpdate is equal to "1900-01-01"
+    const isLastUpdateEqual = productDetail.LastUpdate === "1900-01-01";
+
+    if (!isProductInHistory && isLastUpdateEqual) {
+      const id =
+        productDetail.SKU !== null
+          ? productDetail.SKU
+          : productDetail.ResearchID;
+      const map = new Map([
+        ["type", "delete"],
+        ["table", "Product"],
+        ["id", id],
+      ]);
+      productDetailsToDelete.push(map);
+    }
+  });
+
+  return productDetailsToDelete;
+}
+
+/**
+ * Insert New Product in Workflow to the SQL Database
+ * @param {Socket<DefaultEventsMap, DefaultEventsMap>} socket
+ * @param {ProductDto[]} productAddingToDatabase Array of new Products
+ * @returns {Promise<void>}
+ */
+async function insertNewWorkflowProductToDatabase(
+  socket,
+  productAddingToDatabase
+) {
+  const sqlInsertLimit = 1000;
+  const totalProducts = productAddingToDatabase.length;
+
+  if (totalProducts === 0) return;
+
+  const updateLoops = Math.ceil(totalProducts / sqlInsertLimit);
+
+  for (let i = 0; i < updateLoops; i++) {
+    const startIndex = i * sqlInsertLimit;
+    const endIndex = startIndex + sqlInsertLimit;
+    const productsToInsert = productAddingToDatabase.slice(
+      startIndex,
+      endIndex
+    );
+
+    const changes = new Map([
+      ["type", "new"],
+      ["table", "Product"],
+      ["user", "product-research-tool"],
+      ["changes", productsToInsert],
+    ]);
+
+    updateChanges([changes]);
+    await saveChanges(socket);
+  }
+}
+
+/**
+ * Update product request history with new products
+ * @returns {Promise<Object>} Return Array of Product and NewProduct data from database
+ */
+
+async function updateProductRequestsWithDatabase(socket) {
+  //Load Product from Database
+  const { Product: productDetails, NewProduct: newProductSaved } =
+    await fetchProductDataFromDatabase(socket).catch((error) =>
+      console.error(error)
+    );
+
+  // Update productRequestHistory in StorageSession with new Product-Details from the New Product Table (Database)
+  updateProductRequestHistory(newProductSaved, productDetails);
+  return { Product: productDetails, NewProduct: newProductSaved };
 }

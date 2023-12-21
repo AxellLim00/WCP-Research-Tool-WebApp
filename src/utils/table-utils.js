@@ -23,7 +23,7 @@ export function createEmptyRow(rowQuantity, columnQuantity = 1) {
  */
 export function findMissingColumnHeader(rowObject, arrayHeader) {
   for (let header of arrayHeader) {
-    if (header == null) {
+    if (header === null) {
       continue;
     }
     if (!rowObject.hasOwnProperty(header)) {
@@ -69,7 +69,7 @@ export async function readFileToJson(
           }
         // sort for index 0 to be the most top left cell
         headerCell.sort();
-        if (headerCell.length == 0) {
+        if (headerCell.length === 0) {
           resolve([{ no_header_found: true }]);
           return;
         }
@@ -158,12 +158,11 @@ export async function readFileToJson(
 }
 
 /**
- * Export all rows in DataTable to Xlsx file ~ more rows make take more time
- * @param {String} tableID HTML Table ID to export
- * @param {String} dataTableOptions DataTable options parameters
- * @param {String} fileName File name to export
- * @param {Boolean} isEmptyData Defaults to False ~ Flag indicating whether table is empty
- * @param {String[]}
+ * Exports the data from a table to an Excel file.
+ * @param {string} tableID - The ID of the table to export.
+ * @param {string} fileName - The name of the exported file.
+ * @param {boolean} [isEmptyData=false] - Indicates if the table has no data.
+ * @param {string[]} [worksheetNames=[]] - An array of worksheet names for multiple sheets in the Excel file.
  */
 export function exportDataTable(
   tableID,
@@ -175,7 +174,7 @@ export function exportDataTable(
     showAlert("<strong>Error!</strong> No data found in table.");
   } else {
     let previousPageLength = $(tableID).DataTable().page.len();
-    // redraw table with all row showm
+    // redraw table with all row shown
     $(tableID).DataTable().page.len(-1).draw(false);
     let exportData = {
       type: "excel",
@@ -187,12 +186,17 @@ export function exportDataTable(
     };
     if (worksheetNames.length > 0)
       exportData.mso["worksheetName"] = worksheetNames;
-    // Export HTML table not Datatable
+    // Export HTML table not DataTable
     $(tableID).tableExport(exportData);
     $(tableID).DataTable().page.len(previousPageLength).draw(false);
   }
 }
 
+/**
+ * Delays the execution for the specified number of milliseconds.
+ * @param {number} milliseconds - The number of milliseconds to delay.
+ * @returns {Promise<void>} A promise that resolves after the delay.
+ */
 function delay(milliseconds) {
   return new Promise((resolve) => {
     setTimeout(resolve, milliseconds);

@@ -87,6 +87,7 @@ export class ProductDto {
     this.SuppList = suppList ?? [];
     this.OemList = oemList ?? [];
     this.TypeCode = typeCode;
+    this.LastUpdate = new Date().toISOString().slice(0, 19).replace("T", " ");
   }
 }
 

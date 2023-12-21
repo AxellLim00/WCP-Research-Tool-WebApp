@@ -26,6 +26,8 @@ import {
   saveChanges,
   updateProductRequestHistory,
   addNewProductRequestHistory,
+  generateProductID,
+  findMatchingProductDetail,
 } from "../utils/tab-utils.js";
 import socket from "../utils/socket-utils.js";
 import {
@@ -49,33 +51,29 @@ $(async function () {
 
   showLoadingScreen("Loading All Products...");
 
-  const productDatabaseArray = await updateProductRequestsWithDatabase(socket);
-  const productDetails = productDatabaseArray.Product;
-  // console.log(productDatabaseArray);
+  let productDetails;
+
+  try {
+    const result = await fetchProductDataFromDatabase(socket);
+    productDetails = result.Product;
+  } catch {
+    return;
+  }
 
   //Load table from API
-  const productWorkflowArray = JSON.parse(
+  const productReqHistWorkflowArray = JSON.parse(
     sessionStorage.getItem("productRequestHistory")
-  );
+  ).map((object) => Object.assign(new ProductRequestHistoryDto(), object));
 
   // Check if both productWorkflowArray and productDatabaseArray are empty
-  isEmptyData =
-    !Boolean(productWorkflowArray) &&
-    (!Boolean(productDatabaseArray) ||
-      productDatabaseArray.NewProduct.length === 0);
+  isEmptyData = !Boolean(productReqHistWorkflowArray);
 
   // If Data from API empty
   if (isEmptyData) {
     $(tableName).append(createEmptyRow(defaultRowAmount, defaultColumnAmount));
   } else {
-    const productAddingToDatabase = [];
-
-    const productDtoArray = productWorkflowArray.map((object) =>
-      Object.assign(new ProductRequestHistoryDto(), object)
-    );
-
     // Add all product from productDtoArray to productObjectList
-    productDtoArray.forEach((currObject, idx, array) => {
+    productReqHistWorkflowArray.forEach((currObject, idx, array) => {
       // If current product's SKU is not empty,
       var i = currObject.productStockNumber
         ? productObjectList.findIndex(
@@ -92,34 +90,15 @@ $(async function () {
         return;
       }
 
-      // If current product's SKU is empty, generate a Research ID
-      if (!currObject.productStockNumber) {
-        currObject.researchIdentifier = generateProductID(
-          `${currObject.interchangeNumber.trim()}${
-            currObject.interchangeVersion
-          }`,
-          currObject.partTypeCode
-        );
-      }
-
       // Find productDetail Match in database
       let productDetailMatch = findMatchingProductDetail(
         productDetails,
         currObject
       );
-      // Assign ResearchID to currObject if productDetailMatch exist else assign New ResearchID
-      let researchId = productDetailMatch
-        ? productDetailMatch.ResearchID
-        : currObject.researchIdentifier;
 
-      // DEBUG
-      // if (researchId && researchId.includes("TEST")) console.log(researchId);
-
-      // Update productDtoArray researchIdentifier here based on productDetailMatch's Values
-      array[idx].researchIdentifier = researchId;
       productObjectList.push(
         new ProductDto(
-          researchId,
+          currObject.researchIdentifier,
           currObject.productStockNumber,
           currObject.vehicleManufacturers.split("\r").join("; "),
           currObject.vehicleModels.split("\r").join("; "),
@@ -132,12 +111,7 @@ $(async function () {
           currObject.interchangeDescriptions
             ? currObject.interchangeDescriptions.split("\r").join("; ")
             : "",
-          productDetailMatch
-            ? productDetailMatch.Status
-            : currObject.productStockNumber &&
-              currObject.productStockNumber.includes("P-")
-            ? "catalogue"
-            : "research",
+          productDetailMatch ? productDetailMatch.Status : "",
           productDetailMatch ? productDetailMatch.OemType : "",
           // TO DO: AltIndex and/or Oem-Supplier Pair place here (Database)
           // Add AltIndex to Supplier List if AltIndex is not empty
@@ -150,25 +124,7 @@ $(async function () {
           currObject.partTypeCode
         )
       );
-
-      // If product is not in database, add to database
-      if (!productDetailMatch) {
-        // TODO: set last update to minimal date 01-01-1900
-        productAddingToDatabase.push(
-          productObjectList[productObjectList.length - 1]
-        );
-      }
-      // TODO: Find ProductDetails with minimal date that is not in productRequestHistory anymore and delete them
     });
-
-    // Insert all product in productDtoArray that has no productDetailMatch to the database
-    insertNewWorkflowProductToDatabase(socket, productAddingToDatabase);
-
-    // Update product with new Generated Research ID
-    sessionStorage.setItem(
-      "productRequestHistory",
-      JSON.stringify(productDtoArray)
-    );
 
     let supplierList;
     try {
@@ -187,7 +143,7 @@ $(async function () {
       );
     });
 
-    // TODO: Get list of unique OEM after symbols have been removed
+    // TODO: Get list of unique OEM
     let oemUniqueArray = [];
     $.each(oemUniqueArray, function (i, item) {
       $("#supplierList").append($("<option>").attr("value", item).text(item));
@@ -301,6 +257,8 @@ $(async function () {
   $(".dataTables_length").css("padding-bottom", "1%");
   table.rows.add(productObjectList).draw(false);
   table.columns().search("").draw();
+
+  hideLoadingScreen();
 
   //#endregion
 
@@ -473,15 +431,15 @@ $(async function () {
         partTypeCodeVal
     );
     // Extra validation on new product form (ID is generated)
-    if (formSelected == "new")
+    if (formSelected === "new")
       isFormFilled &= Boolean(
         // 18 is length of ID generated
         statusVal && oemTypeVal && idVal != researchIdPlaceHolder
       );
     // Extra validation on import product form (File is uploaded)
-    else if (formSelected == "import") isFormFilled &= Boolean(fileVal);
+    else if (formSelected === "import") isFormFilled &= Boolean(fileVal);
     // Extra validation on edit product form (ID is not empty)
-    else if (formSelected == "edit") {
+    else if (formSelected === "edit") {
       isFormFilled = Boolean(statusVal && oemTypeVal);
       incompleteMessage = "Please have all fields filled before saving";
     }
@@ -493,11 +451,11 @@ $(async function () {
     }
 
     // Import Form Save
-    if (formSelected == "import") {
+    if (formSelected === "import") {
       // Optional Column header name
-      let isSkuEmpty = skuVal.trim().length == 0;
-      let isStatusEmpty = statusVal.trim().length == 0;
-      let isOemCategoryEmpty = oemTypeVal.trim().length == 0;
+      let isSkuEmpty = skuVal.trim().length === 0;
+      let isStatusEmpty = statusVal.trim().length === 0;
+      let isOemCategoryEmpty = oemTypeVal.trim().length === 0;
       let columnHeaders = [
         skuVal,
         makeVal,
@@ -510,10 +468,10 @@ $(async function () {
         oemTypeVal,
       ];
       columnHeaders.filter((n) => n);
-      const SHEET_JSON = await readFileToJson("#importFile", columnHeaders);
+      const jsonSheet = await readFileToJson("#importFile", columnHeaders);
 
       // Check if file is empty or blank (no data), exit and alert if true
-      if (SHEET_JSON === undefined || SHEET_JSON.length == 0) {
+      if (jsonSheet === undefined || jsonSheet.length === 0) {
         showAlert(
           `<strong>Error!</strong> <i>${$("input[type=file]")
             .val()
@@ -523,7 +481,7 @@ $(async function () {
         return;
       }
 
-      let missingHeader = findMissingColumnHeader(SHEET_JSON[0], [
+      let missingHeader = findMissingColumnHeader(jsonSheet[0], [
         isSkuEmpty ? null : skuVal,
         makeVal,
         modelVal,
@@ -549,7 +507,7 @@ $(async function () {
       // TODO: Inform user if there are any duplicate IC Number + Part Type Code in the file
       // TODO: Inform user for changes/updates to values. (e.g. Status, OEM, etc.) can be done with colors and tooltips.
       // Put map data into Object List
-      const importProducts = SHEET_JSON.map((row) => {
+      const importProducts = jsonSheet.map((row) => {
         let newObject = new ProductDto(
           generateProductID(row[icNumVal], row[partTypeCodeVal]),
           isSkuEmpty ? "" : row[skuVal],
@@ -606,7 +564,7 @@ $(async function () {
       exitPopUpForm(formSelected);
     }
     // New Form Save
-    else if (formSelected == "new") {
+    else if (formSelected === "new") {
       let newProduct = new ProductDto(
         $("#ID").text(),
         skuVal.toUpperCase(),
@@ -644,7 +602,7 @@ $(async function () {
       addNewProductRequestHistory(newProduct);
     }
     // Edit Form Save
-    else if (formSelected == "edit") {
+    else if (formSelected === "edit") {
       let rowData = table.row(rowIndexSelected).data();
       // Save if there are any changes compared to old value (can be found in productSelected)
       let newUpdate = {};
@@ -695,114 +653,11 @@ $(async function () {
       // Check if all input fields are non-empty and have at least 3 characters
       // Generate and display the product ID
       $("#ID").text(generateProductID(icNum, typeCode));
-    } else if (icNum.length == 0 || typeCode.length == 0) {
+    } else if (icNum.length === 0 || typeCode.length === 0) {
       // Clear the product ID if any input field is empty or has less than 3 characters
       $("#ID").text(researchIdPlaceHolder);
     }
   });
 
-  hideLoadingScreen();
   //#endregion
 });
-
-/**
- * Generate the product ID using first 3 letters of Make, Model and Part Type,
- * followed by an 8 character UUID
- * @param {String} icNumber Product's IC Number value
- * @param {String} PartTypeCode Product's Part Type Code value
- * @returns {String} Product ID
- */
-function generateProductID(icNumber, PartTypeCode) {
-  // Combine the prefixes and shortened UUID to create the product ID
-  return `R-${icNumber.replace(
-    /\s+/g,
-    ""
-  )}${PartTypeCode}-${generateShortUUID().toUpperCase()}`;
-}
-
-/**
- * Generate a short 4 character UUID
- * @returns {String} Short UUID
- */
-function generateShortUUID() {
-  // A shorter UUID consisting of 4 hexadecimal digits
-  let uuid = "xxxx".replace(/[x]/g, function () {
-    return ((Math.random() * 16) | 0).toString(16);
-  });
-  return uuid;
-}
-
-/**
- * Insert New Product in Workflow to the SQL Database
- * @param {Socket<DefaultEventsMap, DefaultEventsMap>} socket
- * @param {ProductDto[]} productAddingToDatabase Array of new Products
- * @returns {Promise<void>}
- */
-async function insertNewWorkflowProductToDatabase(
-  socket,
-  productAddingToDatabase
-) {
-  const sqlInsertLimit = 1000;
-  const totalProducts = productAddingToDatabase.length;
-
-  if (totalProducts === 0) return;
-
-  const updateLoops = Math.ceil(totalProducts / sqlInsertLimit);
-
-  for (let i = 0; i < updateLoops; i++) {
-    const startIndex = i * sqlInsertLimit;
-    const endIndex = startIndex + sqlInsertLimit;
-    const productsToInsert = productAddingToDatabase.slice(
-      startIndex,
-      endIndex
-    );
-
-    const changes = new Map([
-      ["type", "new"],
-      ["table", "Product"],
-      ["user", "product-research-tool"],
-      ["changes", productsToInsert],
-    ]);
-
-    updateChanges([changes]);
-    await saveChanges(socket);
-  }
-}
-
-function findMatchingProductDetail(productDetailsArray, currObject) {
-  return productDetailsArray.find((product) => {
-    // Check if SKU match match in database with current product in workflow list (currObject)
-    let isSkuMatch = product.SKU
-      ? product.SKU == currObject.productStockNumber
-      : false;
-    // Check if Research ID match in database with current product in workflow list (currObject)
-    let isResearchIdMatch = product.ResearchID
-      ? product.ResearchID.includes(
-          (
-            currObject.interchangeNumber +
-            currObject.interchangeVersion +
-            currObject.partTypeCode
-          ).replace(/\s+/g, "")
-        )
-      : false;
-    // Return true if either SKU or Research ID match
-    return isSkuMatch || isResearchIdMatch;
-  });
-}
-
-/**
- * Update product request history with new products
- * @returns {Promise<Object>} Return Array of Product and NewProduct data from database
- */
-
-async function updateProductRequestsWithDatabase(socket) {
-  //Load Product from Database
-  const { Product: productDetails, NewProduct: newProductSaved } =
-    await fetchProductDataFromDatabase(socket).catch((error) =>
-      console.error(error)
-    );
-
-  // Update productRequestHistory in StorageSession with new productDetails
-  updateProductRequestHistory(newProductSaved, productDetails);
-  return { Product: productDetails, NewProduct: newProductSaved };
-}
