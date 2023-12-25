@@ -1,8 +1,10 @@
 import DataTable from "datatables.net-dt";
-import "datatables.net-datetime";
-// require("datatables.net-responsive-dt");
 import "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
+import "datatables.net-datetime";
+import "multiple-select";
+import "../../node_modules/multiple-select/dist/multiple-select.min.css";
 import socket from "../utils/socket-utils.js";
+
 import { AlternateIndexDto } from "../utils/class/dataTableDto.js";
 import {
   productSelectedChanged,
@@ -15,6 +17,8 @@ import {
   updateChanges,
   saveChanges,
   getCurrencyRates,
+  getProductFromID,
+  getProductIDAlias,
 } from "../utils/tab-utils.js";
 import {
   createEmptyRow,
@@ -30,112 +34,122 @@ import {
   showLoadingScreen,
   hideLoadingScreen,
 } from "../utils/html-utils.js";
-import { fetchSupplierFromDatabase } from "../utils/fetchSQL-utils.js";
+import {
+  fetchSupplierFromDatabase,
+  fetchAltIndexFromDatabase,
+} from "../utils/fetchSQL-utils.js";
 
-// TODO: Test this edit changes
+// TODO: Make Supplier Form to Edit Currency
 
 $(async function () {
-  const columnDefaultAmount = 10;
+  const columnDefaultAmount = 11;
   const rowDefaultAmount = 10;
   const tableName = "#altIndexTable";
   const $dateFromFilter = $('input[type="date"][name="from"]');
   const $dateToFilter = $('input[type="date"][name="to"]');
-  const productDtoArray = JSON.parse(
+  const productRequestArray = JSON.parse(
     sessionStorage.getItem("productRequestHistory")
   );
+  const supplierArray = [];
+  const altIndexObjectArray = [];
+  const currencySupplierMap = new Map();
+  const productIdArray = getProductIdentifier(productRequestArray);
+  const productIdSelected = sessionStorage.getItem("productIDSelected");
 
   let isTableEmpty = true;
   let formSelected;
-  let currencyRate = new Map();
-  let currencySupplierMap = new Map();
   let altIndexSelected = new AlternateIndexDto();
-  let supplierList = [];
   let mainSupplier = null;
-  let productIdSelected = sessionStorage.getItem("productIDSelected");
   let rowIndexSelected = -1;
-  let productIdArray = getProductIdentifier(productDtoArray);
-  let altIndexObjectArray = [];
   // temporary variable to store previous values
   let prevMainSupplier = null;
+  let productIdAlias;
 
   //#region Initialization
 
   showLoadingScreen("Loading Alternate Index Table...");
-
-  // Load table from API
-  // TODO: Load table Server-side?
-  // TODO: Add AltIndexNumber to Alt Index Table
-  if (productIdSelected) {
-    let selectedProductData = [];
-    if (productIdSelected.slice(0, 2) == "R-") {
-      // Filter existing ones with interchangeNumber, interchangeNumber and partTypeFriendlyName/partTypeCode
-      selectedProductData = productDtoArray.filter(
-        (x) => x.researchIdentifier == productIdSelected && x.vendorId
-      );
-    } else {
-      selectedProductData = productDtoArray.filter(
-        (x) => x.productStockNumber == productIdSelected && x.vendorId
-      );
-    }
-    altIndexObjectArray = selectedProductData.map(
-      (product) =>
-        new AlternateIndexDto(
-          String(product.vendorName),
-          String(product.vendorId)
-        )
-    );
-  }
-  // Custom range date filtering function
-  DataTable.ext.search.push(function (_, data) {
-    let columnIndex = $dateFromFilter.data("column");
-    let start = new Date(
-      $dateFromFilter.val() ? $dateFromFilter.val() : -8640000000000000
-    );
-    let end = new Date(
-      $dateToFilter.val() ? $dateToFilter.val() : -8640000000000000
-    );
-    let date = new Date(
-      data[columnIndex] ? data[columnIndex] : -8640000000000000
-    );
-
-    if (date >= start && date <= end) return true;
-    return false;
-  });
-
-  //#region Fill in textbox Datalist
 
   // Fill in ID search box
   $.each(productIdArray, function (_, item) {
     $("#productList").append($("<option>").attr("value", item).text(item));
   });
 
-  // Fill in options for alternative index Name and ID
-  try {
-    supplierList = await fetchSupplierFromDatabase(socket);
-  } catch {
-    // Error handled in fetchSupplierFromDatabase
-    return;
-  }
+  if (productIdSelected) {
+    let productData = getProductFromID(productIdSelected, productRequestArray);
+    productIdAlias = getProductIDAlias(productIdSelected, productData);
 
-  // Fill in Search by Bars
-  supplierList.forEach((supplier) => {
-    $("#altIndexNumList").append(
-      $("<option>")
-        .attr("value", supplier.SupplierNumber)
-        .text(`${supplier.SupplierNumber}: ${supplier.SupplierName}`)
-    );
-  });
+    try {
+      await fillSupplierTextBoxDataList(supplierArray, currencySupplierMap);
+    } catch {
+      // Error handled in fetchSupplierFromDatabase
+      return;
+    }
 
-  //#endregion
+    try {
+      // Check if all currency is in currencyRates
+      await getCurrencyRates(socket);
+    } catch (error) {
+      showAlert(error.message);
+      return;
+    }
 
-  try {
-    // TO DO: get all currency and supplier pair from Server-side
-    // currencySupplierMap =
-    // Check if all currency is in currencyRates
-    currencyRate = await getCurrencyRates(socket);
-  } catch (error) {
-    showAlert(error.message);
-    return;
+    //#region Load table
+
+    // Load table from Database - Server side
+    try {
+      const altIndexFromDatabase = await fetchAltIndexFromDatabase(
+        socket,
+        productIdSelected
+      );
+      altIndexObjectArray.push(
+        ...altIndexFromDatabase.map((x) => {
+          return new AlternateIndexDto(
+            x.AltIndexNumber,
+            x.SupplierName,
+            x.SupplierNumber,
+            x.MOQ,
+            x.CostCurrency,
+            x.CostAud,
+            new Date(x.LastUpdate),
+            x.Quality,
+            x.SupplierPartType,
+            x.WCPPartType,
+            x.IsMain
+          );
+        })
+      );
+    } catch {
+      // Error handled in fetchAltIndexFromDatabase
+      return;
+    }
+
+    // Load table from API
+    let selectedProductData = [];
+    if (productIdSelected.slice(0, 2) == "R-") {
+      // Filter existing ones with interchangeNumber, interchangeNumber and partTypeFriendlyName/partTypeCode
+      selectedProductData = productRequestArray.filter(
+        (x) => x.researchIdentifier == productIdSelected && x.vendorId
+      );
+    } else {
+      selectedProductData = productRequestArray.filter(
+        (x) => x.productStockNumber == productIdSelected && x.vendorId
+      );
+    }
+
+    selectedProductData.forEach((product) => {
+      // Check if product is already in altIndexObjectArray, if so, skip
+      if (altIndexObjectArray.find((x) => x.Number == product.vendorId)) return;
+      // Add product to altIndexObjectArray
+      altIndexObjectArray.push(
+        new AlternateIndexDto(
+          String(product.altIndexNumber),
+          String(product.vendorName),
+          String(product.vendorId)
+        )
+      );
+    });
+
+    //#endregion
   }
 
   // Check if alternative index list is empty
@@ -150,14 +164,39 @@ $(async function () {
   $dateFromFilter.attr("disabled", isTableEmpty);
   $dateToFilter.attr("disabled", isTableEmpty);
 
-  let tableOptions = {
+  const tableOptions = {
     orderCellsTop: true,
     columns: [
+      { data: "Index" },
       { data: "Name" },
       { data: "Number" },
       { data: "Moq" },
-      { data: "CostCurrency" },
-      { data: "CostAud" },
+      {
+        data: "CostCurrency",
+        render: function (data, _, row) {
+          const currency = currencySupplierMap[row.Number] ?? "AUD";
+          if (!row.Index) return "";
+          if (data === null) return currency;
+          return `${currency} ${data}`;
+        },
+      },
+      {
+        data: "CostAud",
+        render: function (data, _, row) {
+          if (data === -1) {
+            const currency = currencySupplierMap[row.Number] ?? "AUD";
+            const costCurrency = row.CostCurrency;
+            const costAud = calculateAUD(currency, costCurrency);
+            if (typeof costAud === "string" || costAud instanceof String) {
+              showAlert(costAud);
+              return "N/A";
+            }
+            return costAud;
+          } else {
+            return data;
+          }
+        },
+      },
       {
         data: "LastUpdated",
         render: DataTable.render.datetime("D MMM YYYY"),
@@ -181,6 +220,7 @@ $(async function () {
     stateSave: true,
     paging: true,
   };
+
   let table = new DataTable(tableName, tableOptions);
 
   $(`${tableName}_filter`).remove();
@@ -227,15 +267,39 @@ $(async function () {
     },
   });
 
+  let dateToVal;
+  let dateFromVal;
   $dateFromFilter.on("input", function () {
-    if ($dateToFilter.val() == "") $dateToFilter.val($(this).val());
+    dateFromVal = new Date($dateFromFilter.val());
+    dateFromVal.setHours(0, 0, 0, 0); // Set hours, minutes, seconds, and milliseconds to 0
+    dateToVal = new Date($dateToFilter.val());
+    dateToVal.setHours(0, 0, 0, 0); // Set hours, minutes, seconds, and milliseconds to 0
     table.draw();
   });
 
   $dateToFilter.on("input", function () {
-    if ($dateFromFilter.val() == "") $dateFromFilter.val($(this).val());
+    dateFromVal = new Date($dateFromFilter.val());
+    dateFromVal.setHours(0, 0, 0, 0); // Set hours, minutes, seconds, and milliseconds to 0
+    dateToVal = new Date($dateToFilter.val());
+    dateToVal.setHours(0, 0, 0, 0); // Set hours, minutes, seconds, and milliseconds to 0
     table.draw();
   });
+
+  // Custom range date filtering function
+  // Add a custom search function to the array
+  $.fn.dataTable.ext.search.push(function (_settings, data, _dataIndex) {
+    let rowDate = new Date(data[$dateFromFilter.data("column")]);
+
+    if (
+      (isNaN(dateFromVal) || rowDate.getTime() >= dateFromVal.getTime()) &&
+      (isNaN(dateToVal) || rowDate.getTime() <= dateToVal.getTime())
+    ) {
+      return true;
+    }
+    return false;
+  });
+
+  $dateFromFilter.trigger("input"); // Trigger input event to initialize the date variables
 
   //#endregion
 
@@ -283,16 +347,30 @@ $(async function () {
   });
 
   // Import product Button
-  $('button[name="importBtn"]').on("click", function () {
+  $('button[name="importBtn"]').on("click", async function () {
     formSelected = "import";
+    // Fill in Supplier Number and Name if not already filled
+    if (supplierArray.length === 0) {
+      showLoadingScreen("Loading Supplier List...");
+      try {
+        await fillSupplierTextBoxDataList(supplierArray, currencySupplierMap);
+      } catch {
+        // Error handled in fetchSupplierFromDatabase
+        return;
+      }
+
+      hideLoadingScreen();
+    }
     showPopUpForm(formSelected, "Import Alternate Index");
   });
 
   // Edit button
   $('button[name="editBtn"]').on("click", function () {
     formSelected = "edit";
+    debugger;
+    $(`#${formSelected}Index`).val(altIndexSelected.Index);
     $(`#${formSelected}Name`).text(altIndexSelected.Name);
-    $(`#${formSelected}Num`).text(altIndexSelected.Number);
+    $(`#${formSelected}Num`).val(altIndexSelected.Number);
     $(`#${formSelected}Moq`).text(altIndexSelected.Moq);
     $(`#${formSelected}Currency`).text(altIndexSelected.CostCurrency);
     $(`#${formSelected}Aud`).val(altIndexSelected.CostAud);
@@ -319,6 +397,11 @@ $(async function () {
     altIndexSelected = new AlternateIndexDto(
       ...Object.values(table.row(this).data())
     );
+    if (altIndexSelected.CostAud == -1)
+      altIndexSelected.CostAud = calculateAUD(
+        currencySupplierMap[altIndexSelected.Number] ?? "AUD",
+        altIndexSelected.CostCurrency
+      );
     rowIndexSelected = table.row(this).index();
     // Enable Edit button
     $('button[name="editBtn"]').prop("disabled", false);
@@ -328,6 +411,7 @@ $(async function () {
   //#region Form Events
   $('button[name="saveForm"]').on("click", async function () {
     const fileVal = $(`#${formSelected}File`).val();
+    const altIndexVal = $(`#${formSelected}Index`).val();
     const supNumVal = $(`#${formSelected}Num`).val();
     const supNameVal = $(`#${formSelected}Name`).text();
     const moqVal = $(`#${formSelected}Moq`).val();
@@ -337,6 +421,7 @@ $(async function () {
     const QualityVal = $(`#${formSelected}Quality`).val();
     const costAUDVal = $(`#${formSelected}Aud`).val();
     const isMainVal = $(`#${formSelected}Main`).is(":checked");
+    const productVal = $(`#${formSelected}Product`).val();
     let isFormFilled = false;
     let changesMade = [];
     let errorMessage = [];
@@ -346,14 +431,18 @@ $(async function () {
       isFormFilled =
         Boolean(
           fileVal &&
+            altIndexVal &&
             supNumVal &&
             moqVal &&
             costCurVal &&
             supPartTypeVal &&
-            wcpPartTypeVal
+            wcpPartTypeVal &&
+            productVal
         ) && supNameVal != "-";
     } else if (formSelected === "edit") {
-      isFormFilled = Boolean(costAUDVal && QualityVal);
+      isFormFilled = Boolean(
+        altIndexVal && supNumVal && costAUDVal && QualityVal
+      );
     }
     // On Form being filled Incompletely
     if (!isFormFilled) {
@@ -367,6 +456,8 @@ $(async function () {
     if (formSelected === "import") {
       let isQualityEmpty = QualityVal.trim().length === 0;
       let columnHeader = [
+        altIndexVal,
+        productVal,
         moqVal,
         costCurVal,
         supPartTypeVal,
@@ -390,6 +481,8 @@ $(async function () {
       }
 
       missingHeader = findMissingColumnHeader(jsonSheet[0], [
+        altIndexVal,
+        productVal,
         moqVal,
         costCurVal,
         supPartTypeVal,
@@ -405,60 +498,58 @@ $(async function () {
         return;
       }
 
-      let importAltIndexes = jsonSheet.map((row) => {
+      const importAltIndexes = jsonSheet.map((row) => {
         // Change according to this: yes I think its probably easier to store
         // the currency the supplier quotes in against the supplier and the import will just be a $ value
-        // TO DO: Find currency from Supplier Number
-        // let Currency = currencySupplierMap[SUPPLIER_NUMBER_VALUE];
-        let supplierFound = supplierList.find(
-          (supplier) => supplier.SupplierNumber == supNumVal
-        );
-        let Currency = supplierFound ? supplierFound.Currency : "AUD";
-        let costAud = calculateAUD(Currency, row[costCurVal]);
-
-        // If converting currency occurred an error
-        if (typeof costAud === "string" || costAud instanceof String) {
-          errorMessage.push(costAud);
-          return null;
-        }
-
-        let newObject = new AlternateIndexDto(
-          SUPPLIER_NAME_VALUE_VALUE,
+        return new AlternateIndexDto(
+          row[altIndexVal],
+          supNameVal,
           supNumVal,
           row[moqVal],
-          String(row[costCurVal]) + ` ${Currency}`,
-          costAud,
+          row[costCurVal],
+          null,
           new Date(),
           isQualityEmpty ? "" : row[QualityVal],
           row[supPartTypeVal],
           row[wcpPartTypeVal],
-          false
+          false,
+          row[productVal]
         );
-
-        // Store each new row locally
-        changesMade.push(
-          new Map([
-            ["type", "new"],
-            ["id", productIdSelected],
-            ["table", "AlternateIndex"],
-            ["changes", [newObject]],
-          ])
-        );
-        return newObject;
       });
+
+      // Store each new row locally
+      changesMade.push(
+        new Map([
+          ["type", "newSupplier"],
+          ["supplier", supNumVal],
+          ["table", "AlternateIndex"],
+          ["changes", importAltIndexes],
+        ])
+      );
 
       if (errorMessage.length) {
         showAlert(`<strong>Error!</strong> ${errorMessage.join(".\n")}`);
         return;
       }
 
-      // Empty Data if data before is is empty
-      if (isTableEmpty) {
-        isTableEmpty = false;
-        table.clear().draw();
+      let importAltIndexCurrentProduct = importAltIndexes.filter(
+        (altIndex) =>
+          altIndex.ProductID === productIdSelected ||
+          altIndex.ProductID === productIdAlias
+      );
+
+      if (importAltIndexCurrentProduct.length > 0) {
+        // Empty Data if data before is is empty
+        if (isTableEmpty) {
+          isTableEmpty = false;
+          $dateFromFilter.attr("disabled", isTableEmpty);
+          $dateToFilter.attr("disabled", isTableEmpty);
+          table.clear().draw();
+        }
+
+        // Add data to table
+        table.rows.add(importAltIndexCurrentProduct).draw();
       }
-      // Add data to table
-      table.rows.add(importAltIndexes).draw();
     }
     // Edit Form Save
     else if (formSelected === "edit") {
@@ -474,6 +565,12 @@ $(async function () {
       let rowData = table.row(rowIndexSelected).data();
       // Save if there are any changes compared to old value (can be found in productSelected)
       let newUpdate = {};
+
+      if (altIndexSelected.Index != altIndexVal)
+        newUpdate.Index = rowData.Index = altIndexVal;
+
+      if (altIndexSelected.Number != supNumVal)
+        newUpdate.Number = rowData.Number = supNumVal;
 
       if (altIndexSelected.CostAud != costAUDVal)
         newUpdate.CostAud = rowData.CostAud = parseFloat(costAUDVal);
@@ -560,16 +657,19 @@ $(async function () {
       );
   });
 
-  $("#importNum").on("focusout", function () {
-    let altIndexNumber = $(this).val();
-    let supplierFound = supplierList.find(
-      (supplier) => supplier.SupplierNumber == altIndexNumber
-    );
-    if (supplierFound) {
-      $("#importName").text(supplierFound.SupplierName);
-      return;
-    }
-    $("#importName").text("-");
+  // Event for when Supplier Number is changed, change Supplier Name
+  ["import", "edit"].forEach((form) => {
+    $(`#${form}Num`).on("focusout", function () {
+      const supplierNumber = $(this).val();
+      const supplierFound = supplierArray.find(
+        (supplier) => supplier.SupplierNumber == supplierNumber
+      );
+      if (supplierFound) {
+        $(`#${form}Name`).text(supplierFound.SupplierName);
+        return;
+      }
+      $(`#${form}Name`).text("-");
+    });
   });
 
   $('#mainConfirmation button[name="yes"]').on("click", function () {
@@ -588,3 +688,33 @@ $(async function () {
 
   //#endregion
 });
+
+/**
+ * Fills the supplier text box data list with options for alternative index Name and ID.
+ * Retrieves supplier data from the database and populates the data list.
+ *
+ * @param {Array} supplierArray - The array to store the retrieved supplier data.
+ * @param {Object} currencySupplierMap - The map to store the currency information for each supplier.
+ * @returns {void}
+ */
+async function fillSupplierTextBoxDataList(supplierArray, currencySupplierMap) {
+  // Fill in options for alternative index Name and ID
+  try {
+    // Get all Supplier from database
+    const supplierFromDatabase = await fetchSupplierFromDatabase(socket);
+    supplierArray.push(...supplierFromDatabase);
+  } catch {
+    // Error handled in fetchSupplierFromDatabase
+    return;
+  }
+
+  // Fill in Search by Bars
+  supplierArray.forEach((supplier) => {
+    $("#altIndexNumList").append(
+      $("<option>")
+        .attr("value", supplier.SupplierNumber)
+        .text(`${supplier.SupplierNumber}: ${supplier.SupplierName}`)
+    );
+    currencySupplierMap[supplier.SupplierNumber] = supplier.Currency;
+  });
+}

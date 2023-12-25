@@ -18,6 +18,8 @@ import {
   saveChanges,
   isFloat,
   getCurrencyRates,
+  getProductFromID,
+  getProductIDAlias,
 } from "../utils/tab-utils.js";
 import {
   findMissingColumnHeader,
@@ -39,7 +41,7 @@ $(async function () {
   let isTableEmpty = true;
   let productIdSelected = sessionStorage.getItem("productIDSelected");
   let costVolSelected = new CostVolumeDto();
-  let productData = null;
+  let productData;
   let productIdAlias;
 
   //#region Initialization
@@ -56,20 +58,10 @@ $(async function () {
 
   //Load table from API
   if (productIdSelected) {
-    if (productIdSelected.slice(0, 2) == "R-") {
-      // Filter existing ones with interchangeNumber, interchangeNumber and partTypeFriendlyName/partTypeCode
-      productData = productRequestArray.filter(
-        (x) => x.researchIdentifier == productIdSelected
-      );
-      productIdAlias = productData[0].productStockNumber;
-    } else {
-      productData = productRequestArray.filter(
-        (x) => x.productStockNumber == productIdSelected
-      );
-      productIdAlias = productData[0].researchIdentifier;
-    }
-    costVolSelected.Id = productData[0].researchIdentifier
-      ? productData[0].researchIdentifier
+    productData = getProductFromID(productIdSelected, productRequestArray);
+    productIdAlias = getProductIDAlias(productData, productRequestArray);
+    costVolSelected.Id = productData.researchIdentifier
+      ? productData.researchIdentifier
       : "No Research ID Assigned";
 
     // Fetch Product Detail from Database
@@ -285,9 +277,7 @@ $(async function () {
           row[idVal],
           parseFloat(row[costUsdVal]).toFixed(2),
           convertedAud,
-          isEstCostAudEmpty
-            ? 0
-            : parseFloat(row[estCostAudVal]).toFixed(2),
+          isEstCostAudEmpty ? 0 : parseFloat(row[estCostAudVal]).toFixed(2),
           isEstSellEmpty ? 0 : parseFloat(row[estSellVal]).toFixed(2),
           isPostageEmpty ? 0 : parseFloat(row[postageVal]).toFixed(2),
           isExtGpEmpty ? 0 : parseFloat(row[extGPVal]).toFixed(2)

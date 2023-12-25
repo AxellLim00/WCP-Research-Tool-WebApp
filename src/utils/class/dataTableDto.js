@@ -93,7 +93,7 @@ export class ProductDto {
 
 export class AlternateIndexDto {
   /**
-   *
+   * @param {String} index
    * @param {String} name
    * @param {String} number
    * @param {String} moq
@@ -105,9 +105,9 @@ export class AlternateIndexDto {
    * @param {String} wcpPartType
    * @param {Boolean} isMain
    * @param {String} productID
-   * @param {String} supplierNumber
    */
   constructor(
+    index,
     name,
     number,
     moq,
@@ -118,9 +118,9 @@ export class AlternateIndexDto {
     supplierPartType,
     wcpPartType,
     isMain,
-    productID,
-    supplierNumber
+    productID
   ) {
+    this.Index = index;
     this.Name = name;
     this.Number = String(number);
     this.Moq = moq ?? "";
@@ -153,7 +153,6 @@ export class AlternateIndexDto {
     this.WcpPartType = wcpPartType ?? "";
     this.IsMain = isMain ?? false;
     this.ProductID = productID;
-    this.SupplierNumber = supplierNumber;
   }
 }
 

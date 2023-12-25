@@ -232,7 +232,7 @@ export async function getAltIndex(productID) {
     // Translate SQL int to DataTable Value
     result.recordset.forEach(
       (row, idx) =>
-        (result.recordset[idx].Quality = ValueDictionary.OemType[row.Quality])
+        (result.recordset[idx].Quality = ValueDictionary.Quality[row.Quality])
     );
     return {
       status: "OK",
@@ -693,14 +693,16 @@ export async function insertAltIndexBySupplier(mapChange) {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
-    console.log("Inserting new AltIndex...");
-    let query = `${mapChange
+
+    const query = `${mapChange
       .map(
         (Map) =>
-          `INSERT INTO AlternateIndex (AltIndexKey, MOQ, CostAud, LastUpdate, Quality, SupplierPartType, WCPPartType, ProductID, SupplierNumber)
+          `INSERT INTO AlternateIndex (AltIndexKey, MOQ, CostAud, LastUpdate, Quality, SupplierPartType, WCPPartType, ProductID, SupplierNumber, AltIndexNumber, CostCurrency)
         VALUES ${Map.get("changes")
           .map(
-            (altIndex) => `(NEWID(), ${altIndex.Moq}, ${altIndex.CostAud},
+            (altIndex) => `(NEWID(), ${altIndex.Moq}, ${
+              altIndex.CostAud ? altIndex.CostAud : -1
+            },
             '${new Date().toISOString().slice(0, 19).replace("T", " ")}',
             ${ValueDictionary.Quality[altIndex.Quality]}, '${
               altIndex.SupplierPartType
@@ -709,13 +711,18 @@ export async function insertAltIndexBySupplier(mapChange) {
             (SELECT TOP 1 ID FROM Product
               WHERE SKU = '${altIndex.ProductID}' 
               OR ResearchID = '${altIndex.ProductID}'), 
-            '${Map.get("supplier")}')`
+            '${Map.get("supplier")}',
+            '${altIndex.Index}',
+            ${altIndex.CostCurrency})`
           )
           .join()};`
       )
       .join("\n")}`;
-    let result = await pool.query(query);
+
+    console.log("Inserting new AltIndex...");
+    const result = await pool.query(query);
     console.log("Inserted new AltIndex");
+
     console.log("Result: ", result.rowsAffected);
     return {
       status: "OK",
@@ -745,27 +752,29 @@ export async function insertAltIndexByProduct(mapChange) {
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new AltIndex...");
-    let query = `DECLARE @productKey uniqueidentifier
+    const query = `DECLARE @productKey uniqueidentifier
     ${mapChange
       .map(
         (Map) =>
           `SET @productKey = (SELECT TOP 1 ID FROM Product
           WHERE Product.ResearchID = '${Map.get("id")}' 
             OR Product.SKU = '${Map.get("id")}');
-          INSERT INTO AlternateIndex (AltIndexKey, MOQ, CostAud, LastUpdate, Quality, SupplierPartType, WCPPartType, ProductID, SupplierNumber)
+          INSERT INTO AlternateIndex (AltIndexKey, MOQ, CostAud, LastUpdate, Quality, SupplierPartType, WCPPartType, ProductID, SupplierNumber, AltIndexNumber, CostCurrency)
           VALUES ${Map.get("changes")
             .map(
               (altIndex) =>
-                `(NEWID(), ${altIndex.Moq}, ${altIndex.CostAud}, 
+                `(NEWID(), ${altIndex.Moq}, ${altIndex.CostAud ?? -1}, 
                 '${new Date().toISOString().slice(0, 19).replace("T", " ")}',
                 ${altIndex.Quality}, '${altIndex.SupplierPartType}', 
                 '${altIndex.WcpPartType}', @productKey, 
-                '${altIndex.SupplierNumber}')`
+                '${altIndex.Number}',
+                '${altIndex.Index}',
+                ${altIndex.CostCurrency})`
             )
             .join()};`
       )
       .join("\n")}`;
-    let result = await pool.query(query);
+    const result = await pool.query(query);
     console.log("Inserted new AltIndex");
     console.log("Result: ", result.rowsAffected);
     return {
@@ -1046,12 +1055,18 @@ export async function updateAltIndex(mapChange) {
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
-    var updateQueries = [];
+    let updateQueries = [];
     mapChange.forEach((item) => {
-      let changes = item.get("changes");
-      let productID = item.get("id");
-      let setUpdates = [];
+      const changes = item.get("changes");
+      const productID = item.get("id");
+      const setUpdates = [];
       // Translate DataTable value to SQL int value
+      if ("Index" in changes)
+        setUpdates.push(`AltIndexNumber = '${changes.Index}'`);
+
+      if ("Number" in changes)
+        setUpdates.push(`SupplierNumber = '${changes.Number}'`);
+
       if ("CostAud" in changes) setUpdates.push(`CostAud = ${changes.CostAud}`);
 
       if ("Quality" in changes)
@@ -1059,8 +1074,21 @@ export async function updateAltIndex(mapChange) {
           `Quality = ${ValueDictionary.Quality[changes.Quality]}`
         );
 
-      if ("IsMain" in changes)
+      if ("IsMain" in changes) {
         setUpdates.push(`IsMain = ${Number(changes.IsMain)}`);
+        if (changes.IsMain) {
+          updateQueries.push(`UPDATE AlternateIndex
+          SET IsMain = 0, LastUpdate = '${new Date()
+            .toISOString()
+            .slice(0, 19)
+            .replace("T", " ")}'
+          WHERE ProductID =
+            (SELECT TOP 1 ID
+              FROM Product
+              WHERE SKU = '${productID}' OR ResearchID = '${productID}')
+            AND IsMain = 1;`);
+        }
+      }
 
       updateQueries.push(`UPDATE AlternateIndex
       SET ${setUpdates.join()}, LastUpdate = '${new Date()
@@ -1072,22 +1100,12 @@ export async function updateAltIndex(mapChange) {
           FROM Product
           WHERE SKU = '${productID}' OR ResearchID = '${productID}')
         AND SupplierNumber = '${item.get("number")}';`);
-      if (changes.IsMain) {
-        updateQueries.push(`UPDATE AlternateIndex
-        SET IsMain = 0, LastUpdate = '${new Date()
-          .toISOString()
-          .slice(0, 19)
-          .replace("T", " ")}'
-        WHERE ProductID =
-          (SELECT TOP 1 ID
-            FROM Product
-            WHERE SKU = '${productID}' OR ResearchID = '${productID}')
-          AND IsMain = 1;`);
-      }
     });
+    const query = updateQueries.join("\n");
+    console.log(query);
 
     console.log("Updating Alternate Index...");
-    let result = await pool.query(updateQueries.join("\n"));
+    let result = await pool.query(query);
     console.log("Updated Alternate Index");
 
     console.log("Result: ", result.rowsAffected);

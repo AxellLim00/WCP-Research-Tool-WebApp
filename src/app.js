@@ -22,6 +22,7 @@ import {
   insertUser,
   insertProduct,
   updateProduct,
+  deleteProduct,
   insertNewProduct,
   deleteNewProduct,
   insertKType,
@@ -212,6 +213,9 @@ io.on("connect", async function (socket) {
 
     if (separatedLists["Product_edit"])
       resultArray.push(await updateProduct(separatedLists["Product_edit"]));
+
+    if (separatedLists["Product_delete"])
+      resultArray.push(await deleteProduct(separatedLists["Product_delete"]));
 
     if (separatedLists["NewProduct_new"])
       resultArray.push(

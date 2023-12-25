@@ -284,6 +284,7 @@ async function syncWorkflowDatabaseData() {
       productDetailsFromDatabase,
       currProdHistReq
     );
+
     // Assign ResearchID to currObject if productDetailMatch exist else assign New ResearchID
     let researchId = productDetailMatch
       ? productDetailMatch.ResearchID
@@ -367,7 +368,9 @@ function findProductDetailsToDelete(
     });
 
     // Check if LastUpdate is equal to "1900-01-01"
-    const isLastUpdateEqual = productDetail.LastUpdate === "1900-01-01";
+    const isLastUpdateEqual =
+      new Date(productDetail.LastUpdate).getTime() ===
+      new Date("1900-01-01").getTime();
 
     if (!isProductInHistory && isLastUpdateEqual) {
       const id =

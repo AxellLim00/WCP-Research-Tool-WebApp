@@ -6,8 +6,10 @@
     "Epid",
     "NEWID",
     "Oems",
+    "tableexport",
     "textbox",
-    "uniqueidentifier"
+    "uniqueidentifier",
+    "WCP's"
   ],
   "cSpell.ignoreWords": ["recordset"]
 }

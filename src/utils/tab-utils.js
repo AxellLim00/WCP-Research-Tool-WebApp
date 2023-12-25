@@ -44,15 +44,14 @@ export function productSelectedChanged(
 export async function getCurrencyRates(socket) {
   try {
     const currencyRate = JSON.parse(localStorage.getItem("currencyRate"));
-    const lastUpdate = new Date(currencyRate?.last_updated_at);
-    const Rates = new Date(currencyRate?.data);
     const currentDate = new Date();
     // If currencyRate is not null and last updated is within 7 days
     if (
       currencyRate &&
-      Rates &&
-      lastUpdate &&
-      lastUpdate.getTime() > currentDate.getTime() - 7 * 24 * 60 * 60 * 1000
+      currencyRate.data &&
+      currencyRate.last_updated_at &&
+      new Date(currencyRate.last_updated_at).getTime() >
+        currentDate.getTime() - 7 * 24 * 60 * 60 * 1000
     ) {
       return currencyRate;
     }
@@ -369,7 +368,10 @@ function generateShortUUID() {
  * @param {Object} productReqHistDto - The current product in the workflow list.
  * @returns {Object|undefined} - The matching product detail object, or undefined if no match is found.
  */
-export function findMatchingProductDetail(productDetailsArray, productReqHistDto) {
+export function findMatchingProductDetail(
+  productDetailsArray,
+  productReqHistDto
+) {
   return productDetailsArray.find((product) => {
     // Check if SKU match match in database with current product in workflow list (productReqHistDto)
     let isSkuMatch = product.SKU
@@ -388,4 +390,32 @@ export function findMatchingProductDetail(productDetailsArray, productReqHistDto
     // Return true if either SKU or Research ID match
     return isSkuMatch || isResearchIdMatch;
   });
+}
+
+/**
+ * Retrieves the product from the given product ID in the product request array.
+ *
+ * @param {string} productIdSelected - The product ID selected.
+ * @param {Array} productRequestArray - The array of product requests.
+ * @returns {Object|undefined} - The product object if found, otherwise undefined.
+ */
+export function getProductFromID(productIdSelected, productRequestArray) {
+  return productRequestArray.find(
+    (x) =>
+      x.researchIdentifier == productIdSelected ||
+      x.productStockNumber == productIdSelected
+  );
+}
+
+/**
+ * Returns the product ID alias based on the selected product ID and product data.
+ * @param {string} productIdSelected - The selected product ID.
+ * @param {object} productData - The product data object.
+ * @returns {string} - The product ID alias.
+ */
+export function getProductIDAlias(productIdSelected, productData) {
+  if (productIdSelected === productData.productStockNumber) {
+    return productData.researchIdentifier;
+  }
+  return productData.productStockNumber;
 }

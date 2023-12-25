@@ -1,5 +1,6 @@
 import DataTable from "datatables.net-dt";
 import "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
+import "datatables.net-datetime";
 import { createEmptyRow } from "../utils/table-utils.js";
 import {
   hideLoadingScreen,
@@ -143,17 +144,7 @@ $(async function () {
       { data: "Desc" },
       {
         data: "LastUpdate",
-        render: (data, type) => {
-          const date = new Date(data);
-          if (type === "display") {
-            return date.toLocaleDateString("en-AU", {
-              month: "2-digit",
-              day: "2-digit",
-              year: "numeric",
-            });
-          }
-          return date;
-        },
+        render: DataTable.render.datetime("D MMM YYYY"),
       },
     ],
   });
@@ -170,29 +161,31 @@ $(async function () {
 
   //#region Searchbar Logic
 
-  let dateToVal = new Date($("#dateTo").val());
-  let dateFromVal = new Date($("#dateFrom").val());
+  let dateToVal;
+  let dateFromVal;
+
   // Input event for DateTo and DateFrom inputs
   $("#dateTo, #dateFrom").on("input", function () {
     dateToVal = new Date($("#dateTo").val());
+    dateToVal.setHours(0, 0, 0, 0); // Set hours, minutes, seconds, and milliseconds to 0
     dateFromVal = new Date($("#dateFrom").val());
+    dateFromVal.setHours(0, 0, 0, 0); // Set hours, minutes, seconds, and milliseconds to 0
     tablePeriod.draw();
   });
 
   // Add a custom search function to the array
   $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
     let rowDate = new Date(data[4]); // Assuming the date is in the 5th column and is a Date object
-
     if (
-      (isNaN(dateFromVal) || rowDate >= dateFromVal) &&
-      (isNaN(dateToVal) || rowDate <= dateToVal)
+      (isNaN(dateFromVal) || rowDate.getTime() >= dateFromVal.getTime()) &&
+      (isNaN(dateToVal) || rowDate.getTime() <= dateToVal.getTime())
     ) {
       return true;
     }
     return false;
   });
 
-  tablePeriod.draw();
+  $("#dateTo").trigger("input"); // Trigger input event to initialize the date variables
 
   //#endregion
 

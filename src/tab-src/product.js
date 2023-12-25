@@ -1,6 +1,7 @@
 import DataTable from "datatables.net-dt";
-import "datatables.net-responsive-dt";
 import "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
+import "multiple-select";
+import "../../node_modules/multiple-select/dist/multiple-select.min.css";
 import { ProductRequestHistoryDto } from "../utils/class/apiDto.js";
 import {
   selectTab,

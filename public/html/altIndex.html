@@ -29,6 +29,7 @@
         >
           <thead>
             <tr>
+              <th>Alternate Index Number</th>
               <th>Supplier Name</th>
               <th>Supplier Number</th>
               <th>MOQ</th>
@@ -44,7 +45,7 @@
               <td>
                 <input
                   type="text"
-                  placeholder="Search supplier name"
+                  placeholder="Search Alt Index Number"
                   class="filter"
                   data-column="0"
                 />
@@ -52,7 +53,7 @@
               <td>
                 <input
                   type="text"
-                  placeholder="Search supplier number"
+                  placeholder="Search supplier name"
                   class="filter"
                   data-column="1"
                 />
@@ -60,7 +61,7 @@
               <td>
                 <input
                   type="text"
-                  placeholder="Search MOQ"
+                  placeholder="Search supplier number"
                   class="filter"
                   data-column="2"
                 />
@@ -68,7 +69,7 @@
               <td>
                 <input
                   type="text"
-                  placeholder="Search ccost currency"
+                  placeholder="Search MOQ"
                   class="filter"
                   data-column="3"
                 />
@@ -76,22 +77,30 @@
               <td>
                 <input
                   type="text"
-                  placeholder="Search cost AUD"
+                  placeholder="Search cost currency"
                   class="filter"
                   data-column="4"
                 />
               </td>
+              <td>
+                <input
+                  type="text"
+                  placeholder="Search cost AUD"
+                  class="filter"
+                  data-column="5"
+                />
+              </td>
               <td style="inline-size: min-content">
                 From:
-                <input type="date" class="filter" name="from" data-column="5" />
+                <input type="date" class="filter" name="from" data-column="6" />
                 <br />
                 To:&emsp;&nbsp;
-                <input type="date" class="filter" name="to" data-column="5" />
+                <input type="date" class="filter" name="to" data-column="6" />
               </td>
               <td>
                 <select
                   class="filter multiple-select"
-                  data-column="6"
+                  data-column="7"
                   multiple="multiple"
                   placeholder="Select quality"
                 >
@@ -105,7 +114,7 @@
                   type="text"
                   placeholder="Search supplier's part type"
                   class="filter"
-                  data-column="7"
+                  data-column="8"
                 />
               </td>
               <td>
@@ -113,7 +122,7 @@
                   type="text"
                   placeholder="Search WCP's part type"
                   class="filter"
-                  data-column="8"
+                  data-column="9"
                 />
               </td>
               <td></td>
@@ -141,6 +150,16 @@
             File to import<b style="color: red">*</b>
             <br />
             <input id="importFile" type="file" accept=".xls, .xlsx, .csv" />
+          </label>
+          <label>
+            Product ID Header (Research ID / SKU)<b style="color: red">*</b>
+            <br />
+            <input id="importProduct" type="text" />
+          </label>
+          <label>
+            Alternate Index Number Header<b style="color: red">*</b>
+            <br />
+            <input id="importIndex" type="text" />
           </label>
           <label>
             Supplier Number (From Pinnacle)<b style="color: red">*</b>
@@ -191,15 +210,19 @@
           style="display: none"
         >
           <label>
-            Supplier Name:
+            Alternate Index Number:
             <br />
-            <p id="editName">-</p>
+            <input id="editIndex" type="text" />
           </label>
           <label>
             Supplier Number:
             <br />
-            <!-- <input id="editNum" type="text" /> -->
-            <p id="editNum">-</p>
+            <input id="editNum" type="text" list="altIndexNumList" />
+          </label>
+          <label>
+            Supplier Name:
+            <br />
+            <p id="editName">-</p>
           </label>
           <label>
             MOQ:
@@ -248,6 +271,9 @@
             <br />
             <input id="editMain" type="checkbox" />
           </label>
+        </section>
+        <section>
+          <p style="color: red">* Required</p>
         </section>
         <section class="flex-buttons form-button">
           <button type="button" name="saveForm">Save</button>

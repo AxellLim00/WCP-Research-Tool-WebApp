@@ -15,6 +15,7 @@ export class ProductRequestHistoryDto {
    * @param {String} interchangeDescriptions
    * @param {String} productStockNumber
    * @param {String} altIndexNumber
+   * @param {String} vendorId
    * @param {String} vendorName
    * @param {Number} averageConditionPrice
    * @param {Number} costPrice
@@ -34,6 +35,7 @@ export class ProductRequestHistoryDto {
     interchangeDescriptions,
     productStockNumber,
     altIndexNumber,
+    vendorId,
     vendorName,
     averageConditionPrice,
     costPrice
@@ -52,6 +54,7 @@ export class ProductRequestHistoryDto {
     this.interchangeDescriptions = interchangeDescriptions;
     this.productStockNumber = productStockNumber;
     this.altIndexNumber = altIndexNumber;
+    this.vendorId = vendorId;
     this.vendorName = vendorName;
     this.averageConditionPrice = averageConditionPrice;
     this.costPrice = costPrice;
