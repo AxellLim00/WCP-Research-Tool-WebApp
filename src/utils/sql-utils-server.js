@@ -220,7 +220,7 @@ export async function getAltIndex(productID) {
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Getting Alt Indexes...");
-    let query = `SELECT AlternateIndex.*, Supplier.SupplierName, Supplier.Currency 
+    let query = `SELECT AlternateIndex.*, Supplier.SupplierName, Supplier.Currency, Product.ResearchID, Product.SKU 
       FROM AlternateIndex 
       JOIN Product ON AlternateIndex.ProductID = Product.ID 
       JOIN Supplier ON AlternateIndex.SupplierNumber = Supplier.SupplierNumber 
@@ -1100,6 +1100,65 @@ export async function updateAltIndex(mapChange) {
           FROM Product
           WHERE SKU = '${productID}' OR ResearchID = '${productID}')
         AND SupplierNumber = '${item.get("number")}';`);
+    });
+    const query = updateQueries.join("\n");
+    console.log(query);
+
+    console.log("Updating Alternate Index...");
+    let result = await pool.query(query);
+    console.log("Updated Alternate Index");
+
+    console.log("Result: ", result.rowsAffected);
+    console.log(
+      `Successfully updated ${result.rowsAffected.reduce(
+        (sum, count) => sum + count,
+        0
+      )} Alternate Indexes.`
+    );
+    return {
+      status: "OK",
+      message: `Successfully updated ${result.rowsAffected.reduce(
+        (sum, count) => sum + count,
+        0
+      )} Alternate Indexes.`,
+    };
+  } catch (err) {
+    console.log(err);
+
+    return {
+      status: "ERROR",
+      error: err,
+    };
+  } finally {
+    if (pool) pool.close();
+    console.log("Connection closed.");
+  }
+}
+
+/**
+ * Updates Supplier value based on the new changes' mapping key-values to the SQL Database.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ */
+export async function updateSupplier(mapChange) {
+  try {
+    console.log("Connecting to SQL...");
+    var pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+
+    let updateQueries = [];
+    mapChange.forEach((item) => {
+      const changes = item.get("changes");
+      const productID = item.get("id");
+      const setUpdates = [];
+      // Translate DataTable value to SQL int value
+
+      if ("Currency" in changes)
+        setUpdates.push(`Currency = '${changes.Currency}'`);
+
+      updateQueries.push(`UPDATE AlternateIndex
+      SET ${setUpdates.join()}
+      WHERE SupplierNumber = '${item.supplier}';`);
     });
     const query = updateQueries.join("\n");
     console.log(query);

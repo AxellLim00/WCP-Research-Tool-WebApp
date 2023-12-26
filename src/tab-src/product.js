@@ -1,3 +1,12 @@
+/**
+ * This file contains the implementation of the product page in the web application.
+ * It includes the initialization of the page, table rendering, search bar logic, and button event handlers.
+ * The page displays a table of product data fetched from the database and allows users to interact with the data.
+ * Users can search for products, filter the table using multiple select dropdowns, edit product details, and export the table.
+ * Double-clicking on a row opens a form to view and edit the selected product.
+ * Single-clicking on a row highlights the row and enables the edit button.
+ * The file also includes various utility functions for manipulating the table and interacting with the database.
+ */
 import DataTable from "datatables.net-dt";
 import "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
 import "multiple-select";
@@ -20,17 +29,15 @@ import {
   readFileToJson,
 } from "../utils/table-utils.js";
 import {
-  getAltIndexValueDictionary,
   updateObject,
   updateHasChanges,
   updateChanges,
   saveChanges,
-  updateProductRequestHistory,
   addNewProductRequestHistory,
   generateProductID,
   findMatchingProductDetail,
 } from "../utils/tab-utils.js";
-import socket from "../utils/socket-utils.js";
+// import socket from "../utils/socket-utils.js";
 import {
   fetchProductDataFromDatabase,
   fetchSupplierFromDatabase,
@@ -43,6 +50,8 @@ $(async function () {
   const defaultRowAmount = 10;
   const tableName = "#productTable";
   const productObjectList = [];
+  const socket = window.socket;
+
   let formSelected;
   let isEmptyData = true;
   let productSelected = new ProductDto();
@@ -73,6 +82,24 @@ $(async function () {
   if (isEmptyData) {
     $(tableName).append(createEmptyRow(defaultRowAmount, defaultColumnAmount));
   } else {
+    // Get list of unique OEM
+    let oemList;
+    try {
+      oemList = await fillOemTextBoxDataList;
+    } catch (error) {
+      console.error("An error occurred:", error);
+      return;
+    }
+
+    // Get list of AltIndex for its Supplier Product relation
+    let altIndexList;
+    try {
+      altIndexList = await fetchAltIndexFromDatabase(socket);
+    } catch (error) {
+      // Error handled in fetchOemFromDatabase
+      throw error;
+    }
+
     // Add all product from productDtoArray to productObjectList
     productReqHistWorkflowArray.forEach((currObject, idx, array) => {
       // If current product's SKU is not empty,
@@ -98,58 +125,24 @@ $(async function () {
       );
 
       productObjectList.push(
-        new ProductDto(
-          currObject.researchIdentifier,
-          currObject.productStockNumber,
-          currObject.vehicleManufacturers.split("\r").join("; "),
-          currObject.vehicleModels.split("\r").join("; "),
-          currObject.partTypeFriendlyName,
-          currObject.interchangeVersion
-            ? `${currObject.interchangeNumber.trim()} ${
-                currObject.interchangeVersion
-              }`
-            : currObject.interchangeNumber.trim(),
-          currObject.interchangeDescriptions
-            ? currObject.interchangeDescriptions.split("\r").join("; ")
-            : "",
-          productDetailMatch ? productDetailMatch.Status : "",
-          productDetailMatch ? productDetailMatch.OemType : "",
-          // TO DO: AltIndex and/or Oem-Supplier Pair place here (Database)
-          // Add AltIndex to Supplier List if AltIndex is not empty
-          currObject.vendorId
-            ? [String(currObject.vendorId).toLowerCase()]
-            : [],
-          // TO DO: oem place on left (Database)
-          // Add Oem to Oem List if productDetailMatch does exist
-          productDetailMatch ? [] : [],
-          currObject.partTypeCode
+        createProductObjectForTable(
+          currObject,
+          productDetailMatch,
+          oemList,
+          altIndexList
         )
       );
     });
 
-    let supplierList;
+    // Add all Supplier from Database to SupplierList
     try {
-      supplierList = await fetchSupplierFromDatabase(socket);
-    } catch {
-      // Error handled in fetchSupplierFromDatabase
+      await fillSupplierTextBoxDataList(socket);
+    } catch (error) {
+      console.error("An error occurred:", error);
       return;
     }
-
-    // Fill in Search by Bars
-    supplierList.forEach((supplier) => {
-      $("#supplierList").append(
-        $("<option>")
-          .attr("value", supplier.SupplierNumber)
-          .text(`${supplier.SupplierNumber} : ${supplier.SupplierName}`)
-      );
-    });
-
-    // TODO: Get list of unique OEM
-    let oemUniqueArray = [];
-    $.each(oemUniqueArray, function (i, item) {
-      $("#supplierList").append($("<option>").attr("value", item).text(item));
-    });
   }
+
   var tableOptions = {
     orderCellsTop: true,
     columns: [
@@ -247,7 +240,7 @@ $(async function () {
   };
   var table = new DataTable(tableName, tableOptions);
 
-  // Hide Supplier and OEM List Column
+  // Hide Supplier and OEM List Column (Only used for searching)
   const supplierListIndex = 9;
   const oemListIndex = 10;
   table.column(supplierListIndex).visible(false, false);
@@ -662,3 +655,156 @@ $(async function () {
 
   //#endregion
 });
+
+/**
+ * Fills the supplier text box data list by fetching supplier data from the database.
+ *
+ * @param {Socket} socket - The socket connection to the database.
+ * @returns {Promise<Array>} - A promise that resolves to an array of supplier data.
+ * @throws {Error} - If there is an error while fetching the supplier data.
+ */
+async function fillSupplierTextBoxDataList(socket) {
+  let supplierList;
+  try {
+    supplierList = await fetchSupplierFromDatabase(socket);
+  } catch (error) {
+    // Error handled in fetchSupplierFromDatabase
+    throw error;
+  }
+
+  // Fill in Search by Bars
+  supplierList.forEach((supplier) => {
+    $("#supplierList").append(
+      $("<option>")
+        .attr("value", supplier.SupplierNumber)
+        .text(`${supplier.SupplierNumber} : ${supplier.SupplierName}`)
+    );
+  });
+  return supplierList;
+}
+
+/**
+ * Fills the OEM text box data list.
+ * @param {Socket} socket - The socket object.
+ * @returns {Promise<Array>} - The list of OEMs.
+ * @throws {Error} - If there is an error fetching the OEMs from the database.
+ */
+async function fillOemTextBoxDataList(socket) {
+  let oemList;
+  try {
+    oemList = await fetchOemFromDatabase(socket);
+  } catch (error) {
+    // Error handled in fetchOemFromDatabase
+    throw error;
+  }
+
+  // Fill in Search by Bars
+  oemList.forEach((oemObject) => {
+    $("#oemList").append(
+      $("<option>").attr("value", oemObject.Oem).text(oemObject.Oem)
+    );
+  });
+  return oemList;
+}
+
+/**
+ * Creates a product object for the table.
+ *
+ * @param {Object} currentProductObject - The current product object.
+ * @param {Object} productDetailMatch - The product detail match.
+ * @param {Array} oemList - The OEM list.
+ * @param {Array} altIndexList - The alternate index list.
+ * @returns {ProductDto} The created product object.
+ */
+function createProductObjectForTable(
+  currentProductObject,
+  productDetailMatch,
+  oemList,
+  altIndexList
+) {
+  let oemProductList = [];
+  let altIndexProductList = new Set();
+  // Add VendorId (Supplier Number) to Supplier List if VendorId  is not empty
+  if (currentProductObject.vendorId)
+    altIndexProductList.add(
+      String(currentProductObject.vendorId).toLowerCase()
+    );
+  // When productDetailMatch does exist
+  if (productDetailMatch) {
+    // Filter OEM List by their SKU or ResearchID to match Product's
+    const filteredOemList = oemList.filter((oemObject) => {
+      const sku = oemObject.Sku;
+      const researchId = oemObject.ResearchID;
+
+      if (
+        sku &&
+        productSelected.Sku &&
+        sku.toLowerCase() === productSelected.Sku.toLowerCase()
+      )
+        return true;
+
+      if (
+        researchId &&
+        productSelected.ResearchIdentifier &&
+        researchId.toLowerCase() ===
+          productSelected.ResearchIdentifier.toLowerCase()
+      )
+        return true;
+
+      return false;
+    });
+
+    oemProductList = filteredOemList.map((oemObject) => oemObject.Oem);
+
+    // Add Supplier Numbers from Oem Database to altIndexProductList
+    filteredOemList.forEach((oemObject) =>
+      altIndexProductList.add(oemObject.SupplierNumber)
+    );
+    // Filter Alternate Index List by their SKU or ResearchID to match Product's
+    const filteredAltIndexList = altIndexList.filter((altIndex) => {
+      const sku = altIndex.Sku;
+      const researchId = altIndex.ResearchID;
+
+      if (
+        sku &&
+        productSelected.Sku &&
+        sku.toLowerCase() === productSelected.Sku.toLowerCase()
+      )
+        return true;
+
+      if (
+        researchId &&
+        productSelected.ResearchIdentifier &&
+        researchId.toLowerCase() ===
+          productSelected.ResearchIdentifier.toLowerCase()
+      )
+        return true;
+
+      return false;
+    });
+
+    filteredAltIndexList.forEach((altIndex) =>
+      altIndexProductList.add(altIndex.SupplierNumber)
+    );
+  }
+  return new ProductDto(
+    currentProductObject.researchIdentifier,
+    currentProductObject.productStockNumber,
+    currentProductObject.vehicleManufacturers.split("\r").join("; "),
+    currentProductObject.vehicleModels.split("\r").join("; "),
+    currentProductObject.partTypeFriendlyName,
+    currentProductObject.interchangeVersion
+      ? `${currentProductObject.interchangeNumber.trim()} ${
+          currentProductObject.interchangeVersion
+        }`
+      : currentProductObject.interchangeNumber.trim(),
+    currentProductObject.interchangeDescriptions
+      ? currentProductObject.interchangeDescriptions.split("\r").join("; ")
+      : "",
+    productDetailMatch ? productDetailMatch.Status : "",
+    productDetailMatch ? productDetailMatch.OemType : "",
+    Array.from(altIndexProductList),
+    oemProductList,
+    currentProductObject.partTypeCode
+  );
+}

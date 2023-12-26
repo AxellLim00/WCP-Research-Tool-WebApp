@@ -26,6 +26,7 @@ $(async function () {
   const productJsonString = sessionStorage.getItem("productRequestHistory");
   var tabChosen = "";
   var menuToggle = true;
+  window.socket = socket;
 
   if (token === undefined || token === null) {
     location.href = location.origin;

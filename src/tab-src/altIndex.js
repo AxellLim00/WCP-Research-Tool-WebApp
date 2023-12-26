@@ -1,9 +1,15 @@
+/**
+ * This file contains the code for the alternate index functionality in the web application.
+ * It imports various modules and defines functions for handling events and manipulating data.
+ * The code initializes the table, sets up search bar logic, and handles button clicks.
+ * It also includes form validation and data retrieval from the server.
+ */
 import DataTable from "datatables.net-dt";
 import "../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css";
 import "datatables.net-datetime";
 import "multiple-select";
 import "../../node_modules/multiple-select/dist/multiple-select.min.css";
-import socket from "../utils/socket-utils.js";
+// import socket from "../utils/socket-utils.js";
 
 import { AlternateIndexDto } from "../utils/class/dataTableDto.js";
 import {
@@ -39,9 +45,10 @@ import {
   fetchAltIndexFromDatabase,
 } from "../utils/fetchSQL-utils.js";
 
-// TODO: Make Supplier Form to Edit Currency
+// TODO: Test Supplier Form to Edit Currency
 
 $(async function () {
+  const socket = window.socket;
   const columnDefaultAmount = 11;
   const rowDefaultAmount = 10;
   const tableName = "#altIndexTable";
@@ -86,10 +93,9 @@ $(async function () {
     }
 
     try {
-      // Check if all currency is in currencyRates
-      await getCurrencyRates(socket);
+      await fillCurrencyRates();
     } catch (error) {
-      showAlert(error.message);
+      console.log(error);
       return;
     }
 
@@ -367,7 +373,6 @@ $(async function () {
   // Edit button
   $('button[name="editBtn"]').on("click", function () {
     formSelected = "edit";
-    debugger;
     $(`#${formSelected}Index`).val(altIndexSelected.Index);
     $(`#${formSelected}Name`).text(altIndexSelected.Name);
     $(`#${formSelected}Num`).val(altIndexSelected.Number);
@@ -381,7 +386,38 @@ $(async function () {
     $(`#${formSelected}SupType`).text(altIndexSelected.SupplierPartType);
     $(`#${formSelected}WcpType`).text(altIndexSelected.WcpPartType);
     $(`#${formSelected}Main`).prop("checked", altIndexSelected.IsMain);
-    showPopUpForm(formSelected, "Edit Product");
+    showPopUpForm(formSelected, "Edit Alternate Index");
+  });
+
+  // Edit Supplier button
+  $('button[name="editSupplierBtn"]').on("click", async function () {
+    formSelected = "editSupplier";
+    debugger;
+    $(`#${formSelected}Name`).text(altIndexSelected.Name);
+    $(`#${formSelected}Num`).val(altIndexSelected.Number);
+    $(`#${formSelected}Currency`).val(
+      currencySupplierMap[altIndexSelected.Number]
+    );
+    // Fill Currency Rates
+    try {
+      await fillCurrencyRates();
+    } catch (error) {
+      console.log(error);
+      return;
+    }
+    // Fill in Supplier Number and Name if not already filled
+    if (supplierArray.length === 0) {
+      showLoadingScreen("Loading Supplier List...");
+      try {
+        await fillSupplierTextBoxDataList(supplierArray, currencySupplierMap);
+      } catch {
+        // Error handled in fetchSupplierFromDatabase
+        return;
+      }
+
+      hideLoadingScreen();
+    }
+    showPopUpForm(formSelected, "Edit Supplier Information");
   });
 
   //#endregion
@@ -422,6 +458,7 @@ $(async function () {
     const costAUDVal = $(`#${formSelected}Aud`).val();
     const isMainVal = $(`#${formSelected}Main`).is(":checked");
     const productVal = $(`#${formSelected}Product`).val();
+    const currencyVal = $(`#${formSelected}Currency`).val();
     let isFormFilled = false;
     let changesMade = [];
     let errorMessage = [];
@@ -443,8 +480,22 @@ $(async function () {
       isFormFilled = Boolean(
         altIndexVal && supNumVal && costAUDVal && QualityVal
       );
+    } else if (formSelected === "editSupplier") {
+      let isCurrencyValid = Object.keys(
+        JSON.parse(sessionStorage.getItem("currencyRates").data)
+      ).includes(currencyVal);
+
+      isFormFilled = Boolean(supNumVal) && supNameVal != "-" && isCurrencyValid;
+
+      // On Currency not being valid
+      if (isCurrencyValid) {
+        showAlert(
+          "<strong>Error!</strong> Please use only the available Currency Options."
+        );
+        return;
+      }
     }
-    // On Form being filled Incompletely
+    // On Form being filled Incompletely or Incorrectly
     if (!isFormFilled) {
       showAlert(
         "<strong>Error!</strong> Please complete all non-optional fields."
@@ -622,6 +673,40 @@ $(async function () {
       // Redraw the table to reflect the changes
       table.row(rowIndexSelected).data(rowData).invalidate().draw();
     }
+    // Edit Supplier Form Save
+    else if (formSelected === "editSupplier") {
+      let newUpdate = {};
+
+      if (currencySupplierMap[altIndexSelected.Number] != currencyVal)
+        newUpdate.Currency = currencySupplierMap[altIndexSelected.Number] =
+          currencyVal;
+
+      // exit if no changes were made
+      if (Object.keys(newUpdate).length === 0) {
+        exitPopUpForm(formSelected);
+        return;
+      }
+
+      changesMade.push(
+        new Map([
+          ["type", "edit"],
+          ["supplier", supNumVal],
+          ["table", "Supplier"],
+          ["changes", newUpdate],
+        ])
+      );
+
+      // Redraw the table to reflect the changes in currency
+      table.rows().every(function (rowIdx, tableLoop, rowLoop) {
+        let rowData = this.data();
+        if (rowData.Number === supNumVal) {
+          rowData.costCurrency =
+            currencyVal + rowData.costCurrency.substring(3);
+          this.data(rowData).invalidate();
+        }
+      });
+      table.draw();
+    }
     // save new rows into sessionStorage
     updateChanges(changesMade);
     // Toggle hasChanges ON
@@ -659,7 +744,7 @@ $(async function () {
 
   // Event for when Supplier Number is changed, change Supplier Name
   ["import", "edit"].forEach((form) => {
-    $(`#${form}Num`).on("focusout", function () {
+    $(`#${form}Num`).on("input", function () {
       const supplierNumber = $(this).val();
       const supplierFound = supplierArray.find(
         (supplier) => supplier.SupplierNumber == supplierNumber
@@ -670,6 +755,20 @@ $(async function () {
       }
       $(`#${form}Name`).text("-");
     });
+  });
+
+  $("#editSupplierNum").on("input", function () {
+    const supplierNumber = $(this).val();
+    const supplierFound = supplierArray.find(
+      (supplier) => supplier.SupplierNumber == supplierNumber
+    );
+    if (supplierFound) {
+      $("#editSupplierName").text(supplierFound.SupplierName);
+      $("#editSupplierCurrency").val(supplierFound.Currency);
+      return;
+    }
+    $("#editSupplierName").text("-");
+    $("#editSupplierCurrency").val("");
   });
 
   $('#mainConfirmation button[name="yes"]').on("click", function () {
@@ -717,4 +816,27 @@ async function fillSupplierTextBoxDataList(supplierArray, currencySupplierMap) {
     );
     currencySupplierMap[supplier.SupplierNumber] = supplier.Currency;
   });
+}
+
+/**
+ * Fills the currency rates in the altIndexCurrencyList dropdown and
+ * Updates Currency Rates if out of date.
+ * @returns {Promise<void>} A promise that resolves when the currency rates are filled.
+ * @throws {Error} If unable to retrieve currency rates from the API.
+ */
+async function fillCurrencyRates() {
+  try {
+    const currencyRates = await getCurrencyRates();
+    Object.keys(currencyRates.data).forEach((currency) => {
+      $("#altIndexCurrencyList").append(
+        $("<option>").attr("value", currency).text(currency)
+      );
+    });
+    return;
+  } catch (error) {
+    showAlert(
+      "<strong>Error!</strong> Unable to retrieve currency rates from API."
+    );
+    throw error;
+  }
 }

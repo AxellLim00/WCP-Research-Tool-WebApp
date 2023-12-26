@@ -2,7 +2,7 @@ import $ from "jquery";
 import "datatables.net-dt";
 
 /**
- * Shows Alert message by appending or unhiding div with alert class
+ * Shows Alert message by appending or un-hides div with alert class
  * @param {String} message Alert message shown (can have html inside)
  * @returns {void}
  */
@@ -25,7 +25,7 @@ export function showAlert(message) {
 }
 
 /**
- * Shows or unhides Pop-up form, disable screen besides form
+ * Shows or unHides Pop-up form, disable screen besides form
  * @param {String} type Type of form to show
  * @param {String} title Title of the form
  * @returns {void}
@@ -60,7 +60,7 @@ export function hidePopUpForm(type) {
 export function exitPopUpForm(type) {
   hidePopUpForm(type);
 
-  // Reset textboxes' and selectboxes' values
+  // Reset TextBoxes' and SelectBoxes' values
   $(`#${type}Form input[type="text"]`).val("");
   $(`#${type}Form select`).val("");
   $(`#${type}Form input[type="checkbox"]`).prop("checked", false);
@@ -87,7 +87,7 @@ export function hideLoadingScreen() {
 }
 
 /**
- * Swithces tab on the layout.html level by loading HTML into #content
+ * Switches tab on the layout.html level by loading HTML into #content
  * @param {String} tabIdSelected Tab's ID to switch to
  * @returns {void}
  */

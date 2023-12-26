@@ -32,6 +32,7 @@ import {
   updateEpid,
   deleteEpid,
   insertSupplier,
+  updateSupplier,
   deleteSupplier,
   insertAltIndexByProduct,
   insertAltIndexBySupplier,
@@ -192,7 +193,7 @@ io.on("connect", async function (socket) {
   });
 
   socket.on("update database", async (updateList, callback) => {
-    // TO DO: Change from using map to just Objects
+    // TODO: Change from using map to just Objects
     // Use reduce to split the list based on table Name and action
     updateList = updateList.map((obj) => new Map(JSON.parse(obj)));
     const separatedLists = updateList.reduce((acc, item) => {
@@ -247,6 +248,9 @@ io.on("connect", async function (socket) {
 
     if (separatedLists["Supplier_new"])
       resultArray.push(await insertSupplier(separatedLists["Supplier_new"]));
+
+    if (separatedLists["Supplier_edit"])
+      resultArray.push(await updateSupplier(separatedLists["Supplier_edit"]));
 
     if (separatedLists["Supplier_delete"])
       resultArray.push(await deleteSupplier(separatedLists["Supplier_delete"]));

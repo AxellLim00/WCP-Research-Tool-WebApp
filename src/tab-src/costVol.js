@@ -27,7 +27,7 @@ import {
 } from "../utils/table-utils.js";
 import $ from "jquery";
 import "../utils/tableExport-utils/tableExport.js";
-import socket from "../utils/socket-utils.js";
+// import socket from "../utils/socket-utils.js";
 import { fetchProductDetailFromDatabase } from "../utils/fetchSQL-utils.js";
 
 $(async function () {
@@ -37,6 +37,7 @@ $(async function () {
     sessionStorage.getItem("productRequestHistory")
   );
   const productIdArray = getProductIdentifier(productRequestArray);
+  const socket = window.socket;
   let formSelected;
   let isTableEmpty = true;
   let productIdSelected = sessionStorage.getItem("productIDSelected");

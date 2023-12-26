@@ -20,7 +20,7 @@ import {
   fetchEpidFromDatabase,
 } from "../utils/fetchSQL-utils.js";
 import { createEmptyRow, exportDataTable } from "../utils/table-utils.js";
-import socket from "../utils/socket-utils.js";
+// import socket from "../utils/socket-utils.js";
 
 $(async function () {
   const defaultColumnAmount = 1;
@@ -30,16 +30,17 @@ $(async function () {
   const productDtoArray = JSON.parse(
     sessionStorage.getItem("productRequestHistory")
   );
-
   const kTypeList = [];
   const ePIDList = [];
+  const productIdArray = getProductIdentifier(productDtoArray);
+  const socket = window.socket;
+
   let isKTypeEmpty = true;
   let isEpidEmpty = true;
   let formSelected;
   let itemSelected = { table: "", value: "" };
   let productIdSelected = sessionStorage.getItem("productIDSelected");
   let rowIndexSelected = -1;
-  let productIdArray = getProductIdentifier(productDtoArray);
 
   //#region Initialization
 

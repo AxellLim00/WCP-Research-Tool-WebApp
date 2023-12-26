@@ -122,7 +122,7 @@ export class AlternateIndexDto {
   ) {
     this.Index = index;
     this.Name = name;
-    this.Number = String(number);
+    this.Number = number ? String(number) : "";
     this.Moq = moq ?? "";
     this.CostCurrency = costCurrency ?? "";
     this.CostAud =

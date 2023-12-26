@@ -21,7 +21,7 @@ import {
   exportDataTable,
   readFileToJson,
 } from "../utils/table-utils.js";
-import socket from "../utils/socket-utils.js";
+// import socket from "../utils/socket-utils.js";
 import {
   fetchOemFromDatabase,
   fetchProductDetailFromDatabase,
@@ -36,8 +36,13 @@ $(async function () {
   const isProductEditable = Boolean(
     sessionStorage.getItem("productIDSelected")
   );
+  const productDtoArray = JSON.parse(
+    sessionStorage.getItem("productRequestHistory")
+  );
+  const productIdArray = getProductIdentifier(productDtoArray);
   const vinList = [];
   const oemList = [];
+  const socket = window.socket;
 
   let formSelected;
   let isOemEmpty = true;
@@ -47,10 +52,6 @@ $(async function () {
   let oemSelected = {};
   let estSalesChanges = false;
   let notesChanges = false;
-  let productDtoArray = JSON.parse(
-    sessionStorage.getItem("productRequestHistory")
-  );
-  let productIdArray = getProductIdentifier(productDtoArray);
   // Temporary previous values variables
   let prevEstSales = "";
   let prevNote = "";

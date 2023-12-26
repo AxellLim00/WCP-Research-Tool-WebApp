@@ -20,7 +20,7 @@ import {
   fetchUserDataFromDatabase,
   fetchProductDataFromDatabase,
 } from "../utils/fetchSQL-utils.js";
-import socket from "../utils/socket-utils.js";
+// import socket from "../utils/socket-utils.js";
 
 $(async function () {
   const defaultColumnAmountUser = 2;
@@ -28,6 +28,7 @@ $(async function () {
   const defaultRowAmount = 10;
   const userTableName = "#userResearchTable";
   const periodTableName = "#periodResearchTable";
+  const socket = window.socket;
   let dateTo = new Date();
   let dateFrom = new Date();
   dateFrom.setMonth(dateFrom.getMonth() - 1);
