@@ -844,7 +844,8 @@ export async function updateProduct(mapChange) {
       WHERE SKU = '${productID}' OR ResearchID = '${productID}';`);
     });
     const query = updateQueries.join("\n");
-
+    // console.log(query);
+    // debugger;
     console.log("Updating Product...");
     let result = await pool.query(query);
     console.log("Updated Product");
@@ -931,7 +932,8 @@ export async function updateNewProduct(mapChange) {
         WHERE SKU = '${productID}' OR ResearchID = '${productID}';`);
     });
     const query = updateQueries.join("\n");
-
+    // console.log(query);
+    // debugger;
     console.log("Updating NewProduct...");
     let result = await pool.query(query);
     console.log("Updated NewProduct");
