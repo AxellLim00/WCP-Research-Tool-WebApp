@@ -85,7 +85,7 @@ $(async function () {
     // Get list of unique OEM
     let oemList;
     try {
-      oemList = await fillOemTextBoxDataList;
+      oemList = await fillOemTextBoxDataList(socket);
     } catch (error) {
       console.error("An error occurred:", error);
       return;
@@ -527,14 +527,32 @@ $(async function () {
             `OEM type <i>${row[oemTypeVal]}</i> must be a valid value`
           );
         }
-        // TODO: Check if imported data is in ProductHistoryRequest, if yes, change type to update and table to Product
+        let type = "new";
+        let table = "NewProduct";
+        // TODO: Test this
+        // Check if imported data is in ProductHistoryRequest, if yes, change type to update and table to Product
+        const productReq = findProductInProductRequestHistory(
+          productReqHistWorkflowArray,
+          newProductObject
+        );
+        if (productReq) {
+          type = "edit";
+          newObject.Id = productReq.researchIdentifier;
+
+          if (productReq.productStockNumber) {
+            showAlert(
+              "WARNING: Duplicate SKU found in file. Products in Pinnacle will not update the uneditable."
+            );
+            table = "Product";
+          }
+        }
         // Store each new row locally
         changesMade.push(
           new Map([
-            ["type", "new"],
+            ["type", type],
             ["id", newObject.Id],
             ["user", user],
-            ["table", "NewProduct"],
+            ["table", table],
             ["changes", [newObject]],
           ])
         );
@@ -727,8 +745,9 @@ function createProductObjectForTable(
   // Add VendorId (Supplier Number) to Supplier List if VendorId  is not empty
   if (currentProductObject.vendorId)
     altIndexProductList.add(
-      String(currentProductObject.vendorId).toLowerCase()
+      String(currentProductObject.vendorId).toUpperCase()
     );
+
   // When productDetailMatch does exist
   if (productDetailMatch) {
     // Filter OEM List by their SKU or ResearchID to match Product's
@@ -738,16 +757,15 @@ function createProductObjectForTable(
 
       if (
         sku &&
-        productSelected.Sku &&
-        sku.toLowerCase() === productSelected.Sku.toLowerCase()
+        productDetailMatch.SKU &&
+        sku.toUpperCase() === productDetailMatch.SKU.toUpperCase()
       )
         return true;
 
       if (
         researchId &&
-        productSelected.ResearchIdentifier &&
-        researchId.toLowerCase() ===
-          productSelected.ResearchIdentifier.toLowerCase()
+        productDetailMatch.ResearchID &&
+        researchId.toUpperCase() === productDetailMatch.ResearchID.toUpperCase()
       )
         return true;
 
@@ -767,16 +785,15 @@ function createProductObjectForTable(
 
       if (
         sku &&
-        productSelected.Sku &&
-        sku.toLowerCase() === productSelected.Sku.toLowerCase()
+        productDetailMatch.SKU &&
+        sku.toUpperCase() === productDetailMatch.SKU.toUpperCase()
       )
         return true;
 
       if (
         researchId &&
-        productSelected.ResearchIdentifier &&
-        researchId.toLowerCase() ===
-          productSelected.ResearchIdentifier.toLowerCase()
+        productDetailMatch.ResearchID &&
+        researchId.toUpperCase() === productDetailMatch.ResearchID.toUpperCase()
       )
         return true;
 
@@ -788,7 +805,9 @@ function createProductObjectForTable(
     );
   }
   return new ProductDto(
-    currentProductObject.researchIdentifier,
+    productDetailMatch
+      ? productDetailMatch.ResearchID
+      : currentProductObject.researchIdentifier,
     currentProductObject.productStockNumber,
     currentProductObject.vehicleManufacturers.split("\r").join("; "),
     currentProductObject.vehicleModels.split("\r").join("; "),
@@ -807,4 +826,37 @@ function createProductObjectForTable(
     oemProductList,
     currentProductObject.partTypeCode
   );
+}
+
+/**
+ * Finds a product in the product request history based on the given criteria.
+ * @param {Array} productReqHistWorkflowArray - The array of product request history objects.
+ * @param {Object} newProductObject - The new product object to search for.
+ * @returns {Object|undefined} - The found product request object, or undefined if not found.
+ */
+function findProductInProductRequestHistory(
+  productReqHistWorkflowArray,
+  newProductObject
+) {
+  return productReqHistWorkflowArray.find((productReq) => {
+    const sku = productReq.productStockNumber;
+    const ic_PartType =
+      productReq.interchangeNumber +
+      productReq.interchangeVersion +
+      productReq.partTypeCode;
+    const objectIc_PartType = String(newProductObject.Num).replace(/\s/g, "");
+    +newProductObject.TypeCode;
+    if (
+      sku &&
+      newProductObject.Sku &&
+      productReq.productStockNumber.toLowerCase() ===
+        newProductObject.Sku.toLowerCase()
+    )
+      return true;
+
+    if (ic_PartType.toLowerCase() === objectIc_PartType.toLowerCase())
+      return true;
+
+    return false;
+  });
 }

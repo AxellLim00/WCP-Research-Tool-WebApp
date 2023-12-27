@@ -97,12 +97,12 @@ $(async function () {
         productIdSelected
       );
       if (oemDatabaseArray.length > 0) {
-        oemList.push([
+        oemList.push(
           ...oemDatabaseArray.map((dbObject) => ({
             data: dbObject.Oem,
-            supplierNumber: dbObject.Supplier,
-          })),
-        ]);
+            supplierNumber: dbObject.SupplierNumber,
+          }))
+        );
       }
     } catch {
       // error is already shown and handled in fetchOemFromDatabase function
@@ -175,16 +175,17 @@ $(async function () {
   var vinTable = new DataTable(vinTableName, vinTableOptions);
   var oemTable = new DataTable(oemTableName, oemTableOptions);
 
-  // Hide Supplier Number column
-  const supplierNumberIndex = 1;
-  oemTable.column(supplierNumberIndex).visible(false, false);
-  oemTable.columns.adjust().draw(false);
-
   $(".dataTables_length").css("padding-bottom", "2%");
 
   // If List is not empty, fill in DataTable
   if (!isVinEmpty) vinTable.rows.add(vinList).draw();
   if (!isOemEmpty) oemTable.rows.add(oemList).draw();
+
+  // Hide Supplier Number column
+  const supplierNumberIndex = 1;
+  oemTable.column(supplierNumberIndex).visible(false, false);
+  oemTable.columns.adjust().draw(false);
+
   // Write productIdSelected to #productSelected textbox
   $("#productSelected").val(productIdSelected);
 
@@ -278,7 +279,7 @@ $(async function () {
   $('button[name="editBtn"]').on("click", function () {
     formSelected = "edit";
     $(`#${formSelected}Oem`).val(oemSelected.data);
-    $(`#${formSelected}Number`).val(oemSelected.supplierNumber);
+    $(`#${formSelected}Number`).text(oemSelected.supplierNumber);
     showPopUpForm(formSelected, "Edit Product");
   });
 
@@ -293,7 +294,7 @@ $(async function () {
     // Highlight clicked row
     $(this).css("background-color", "#D5F3FE");
     // Assign row values to oemSelected object
-    oemSelected = { ...Object.values(oemTable.row(this).data()) };
+    oemSelected = Object.assign({}, oemTable.row(this).data());
     rowIndexSelected = oemTable.row(this).index();
     if (isProductEditable)
       // Enable Edit button
@@ -373,7 +374,11 @@ $(async function () {
         isOemEmpty = false;
         oemTable.clear().draw();
       }
-      oemTable.rows.add(importOems).draw();
+      const importOemTableObjects = importOems.map(({ Oem, Supplier }) => ({
+        data: Oem,
+        supplierNumber: Supplier,
+      }));
+      oemTable.rows.add(importOemTableObjects).draw();
     }
     // Edit Form Save
     else if (formSelected === "edit") {
@@ -381,7 +386,7 @@ $(async function () {
 
       if (oemSelected.data != oemVal) {
         // Get all OEMs without special characters
-        oemArray = oemTable
+        const oemArray = oemTable
           .columns(0)
           .data()
           .toArray()[0]
@@ -399,7 +404,6 @@ $(async function () {
         exitPopUpForm(formSelected);
         return;
       }
-
       changesMade.push(
         new Map([
           ["type", "edit"],

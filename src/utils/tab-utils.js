@@ -35,11 +35,14 @@ export function productSelectedChanged(
   selectTab(tabId);
 }
 
+
 /**
- * Update "currencyRate" in Session Storage to have currency rates to AUD
- * and get conversion rates from API
- * @param {SocketIO.Socket} socket SocketIO socket
- * @returns {Map} of currencies to its currency rates
+ * Retrieves the currency rates from local storage or the system.
+ * If the currency rates are stored in local storage and were updated within the last 7 days,
+ * it returns the stored rates. Otherwise, it retrieves the rates from the system and updates the local storage.
+ * @param {Object} socket - The socket object used for communication with the system.
+ * @returns {Promise<Object>} - A promise that resolves to the currency rates.
+ * @throws {Error} - If there is an error retrieving the currency rates.
  */
 export async function getCurrencyRates(socket) {
   try {
@@ -74,6 +77,7 @@ export async function getCurrencyRates(socket) {
     throw error;
   }
 }
+
 /**
  * Convert local currency to AUD currency
  * @param {String} costCurrency currency name

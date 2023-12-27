@@ -45,8 +45,6 @@ import {
   fetchAltIndexFromDatabase,
 } from "../utils/fetchSQL-utils.js";
 
-// TODO: Test Supplier Form to Edit Currency
-
 $(async function () {
   const socket = window.socket;
   const columnDefaultAmount = 11;
@@ -71,10 +69,19 @@ $(async function () {
   // temporary variable to store previous values
   let prevMainSupplier = null;
   let productIdAlias;
+  let currencyRates;
 
   //#region Initialization
 
   showLoadingScreen("Loading Alternate Index Table...");
+
+  // Fill in Currency Rates from API if not already filled and get currency rates
+  try {
+    currencyRates = await fillCurrencyRates();
+  } catch (error) {
+    console.log(error);
+    return;
+  }
 
   // Fill in ID search box
   $.each(productIdArray, function (_, item) {
@@ -89,13 +96,6 @@ $(async function () {
       await fillSupplierTextBoxDataList(supplierArray, currencySupplierMap);
     } catch {
       // Error handled in fetchSupplierFromDatabase
-      return;
-    }
-
-    try {
-      await fillCurrencyRates();
-    } catch (error) {
-      console.log(error);
       return;
     }
 
@@ -392,7 +392,6 @@ $(async function () {
   // Edit Supplier button
   $('button[name="editSupplierBtn"]').on("click", async function () {
     formSelected = "editSupplier";
-    debugger;
     $(`#${formSelected}Name`).text(altIndexSelected.Name);
     $(`#${formSelected}Num`).val(altIndexSelected.Number);
     $(`#${formSelected}Currency`).val(
@@ -481,14 +480,14 @@ $(async function () {
         altIndexVal && supNumVal && costAUDVal && QualityVal
       );
     } else if (formSelected === "editSupplier") {
-      let isCurrencyValid = Object.keys(
-        JSON.parse(sessionStorage.getItem("currencyRates").data)
-      ).includes(currencyVal);
+      const isCurrencyValid = Object.keys(currencyRates.data).includes(
+        currencyVal
+      );
 
       isFormFilled = Boolean(supNumVal) && supNameVal != "-" && isCurrencyValid;
 
       // On Currency not being valid
-      if (isCurrencyValid) {
+      if (!isCurrencyValid) {
         showAlert(
           "<strong>Error!</strong> Please use only the available Currency Options."
         );
@@ -620,8 +619,10 @@ $(async function () {
       if (altIndexSelected.Index != altIndexVal)
         newUpdate.Index = rowData.Index = altIndexVal;
 
-      if (altIndexSelected.Number != supNumVal)
+      if (altIndexSelected.Number != supNumVal) {
         newUpdate.Number = rowData.Number = supNumVal;
+        newUpdate.Name = rowData.Name = supNameVal;
+      }
 
       if (altIndexSelected.CostAud != costAUDVal)
         newUpdate.CostAud = rowData.CostAud = parseFloat(costAUDVal);
@@ -651,7 +652,7 @@ $(async function () {
             ])
           );
 
-          table.row(prevMainRow).data(prevMainRowData).invalidate();
+          table.row(prevMainRow).data(prevMainRowData).invalidate().draw();
         }
       }
       // exit if no changes were made
@@ -700,8 +701,6 @@ $(async function () {
       table.rows().every(function (rowIdx, tableLoop, rowLoop) {
         let rowData = this.data();
         if (rowData.Number === supNumVal) {
-          rowData.costCurrency =
-            currencyVal + rowData.costCurrency.substring(3);
           this.data(rowData).invalidate();
         }
       });
@@ -819,20 +818,25 @@ async function fillSupplierTextBoxDataList(supplierArray, currencySupplierMap) {
 }
 
 /**
- * Fills the currency rates in the altIndexCurrencyList dropdown and
- * Updates Currency Rates if out of date.
- * @returns {Promise<void>} A promise that resolves when the currency rates are filled.
- * @throws {Error} If unable to retrieve currency rates from the API.
+ * Fills the currency rates in the altIndexCurrencyList dropdown.
+ * @returns {Promise<Object>} The currency rates object.
+ * @throws {Error} If unable to retrieve currency rates from API.
  */
 async function fillCurrencyRates() {
   try {
     const currencyRates = await getCurrencyRates();
-    Object.keys(currencyRates.data).forEach((currency) => {
-      $("#altIndexCurrencyList").append(
-        $("<option>").attr("value", currency).text(currency)
-      );
-    });
-    return;
+    const $altIndexCurrencyList = $("#altIndexCurrencyList");
+
+    // Check if datalist already has options
+    if ($altIndexCurrencyList.children().length === 0) {
+      Object.keys(currencyRates.data).forEach((currency) => {
+        $altIndexCurrencyList.append(
+          $("<option>").attr("value", currency).text(currency)
+        );
+      });
+    }
+
+    return currencyRates;
   } catch (error) {
     showAlert(
       "<strong>Error!</strong> Unable to retrieve currency rates from API."

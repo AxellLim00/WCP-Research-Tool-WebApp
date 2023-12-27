@@ -521,7 +521,7 @@ export async function insertOemByProduct(mapChange) {
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new Oem...");
-    let query = `DECLARE @productKey uniqueidentifier;
+    const query = `DECLARE @productKey uniqueidentifier;
     ${mapChange
       .map(
         (Map) =>
@@ -530,14 +530,17 @@ export async function insertOemByProduct(mapChange) {
           FROM Product
           WHERE Product.ResearchID = '${Map.get("id")}' 
           OR Product.SKU = '${Map.get("id")}');
-        INSERT INTO Oem (SupplierNumber, OEM, productID)
+        INSERT INTO Oem (OemKey, SupplierNumber, OEM, productID)
         VALUES
           ${Map.get("changes")
-            .map((pair) => `('${pair.Supplier}', '${pair.Oem}', @productKey)`)
+            .map(
+              (pair) =>
+                `(NEWID(), '${pair.Supplier}', '${pair.Oem}', @productKey)`
+            )
             .join(",\n")};`
       )
       .join("\n")}`;
-    let result = await pool.query(query);
+    const result = await pool.query(query);
     console.log("Inserted new Oem");
 
     console.log("Result: ", result.rowsAffected);
@@ -571,14 +574,14 @@ export async function insertOemBySupplier(mapChange) {
     console.log("Connected to SQL");
 
     console.log("Inserting new Oem...");
-    let query = `${mapChange
+    const query = `${mapChange
       .map(
         (Map) =>
-          `INSERT INTO Oem (SupplierNumber, OEM, productID) VALUES
+          `INSERT INTO Oem (OemKey, SupplierNumber, OEM, productID) VALUES
             ${Map.get("changes")
               .map(
                 (pair) =>
-                  `('${Map.get("Supplier")}', '${pair.Oem}', 
+                  `(NEWID(), '${Map.get("Supplier")}', '${pair.Oem}', 
                   (SELECT TOP 1 ID FROM Product
                   WHERE SKU = '${pair.ProductID}' 
                   OR ResearchID = '${pair.ProductID}'))`
@@ -586,7 +589,7 @@ export async function insertOemBySupplier(mapChange) {
               .join(",\n")};`
       )
       .join("\n")}`;
-    let result = await pool.query(query);
+    const result = await pool.query(query);
     console.log("Inserted new Oem");
 
     console.log("Result: ", result.rowsAffected);
@@ -841,7 +844,7 @@ export async function updateProduct(mapChange) {
       WHERE SKU = '${productID}' OR ResearchID = '${productID}';`);
     });
     const query = updateQueries.join("\n");
-    console.log(query);
+
     console.log("Updating Product...");
     let result = await pool.query(query);
     console.log("Updated Product");
@@ -859,6 +862,93 @@ export async function updateProduct(mapChange) {
         (sum, count) => sum + count,
         0
       )} Product.`,
+    };
+  } catch (err) {
+    console.log(err);
+
+    return {
+      status: "ERROR",
+      error: err,
+    };
+  } finally {
+    if (pool) pool.close();
+    console.log("Connection closed.");
+  }
+}
+
+/**
+ * Updates New Product value based on the new changes' mapping key-values to the SQL Database.
+ * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
+ * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ */
+export async function updateNewProduct(mapChange) {
+  try {
+    console.log("Connecting to SQL...");
+    var pool = await sql.connect(sqlConfig);
+    console.log("Connected to SQL");
+
+    const updateQueries = [];
+    mapChange.forEach((item) => {
+      let changes = item.get("changes");
+      let productID = item.get("id");
+      const setUpdates = [];
+      const setProductUpdates = [];
+      // Translate DataTable value to SQL int value
+      if ("Status" in changes && changes.Status != "")
+        setProductUpdates.push(
+          `Status = ${ValueDictionary.Status[changes.Status]}`
+        );
+
+      if ("Oem" in changes && changes.Oem != "")
+        setProductUpdates.push(
+          `OemType = ${ValueDictionary.OemType[changes.Oem]}`
+        );
+      if ("Make" in changes) setUpdates.push(`Make = '${changes.Make}'`);
+      if ("Model" in changes) setUpdates.push(`Model = '${changes.Model}'`);
+      if ("Type" in changes) setUpdates.push(`PartType = '${changes.Type}'`);
+      if ("Desc" in changes)
+        setUpdates.push(`IcDescription = '${changes.Desc}'`);
+      if ("Request" in changes) setUpdates.push(`Request = ${changes.Request}`);
+      if ("RequestNF" in changes)
+        setUpdates.push(`RequestNF = ${changes.RequestNF}`);
+      if ("UnitSold" in changes)
+        setUpdates.push(`UnitSold = ${changes.UnitSold}`);
+      if ("AveragePrice" in changes)
+        setUpdates.push(`AveragePrice = ${changes.AveragePrice}`);
+
+      updateQueries.push(`UPDATE NewProduct
+        JOIN Product ON NewProduct.ProductID = Product.ID
+        SET ${setUpdates.join()} 
+        WHERE Product.ResearchID = '${productID}';`);
+
+      updateQueries.push(`UPDATE Product
+        SET ${
+          setUpdates.length > 0 ? setUpdates.join() + "," : ""
+        } LastUpdate = '${new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace("T", " ")}'
+        WHERE SKU = '${productID}' OR ResearchID = '${productID}';`);
+    });
+    const query = updateQueries.join("\n");
+
+    console.log("Updating NewProduct...");
+    let result = await pool.query(query);
+    console.log("Updated NewProduct");
+
+    console.log("Result: ", result.rowsAffected);
+    console.log(
+      `Successfully updated ${result.rowsAffected.reduce(
+        (sum, count) => sum + count,
+        0
+      )} NewProduct.`
+    );
+    return {
+      status: "OK",
+      message: `Successfully updated ${result.rowsAffected.reduce(
+        (sum, count) => sum + count,
+        0
+      )} NewProduct.`,
     };
   } catch (err) {
     console.log(err);
@@ -903,9 +993,11 @@ export async function updateOem(mapChange) {
         .replace("T", " ")}'
       WHERE SKU = '${productID}' OR ResearchID = '${productID}'`);
     });
+    const query = updateQueries.join("\n");
+    console.log(query);
 
     console.log("Updating Oem...");
-    let result = await pool.query(updateQueries.join("\n"));
+    let result = await pool.query(query);
     console.log("Updated Oem");
 
     console.log("Result: ", result.rowsAffected);
@@ -1102,7 +1194,7 @@ export async function updateAltIndex(mapChange) {
         AND SupplierNumber = '${item.get("number")}';`);
     });
     const query = updateQueries.join("\n");
-    console.log(query);
+    // console.log(query);
 
     console.log("Updating Alternate Index...");
     let result = await pool.query(query);
@@ -1156,30 +1248,30 @@ export async function updateSupplier(mapChange) {
       if ("Currency" in changes)
         setUpdates.push(`Currency = '${changes.Currency}'`);
 
-      updateQueries.push(`UPDATE AlternateIndex
+      updateQueries.push(`UPDATE Supplier
       SET ${setUpdates.join()}
-      WHERE SupplierNumber = '${item.supplier}';`);
+      WHERE SupplierNumber = '${item.get("supplier")}';`);
     });
     const query = updateQueries.join("\n");
-    console.log(query);
+    // console.log(query);
 
-    console.log("Updating Alternate Index...");
+    console.log("Updating Supplier...");
     let result = await pool.query(query);
-    console.log("Updated Alternate Index");
+    console.log("Updated Supplier");
 
     console.log("Result: ", result.rowsAffected);
     console.log(
       `Successfully updated ${result.rowsAffected.reduce(
         (sum, count) => sum + count,
         0
-      )} Alternate Indexes.`
+      )} Supplier.`
     );
     return {
       status: "OK",
       message: `Successfully updated ${result.rowsAffected.reduce(
         (sum, count) => sum + count,
         0
-      )} Alternate Indexes.`,
+      )} Supplier.`,
     };
   } catch (err) {
     console.log(err);
