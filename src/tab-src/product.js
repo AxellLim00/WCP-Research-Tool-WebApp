@@ -124,6 +124,7 @@ $(async function () {
         currObject
       );
 
+      // Add current product's AltIndex to the supplier list of the product with the same SKU in the list
       productObjectList.push(
         createProductObjectForTable(
           currObject,
@@ -143,7 +144,7 @@ $(async function () {
     }
   }
 
-  var tableOptions = {
+  const tableOptions = {
     orderCellsTop: true,
     columns: [
       {
@@ -496,121 +497,62 @@ $(async function () {
       }
 
       let errorMessage = [];
+      let nonUpdateWarning = false;
       // TODO: Make preview display of imported data
       // TODO: Inform user if there are any duplicate IC Number + Part Type Code in the file
       // TODO: Inform user for changes/updates to values. (e.g. Status, OEM, etc.) can be done with colors and tooltips.
       // Put map data into Object List
-      // const updatedRows = [];
-      const importProducts = jsonSheet
-        .map((row) => {
-          let newObject = new ProductDto(
-            generateProductID(row[icNumVal], row[partTypeCodeVal]),
-            isSkuEmpty ? "" : row[skuVal],
-            row[makeVal],
-            row[modelVal],
-            row[partTypeVal],
-            row[icNumVal],
-            row[icDescVal],
-            isStatusEmpty ? "" : row[statusVal],
-            isOemCategoryEmpty ? "" : row[oemTypeVal],
-            [],
-            [],
-            row[partTypeCodeVal]
-          );
+      const updatedRows = [];
+      const importProducts = jsonSheet.map((row) => {
+        let newObject = new ProductDto(
+          generateProductID(row[icNumVal], row[partTypeCodeVal]),
+          isSkuEmpty ? "" : row[skuVal],
+          row[makeVal],
+          row[modelVal],
+          row[partTypeVal],
+          row[icNumVal],
+          row[icDescVal],
+          isStatusEmpty ? "" : row[statusVal],
+          isOemCategoryEmpty ? "" : row[oemTypeVal],
+          [],
+          [],
+          row[partTypeCodeVal]
+        );
 
-          if (newObject.Status === null) {
-            errorMessage.push(
-              `STATUS <i>${row[statusVal]}</i> must be a valid value`
-            );
-          }
-          if (newObject.Oem === null) {
-            errorMessage.push(
-              `OEM type <i>${row[oemTypeVal]}</i> must be a valid value`
-            );
-          }
-          let type = "new";
+        if (newObject.Status === null) {
+          errorMessage.push(
+            `STATUS <i>${row[statusVal]}</i> must be a valid value`
+          );
+        }
+        if (newObject.Oem === null) {
+          errorMessage.push(
+            `OEM type <i>${row[oemTypeVal]}</i> must be a valid value`
+          );
+        }
+        // Check if imported data is in ProductHistoryRequest, if yes, change type to update and table to Product
+        const productReq = findProductInProductRequestHistory(
+          productReqHistWorkflowArray,
+          newObject
+        );
+        let isNew = true;
+        if (productReq) {
           let tableDatabase = "NewProduct";
-          // TODO: Test this
-          // Check if imported data is in ProductHistoryRequest, if yes, change type to update and table to Product
-          const productReq = findProductInProductRequestHistory(
-            productReqHistWorkflowArray,
-            newObject
-          );
-          let isNew = true;
-          if (productReq) {
-            type = "edit";
-            isNew = false;
-            newObject.Id = productReq.researchIdentifier;
+          newObject.Id = productReq.researchIdentifier;
 
-            if (productReq.productStockNumber) {
-              showAlert(
-                "WARNING: Duplicate SKU found in file. Products in Pinnacle will not update the uneditable data."
-              );
-              tableDatabase = "Product";
-            }
+          if (productReq.productStockNumber) {
+            nonUpdateWarning = true;
+            tableDatabase = "Product";
           }
-
-          // Store each new row locally
-          changesMade.push(
-            new Map([
-              ["type", type],
-              ["id", newObject.Id],
-              ["user", user],
-              ["table", tableDatabase],
-              ["changes", type == "new" ? [newObject] : newObject],
-            ])
-          );
-
-          // if New Product, return newObject, else return nothing
-          if (isNew) return newObject;
-          // Find row by SKU
-          let rowIndex;
-          let rowObject = table
-            .row((idx, data) => {
-              if (
-                data.Sku &&
-                productReq.productStockNumber &&
-                data.Sku.toUpperCase() ===
-                  productReq.productStockNumber.toUpperCase()
-              ) {
-                rowIndex = idx;
-                return true;
-              }
-              return false;
-            })
-            .data();
-          // Find row by Research ID if SKU not found
-          if (!rowObject) {
-            rowObject = table
-              .row((idx, data) => {
-                rowIndex = idx;
-                if (
-                  data.Id &&
-                  productReq.researchIdentifier &&
-                  data.Id.toUpperCase() ===
-                    productReq.researchIdentifier.toUpperCase()
-                ) {
-                  rowIndex = idx;
-                  return true;
-                }
-                return false;
-              })
-              .data();
-          }
-          // Row found by SKU
-          console.log(rowObject);
-          // Update rowBySku values based on newObject
-          if (!isStatusEmpty) rowObject.Status = newObject.Status;
-          if (!isOemCategoryEmpty) rowObject.Oem = newObject.Oem;
-          // Update Row in table
-          table.row(rowIndex).data(rowObject).invalidate();
-          // Add updated row to the array
-          // updatedRows.push({ idx: rowIndex, data: rowObject });
-
-          return;
-        })
-        // Filter out undefined objects
-        .filter((obj) => obj);
+          return { type: "edit", table: tableDatabase, productObj: newObject };
+        }
+        return { type: "new", table: "NewProduct", productObj: newObject };
+      });
+      const newImportProduct = importProducts
+        .filter((product) => product.type === "new")
+        .map((product) => product.productObj);
+      const editImportProduct = importProducts.filter(
+        (product) => product.type === "edit"
+      );
 
       if (errorMessage.length) {
         showAlert(
@@ -618,23 +560,53 @@ $(async function () {
         );
         return;
       }
-      // Empty Table if DataTable previously was empty
       if (isEmptyData) {
+        // Empty Table if DataTable previously was empty
         isEmptyData = false;
         table.clear().draw();
       }
-      // console.log(importProducts);
-      // console.log(importProducts.length);
 
-      // console.log(updatedRows);
-      // Update rows in table
-      // updatedRows.forEach((row) => {
-      //   table.row(row.idx).data(row.data).invalidate();
-      // });
+      // Add new import data to database changes
+      if (newImportProduct.length > 0)
+        changesMade.push(
+          new Map([
+            ["type", "new"],
+            ["user", user],
+            ["table", "NewProduct"],
+            ["changes", newImportProduct],
+          ])
+        );
+      // Add edit import data to database changes and update rows
+      editImportProduct.forEach((product) => {
+        changesMade.push(
+          new Map([
+            ["type", "edit"],
+            ["user", user],
+            ["id", product.productObj.Sku ?? product.productObj.Id],
+            ["table", product.table],
+            ["changes", product.productObj],
+          ])
+        );
+        const { rowIndex, rowObject } = findRowObject(
+          table,
+          product.productObj
+        );
+        if (!isStatusEmpty) rowObject.Status = product.productObj.Status;
+        if (!isOemCategoryEmpty) rowObject.Oem = product.productObj.Oem;
+        // Update rows in table
+        table.row(rowIndex).data(rowObject).invalidate();
+      });
+
       // Add new import data to table
-      table.rows.add(importProducts).draw();
+      table.rows.add(newImportProduct).draw();
       // Exit Row
       exitPopUpForm(formSelected);
+      if (nonUpdateWarning) {
+        debugger;
+        showAlert(
+          "WARNING: Duplicate SKU found in file. Products in Pinnacle will not update the uneditable data."
+        );
+      }
     }
     // New Form Save
     else if (formSelected === "new") {
@@ -673,6 +645,7 @@ $(async function () {
 
       // Add NewProduct to sessionStorage's ("productRequestHistory")
       addNewProductRequestHistory(newProduct);
+      exitPopUpForm(formSelected);
     }
     // Edit Form Save
     else if (formSelected === "edit") {
@@ -706,8 +679,6 @@ $(async function () {
     updateChanges(changesMade);
     // Toggle hasChanges ON
     updateHasChanges(true);
-    // Exit form
-    exitPopUpForm(formSelected);
   });
 
   // Cancel Form - NOTE: keep last thing written
@@ -920,4 +891,46 @@ function findProductInProductRequestHistory(
 
     return false;
   });
+}
+
+/**
+ * Finds the row object in a table based on the given product request.
+ * @param {DataTable} table - The table to search in.
+ * @param {Object} productObj - The product request object containing the product stock number and research identifier.
+ * @returns {Object} - An object containing the rowIndex and rowObject of the found row, or null if not found.
+ */
+function findRowObject(table, productObj) {
+  let rowIndex;
+  let rowObject = table
+    .row((idx, data) => {
+      if (
+        data.Sku &&
+        productObj.Sku &&
+        data.Sku.toUpperCase() === productObj.Sku.toUpperCase()
+      ) {
+        rowIndex = idx;
+        return true;
+      }
+      return false;
+    })
+    .data();
+  // Find row by Research ID if SKU not found
+  if (!rowObject) {
+    rowObject = table
+      .row((idx, data) => {
+        rowIndex = idx;
+        if (
+          data.Id &&
+          productObj.Id &&
+          data.Id.toUpperCase() === productObj.Id.toUpperCase()
+        ) {
+          rowIndex = idx;
+          return true;
+        }
+        return false;
+      })
+      .data();
+  }
+
+  return { rowIndex, rowObject };
 }

@@ -211,10 +211,12 @@ export async function getSupplier() {
 }
 
 /**
- * Get all Alternate Indexes saved in the SQL Database based on a product.
- * @returns {Object[]} Status ("OK" or "ERROR"), and List of Alternate Index object according to AlternateIndex Table Columns OR Error Object.
+ * Retrieves alternate indexes from the database based on the provided product ID and optional supplier number.
+ * @param {string} productID - The ID or SKU of the product.
+ * @param {string} supplierNumber - The supplier number (optional).
+ * @returns {Promise<{status: string, result: Array}>} - The status and result of the query.
  */
-export async function getAltIndex(productID) {
+export async function getAltIndex(productID, supplierNumber = "") {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
@@ -223,13 +225,18 @@ export async function getAltIndex(productID) {
     let query = `SELECT AlternateIndex.*, Supplier.SupplierName, Supplier.Currency, Product.ResearchID, Product.SKU 
       FROM AlternateIndex 
       JOIN Product ON AlternateIndex.ProductID = Product.ID 
-      JOIN Supplier ON AlternateIndex.SupplierNumber = Supplier.SupplierNumber 
-      WHERE Product.ResearchID = '${productID}' OR Product.SKU = '${productID}'`;
-    if (productID === "All") query = `Select * from AlternateIndex`;
+      JOIN Supplier ON AlternateIndex.SupplierNumber = Supplier.SupplierNumber`;
+    if (productID !== "All")
+      query += ` WHERE Product.ResearchID = '${productID}' OR Product.SKU = '${productID}'`;
+    if (supplierNumber) {
+      query +=
+        productID === "All"
+          ? ` WHERE AlternateIndex.SupplierNumber = '${supplierNumber}'`
+          : ` AND AlternateIndex.SupplierNumber = '${supplierNumber}'`;
+    }
     const result = await pool.query(query);
     console.log("Got Alt Index");
     console.log("Result: ", result.rowsAffected);
-    // Translate SQL int to DataTable Value
     result.recordset.forEach(
       (row, idx) =>
         (result.recordset[idx].Quality = ValueDictionary.Quality[row.Quality])
@@ -422,7 +429,7 @@ export async function insertNewProduct(mapChange) {
             changeMap.get("changes").map(
               (product) =>
                 `(NEWID(), '${changeMap.get("user")}', 
-                '${changeMap.get("id")}', 
+                '${product.Id}', 
               ${product.Sku ? "'" + product.Sku + "'" : "NULL"}, 
               ${ValueDictionary.Status[product.Status]}, 
               ${ValueDictionary.OemType[product.Oem]}, 
@@ -1168,7 +1175,7 @@ export async function updateAltIndex(mapChange) {
           `Quality = ${ValueDictionary.Quality[changes.Quality]}`
         );
 
-      if ("IsMain" in changes) {
+      if ("IsMain" in changes && typeof changes.IsMain === "boolean") {
         setUpdates.push(`IsMain = ${Number(changes.IsMain)}`);
         if (changes.IsMain) {
           updateQueries.push(`UPDATE AlternateIndex

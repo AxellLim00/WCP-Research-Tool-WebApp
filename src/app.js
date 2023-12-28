@@ -143,54 +143,60 @@ io.on("connect", async function (socket) {
     callback(responseJSON);
   });
 
-  socket.on("get object database", async (table, productID, callback) => {
-    let result;
-    switch (table) {
-      case "Users":
-        result = await getUsersProduct();
-        break;
-      case "Product":
-        let product = await getProduct();
-        let newProduct = await getNewProduct();
-        if (product.status === "OK" && newProduct.status === "OK")
+  socket.on(
+    "get object database",
+    async (table, productID, supplierNumber, callback) => {
+      let result;
+      switch (table) {
+        case "Users":
+          result = await getUsersProduct();
+          break;
+        case "Product":
+          let product = await getProduct();
+          let newProduct = await getNewProduct();
+          if (product.status === "OK" && newProduct.status === "OK")
+            result = {
+              status: "OK",
+              result: {
+                Product: product.result,
+                NewProduct: newProduct.result,
+              },
+            };
+          else {
+            result = { status: "ERROR", error: [] };
+            if (product.status === "ERROR") result.error.push(product.error);
+            if (newProduct.status === "ERROR")
+              result.error.push(newProduct.error);
+          }
+          break;
+        case "Product Detail":
+          result = await getProduct(productID);
+          break;
+        case "KeyType":
+          result = await getKeyType(productID);
+          break;
+        case "EPID":
+          result = await getEpid(productID);
+          break;
+        case "Supplier":
+          result = await getSupplier();
+          break;
+        case "AlternateIndex":
+          result = await getAltIndex(productID, supplierNumber);
+          break;
+        case "Oem":
+          result = await getOem(productID);
+          break;
+        default:
           result = {
-            status: "OK",
-            result: { Product: product.result, NewProduct: newProduct.result },
+            status: "ERROR",
+            error: `There is no table with the name ${table} in the database`,
           };
-        else {
-          result = { status: "ERROR", error: [] };
-          if (product.status === "ERROR") result.error.push(product.error);
-          if (newProduct.status === "ERROR")
-            result.error.push(newProduct.error);
-        }
-        break;
-      case "Product Detail":
-        result = await getProduct(productID);
-        break;
-      case "KeyType":
-        result = await getKeyType(productID);
-        break;
-      case "EPID":
-        result = await getEpid(productID);
-        break;
-      case "Supplier":
-        result = await getSupplier();
-        break;
-      case "AlternateIndex":
-        result = await getAltIndex(productID);
-        break;
-      case "Oem":
-        result = await getOem(productID);
-        break;
-      default:
-        result = {
-          status: "ERROR",
-          error: `There is no table with the name ${table} in the database`,
-        };
-        break;
+          break;
+      }
+      callback(result);
     }
-    callback(result);
-  });
+  );
 
   socket.on("update database", async (updateList, callback) => {
     // TODO: Change from using map to just Objects

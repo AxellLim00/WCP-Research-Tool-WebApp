@@ -7,7 +7,7 @@
  */
 export async function fetchOemFromDatabase(socket, productID = "All") {
   return new Promise((resolve, reject) => {
-    socket.emit("get object database", "Oem", productID, (ackData) => {
+    socket.emit("get object database", "Oem", productID, "", (ackData) => {
       if (ackData.status === "OK") {
         resolve(ackData.result);
       } else {
@@ -35,7 +35,7 @@ export async function fetchOemFromDatabase(socket, productID = "All") {
  */
 export async function fetchProductDataFromDatabase(socket) {
   return new Promise((resolve, reject) => {
-    socket.emit("get object database", "Product", "", (ackData) => {
+    socket.emit("get object database", "Product", "", "", (ackData) => {
       if (ackData.status === "OK") {
         resolve(ackData.result);
       } else {
@@ -63,12 +63,17 @@ export async function fetchProductDataFromDatabase(socket) {
  * @returns {Promise<Array>} - A promise that resolves with the fetched alternate index data.
  * @throws {Error} - An array of error objects if an error occurs during the fetch.
  */
-export async function fetchAltIndexFromDatabase(socket, productID = "All") {
+export async function fetchAltIndexFromDatabase(
+  socket,
+  productID = "All",
+  supplierNumber = ""
+) {
   return new Promise((resolve, reject) => {
     socket.emit(
       "get object database",
       "AlternateIndex",
       productID,
+      supplierNumber,
       (ackData) => {
         if (ackData.status === "OK") {
           resolve(ackData.result);
@@ -102,6 +107,7 @@ export async function fetchProductDetailFromDatabase(socket, productID) {
       "get object database",
       "Product Detail",
       productID,
+      "",
       (ackData) => {
         if (ackData.status === "OK") {
           resolve(ackData.result);
@@ -132,7 +138,7 @@ export async function fetchProductDetailFromDatabase(socket, productID) {
  */
 export async function fetchSupplierFromDatabase(socket) {
   return new Promise((resolve, reject) => {
-    socket.emit("get object database", "Supplier", "", (ackData) => {
+    socket.emit("get object database", "Supplier", "", "", (ackData) => {
       if (ackData.status === "OK") {
         resolve(ackData.result);
       } else {
@@ -161,7 +167,7 @@ export async function fetchSupplierFromDatabase(socket) {
  */
 export async function fetchKTypeFromDatabase(socket, productID) {
   return new Promise((resolve, reject) => {
-    socket.emit("get object database", "KeyType", productID, (ackData) => {
+    socket.emit("get object database", "KeyType", productID, "", (ackData) => {
       if (ackData.status === "OK") {
         resolve(ackData.result);
       } else {
@@ -190,7 +196,7 @@ export async function fetchKTypeFromDatabase(socket, productID) {
  */
 export async function fetchEpidFromDatabase(socket, productID) {
   return new Promise((resolve, reject) => {
-    socket.emit("get object database", "EPID", productID, (ackData) => {
+    socket.emit("get object database", "EPID", productID, "", (ackData) => {
       if (ackData.status === "OK") {
         resolve(ackData.result);
       } else {
@@ -218,7 +224,7 @@ export async function fetchEpidFromDatabase(socket, productID) {
  */
 export async function fetchUserDataFromDatabase(socket) {
   return new Promise((resolve, reject) => {
-    socket.emit("get object database", "Users", "", (ackData) => {
+    socket.emit("get object database", "Users", "", "", (ackData) => {
       if (ackData.status === "OK") {
         resolve(ackData.result);
       } else {

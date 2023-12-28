@@ -547,11 +547,21 @@ $(async function () {
         );
         return;
       }
+      // Get all altIndex from database based on Supplier Number
+      // to check if altIndex already exists
+      let altIndexBySupplierNumber;
+      try {
+        altIndexBySupplierNumber = await fetchAltIndexFromDatabase(
+          "All",
+          supNumVal
+        );
+      } catch {
+        // Error handled in fetchSupplierFromDatabase
+        return;
+      }
 
       const importAltIndexes = jsonSheet.map((row) => {
-        // Change according to this: yes I think its probably easier to store
-        // the currency the supplier quotes in against the supplier and the import will just be a $ value
-        return new AlternateIndexDto(
+        const altIndexObj = new AlternateIndexDto(
           row[altIndexVal],
           supNameVal,
           supNumVal,
@@ -565,17 +575,49 @@ $(async function () {
           false,
           row[productVal]
         );
+        let type = "newSupplier";
+        if (
+          altIndexBySupplierNumber.find(
+            (x) =>
+              (x.SKU && x.SKU === row[productVal]) ||
+              (x.ResearchID && x.ResearchID === row[productVal])
+          )
+        ) {
+          altIndexObj.IsMain = null;
+          type = "edit";
+        }
+        // Change according to this: yes I think its probably easier to store
+        // the currency the supplier quotes in against the supplier and the import will just be a $ value
+        return { type: type, altIndex: altIndexObj };
       });
-
-      // Store each new row locally
-      changesMade.push(
-        new Map([
-          ["type", "newSupplier"],
-          ["supplier", supNumVal],
-          ["table", "AlternateIndex"],
-          ["changes", importAltIndexes],
-        ])
-      );
+      // Separate new Alternate Indexes and Alternate Indexes to edit
+      const newImportAltIndexes = importAltIndexes
+        .filter((item) => item.type === "newSupplier")
+        .map((obj) => obj.altIndex);
+      const editImportAltIndexes = importAltIndexes
+        .filter((item) => item.type === "edit")
+        .map((obj) => obj.altIndex);
+      // Check if there are any new Alternate Indexes
+      if (newImportAltIndexes.length > 0)
+        changesMade.push(
+          new Map([
+            ["type", "newSupplier"],
+            ["supplier", supNumVal],
+            ["table", "AlternateIndex"],
+            ["changes", newImportAltIndexes],
+          ])
+        );
+      // Check if there are any Alternate Indexes to edit
+      editImportAltIndexes.forEach((altIndex) => {
+        changesMade.push(
+          new Map([
+            ["type", "edit"],
+            ["id", altIndex.SKU ?? altIndex.ResearchID],
+            ["table", "AlternateIndex"],
+            ["changes", altIndex],
+          ])
+        );
+      });
 
       if (errorMessage.length) {
         showAlert(`<strong>Error!</strong> ${errorMessage.join(".\n")}`);
@@ -596,9 +638,13 @@ $(async function () {
           $dateToFilter.attr("disabled", isTableEmpty);
           table.clear().draw();
         }
-
+        editImportAltIndexes.forEach((altIndex) => {
+          const { idx, data } = findRowObject(table, altIndex);
+          if (idx < 0) return;
+          table.row(idx).data(altIndex).invalidate();
+        });
         // Add data to table
-        table.rows.add(importAltIndexCurrentProduct).draw();
+        table.rows.add(newImportAltIndexes).draw();
       }
     }
     // Edit Form Save
@@ -843,4 +889,28 @@ async function fillCurrencyRates() {
     );
     throw error;
   }
+}
+
+/**
+ * Finds the row object in a table based on the altIndexObj.
+ * @param {DataTable} table - The DataTable object representing the table.
+ * @param {Object} altIndexObj - The altIndexObj used to search for the row object.
+ * @returns {Object} - An object containing the rowIndex and rowObject.
+ */
+function findRowObject(table, altIndexObj) {
+  let rowIndex = -1;
+  let rowObject = table
+    .row((idx, data) => {
+      if (
+        String(data.Number).toUpperCase() ===
+        String(altIndexObj.Number).toUpperCase()
+      ) {
+        rowIndex = idx;
+        return true;
+      }
+      return false;
+    })
+    .data();
+
+  return { rowIndex, rowObject };
 }
