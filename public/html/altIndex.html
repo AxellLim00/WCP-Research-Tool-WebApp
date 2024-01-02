@@ -153,16 +153,6 @@
             <input id="importFile" type="file" accept=".xls, .xlsx, .csv" />
           </label>
           <label>
-            Product ID Header (Research ID / SKU)<b style="color: red">*</b>
-            <br />
-            <input id="importProduct" type="text" />
-          </label>
-          <label>
-            Alternate Index Number Header<b style="color: red">*</b>
-            <br />
-            <input id="importIndex" type="text" />
-          </label>
-          <label>
             Supplier Number (From Pinnacle)<b style="color: red">*</b>
             <br />
             <input id="importNum" type="text" list="altIndexNumList" />
@@ -172,6 +162,16 @@
             Supplier Name<b style="color: red">*</b>
             <br />
             <p id="importName">-</p>
+          </label>
+          <label>
+            Product ID Header (Research ID / SKU)<b style="color: red">*</b>
+            <br />
+            <input id="importProduct" type="text" />
+          </label>
+          <label>
+            Alternate Index Number Header<b style="color: red">*</b>
+            <br />
+            <input id="importIndex" type="text" />
           </label>
           <label>
             MOQ Header<b style="color: red">*</b>
@@ -295,7 +295,6 @@
               id="editSupplierCurrency"
               type="text"
               list="altIndexCurrencyList"
-              
             />
             <datalist id="altIndexCurrencyList"> </datalist>
           </label>

@@ -94,8 +94,9 @@ $(async function () {
 
     try {
       await fillSupplierTextBoxDataList(supplierArray, currencySupplierMap);
-    } catch {
-      // Error handled in fetchSupplierFromDatabase
+    } catch (error) {
+      console.error(error);
+      // Error shown in fetchSupplierFromDatabase
       return;
     }
 
@@ -124,8 +125,9 @@ $(async function () {
           );
         })
       );
-    } catch {
-      // Error handled in fetchAltIndexFromDatabase
+    } catch (error) {
+      console.error(error);
+      // Error shown in fetchAltIndexFromDatabase
       return;
     }
 
@@ -360,8 +362,9 @@ $(async function () {
       showLoadingScreen("Loading Supplier List...");
       try {
         await fillSupplierTextBoxDataList(supplierArray, currencySupplierMap);
-      } catch {
-        // Error handled in fetchSupplierFromDatabase
+      } catch (error) {
+        console.error(error);
+        // Error shown in fetchSupplierFromDatabase
         return;
       }
 
@@ -409,8 +412,9 @@ $(async function () {
       showLoadingScreen("Loading Supplier List...");
       try {
         await fillSupplierTextBoxDataList(supplierArray, currencySupplierMap);
-      } catch {
-        // Error handled in fetchSupplierFromDatabase
+      } catch (error) {
+        console.error(error);
+        // Error shown in fetchSupplierFromDatabase
         return;
       }
 
@@ -491,6 +495,7 @@ $(async function () {
         showAlert(
           "<strong>Error!</strong> Please use only the available Currency Options."
         );
+        console.error("Error! Please use only the available Currency Options.");
         return;
       }
     }
@@ -499,6 +504,8 @@ $(async function () {
       showAlert(
         "<strong>Error!</strong> Please complete all non-optional fields."
       );
+      console.error("Error! Please complete all non-optional fields.");
+      // Exit save function
       return;
     }
 
@@ -527,6 +534,7 @@ $(async function () {
             .split("\\")
             .pop()}</i> File is empty or blank.`
         );
+        // Exit save function
         return;
       }
 
@@ -545,6 +553,7 @@ $(async function () {
         showAlert(
           `<strong>Error!</strong> Column <i>${missingHeader}</i> Header not found in file.`
         );
+        // Exit save function
         return;
       }
       // Get all altIndex from database based on Supplier Number
@@ -552,16 +561,20 @@ $(async function () {
       let altIndexBySupplierNumber;
       try {
         altIndexBySupplierNumber = await fetchAltIndexFromDatabase(
+          socket,
           "All",
           supNumVal
         );
-      } catch {
-        // Error handled in fetchSupplierFromDatabase
+      } catch (error) {
+        // Error shown in fetchSupplierFromDatabase
+        console.error(error);
+        // Exit save function
         return;
       }
-
+      const missingProductID = [];
+      const missingSupplierNumber = [];
       const importAltIndexes = jsonSheet.map((row) => {
-        const altIndexObj = new AlternateIndexDto(
+        const altIndexDto = new AlternateIndexDto(
           row[altIndexVal],
           supNameVal,
           supNumVal,
@@ -576,6 +589,18 @@ $(async function () {
           row[productVal]
         );
         let type = "newSupplier";
+
+        // Check if Supplier Number exists in Supplier List
+        if (!getSupplierByNumber(altIndexDto.Number, supplierArray)) {
+          missingSupplierNumber.push(altIndexDto.Number);
+        }
+
+        // Check if Product ID exists in Product List
+        if (!getProductFromID(altIndexDto.ProductID, productRequestArray)) {
+          missingProductID.push(altIndexDto.ProductID);
+        }
+
+        // Check if altIndex already exists in database
         if (
           altIndexBySupplierNumber.find(
             (x) =>
@@ -583,54 +608,102 @@ $(async function () {
               (x.ResearchID && x.ResearchID === row[productVal])
           )
         ) {
-          altIndexObj.IsMain = null;
           type = "edit";
         }
         // Change according to this: yes I think its probably easier to store
         // the currency the supplier quotes in against the supplier and the import will just be a $ value
-        return { type: type, altIndex: altIndexObj };
+        return { type: type, altIndex: altIndexDto };
       });
+
+      if (missingSupplierNumber.length > 0) {
+        errorMessage.push(
+          `Supplier Number ${missingSupplierNumber.join(
+            ";\t"
+          )} not found in Product List.`
+        );
+      }
+
+      // On Error Missing Product in Import
+      if (missingProductID.length > 0) {
+        errorMessage.push(
+          `Product ID ${missingProductID.join(";")} not found in Product List.`
+        );
+      }
+      if (errorMessage.length > 0) {
+        showAlert(`<strong>ERROR!</strong> ${errorMessage.join(".<br>")}`);
+        // Exit save function
+        return;
+      }
+
       // Separate new Alternate Indexes and Alternate Indexes to edit
-      const newImportAltIndexes = importAltIndexes
+      const newImportAltIndexesDto = importAltIndexes
         .filter((item) => item.type === "newSupplier")
         .map((obj) => obj.altIndex);
-      const editImportAltIndexes = importAltIndexes
+      const editImportAltIndexesDto = importAltIndexes
         .filter((item) => item.type === "edit")
         .map((obj) => obj.altIndex);
       // Check if there are any new Alternate Indexes
-      if (newImportAltIndexes.length > 0)
+      if (newImportAltIndexesDto.length > 0)
         changesMade.push(
           new Map([
             ["type", "newSupplier"],
             ["supplier", supNumVal],
             ["table", "AlternateIndex"],
-            ["changes", newImportAltIndexes],
+            ["changes", newImportAltIndexesDto],
           ])
         );
       // Check if there are any Alternate Indexes to edit
-      editImportAltIndexes.forEach((altIndex) => {
+      editImportAltIndexesDto.forEach((altIndex) => {
+        // Remove unnecessary data
+        const temp = Object.assign({}, altIndex);
+        altIndex.IsMain = null;
+        altIndex.CostAud = null;
+        altIndex.SupplierNumber = null;
+        altIndex.SupplierName = null;
         changesMade.push(
           new Map([
             ["type", "edit"],
-            ["id", altIndex.SKU ?? altIndex.ResearchID],
+            ["id", altIndex.ProductID],
             ["table", "AlternateIndex"],
+            ["supplier", supNumVal],
             ["changes", altIndex],
           ])
         );
+        // Reassign data
+        altIndex.IsMain = temp.IsMain;
+        altIndex.CostAud = temp.CostAud;
+        altIndex.SupplierNumber = temp.SupplierNumber;
+        altIndex.SupplierName = temp.SupplierName;
       });
 
-      if (errorMessage.length) {
-        showAlert(`<strong>Error!</strong> ${errorMessage.join(".\n")}`);
-        return;
+      // Check if there are any Alternate Indexes to edit in table
+      const editAltIndexFilteredDto = editImportAltIndexesDto.filter(
+        (altIndex) =>
+          altIndex.ProductID === productIdSelected ||
+          altIndex.ProductID === productIdAlias
+      );
+      if (editAltIndexFilteredDto.length > 0) {
+        editAltIndexFilteredDto.forEach((altIndexDto) => {
+          const { idx: rowIdx, obj: rowObj } = findRowObject(
+            table,
+            altIndexDto
+          );
+          if (typeof rowIdx !== "number" || rowIdx < 0) return;
+          // Update row object with new data
+          updateImportRowDataTableObj(rowObj, altIndexDto);
+          table.row(rowIdx).data(rowObj).invalidate();
+        });
       }
 
-      let importAltIndexCurrentProduct = importAltIndexes.filter(
+      // Check if there are any new Alternate Indexes to add to table
+      const newEditAltIndexFilteredDto = newImportAltIndexesDto.filter(
         (altIndex) =>
           altIndex.ProductID === productIdSelected ||
           altIndex.ProductID === productIdAlias
       );
 
-      if (importAltIndexCurrentProduct.length > 0) {
+      // Add data to table
+      if (newEditAltIndexFilteredDto.length > 0) {
         // Empty Data if data before is is empty
         if (isTableEmpty) {
           isTableEmpty = false;
@@ -638,26 +711,17 @@ $(async function () {
           $dateToFilter.attr("disabled", isTableEmpty);
           table.clear().draw();
         }
-        editImportAltIndexes.forEach((altIndex) => {
-          const { idx, data } = findRowObject(table, altIndex);
-          if (idx < 0) return;
-          table.row(idx).data(altIndex).invalidate();
-        });
-        // Add data to table
-        table.rows.add(newImportAltIndexes).draw();
+        table.rows.add(newEditAltIndexFilteredDto).draw();
       }
     }
     // Edit Form Save
     else if (formSelected === "edit") {
-      if (!isFloat(costAUDVal))
-        errorMessage.push(
-          `Cost AUD <i>${costAUDVal}</i> is not a number value`
-        );
-
-      if (errorMessage.length) {
+      if (!isFloat(costAUDVal)) {
         showAlert(`<strong>ERROR!</strong> ${errorMessage.join(".\n")}`);
+        // Exit save function
         return;
       }
+
       let rowData = table.row(rowIndexSelected).data();
       // Save if there are any changes compared to old value (can be found in productSelected)
       let newUpdate = {};
@@ -693,7 +757,7 @@ $(async function () {
               ["type", "edit"],
               ["id", productIdSelected],
               ["table", "AlternateIndex"],
-              ["number", prevMainRowData.Number],
+              ["supplier", prevMainRowData.Number],
               ["changes", updatePrevMain],
             ])
           );
@@ -712,7 +776,7 @@ $(async function () {
           ["type", "edit"],
           ["id", productIdSelected],
           ["table", "AlternateIndex"],
-          ["number", altIndexSelected.Number],
+          ["supplier", altIndexSelected.Number],
           ["changes", newUpdate],
         ])
       );
@@ -791,9 +855,7 @@ $(async function () {
   ["import", "edit"].forEach((form) => {
     $(`#${form}Num`).on("input", function () {
       const supplierNumber = $(this).val();
-      const supplierFound = supplierArray.find(
-        (supplier) => supplier.SupplierNumber == supplierNumber
-      );
+      const supplierFound = getSupplierByNumber(supplierNumber, supplierArray);
       if (supplierFound) {
         $(`#${form}Name`).text(supplierFound.SupplierName);
         return;
@@ -804,9 +866,7 @@ $(async function () {
 
   $("#editSupplierNum").on("input", function () {
     const supplierNumber = $(this).val();
-    const supplierFound = supplierArray.find(
-      (supplier) => supplier.SupplierNumber == supplierNumber
-    );
+    const supplierFound = getSupplierByNumber(supplierNumber, supplierArray);
     if (supplierFound) {
       $("#editSupplierName").text(supplierFound.SupplierName);
       $("#editSupplierCurrency").val(supplierFound.Currency);
@@ -847,8 +907,9 @@ async function fillSupplierTextBoxDataList(supplierArray, currencySupplierMap) {
     // Get all Supplier from database
     const supplierFromDatabase = await fetchSupplierFromDatabase(socket);
     supplierArray.push(...supplierFromDatabase);
-  } catch {
-    // Error handled in fetchSupplierFromDatabase
+  } catch (error) {
+    console.error(error);
+    // Error shown in fetchSupplierFromDatabase
     return;
   }
 
@@ -911,6 +972,41 @@ function findRowObject(table, altIndexObj) {
       return false;
     })
     .data();
+  return { idx: rowIndex, obj: rowObject };
+}
 
-  return { rowIndex, rowObject };
+/**
+ * Retrieves a supplier from the supplierArray based on the supplier number.
+ * @param {string} supplierNumber - The supplier number to search for.
+ * @param {Array} supplierArray - The array of suppliers to search in.
+ * @returns {Object|undefined} - The supplier object if found, otherwise undefined.
+ */
+function getSupplierByNumber(supplierNumber, supplierArray) {
+  return supplierArray.find(
+    (supplier) => supplier.SupplierNumber == supplierNumber
+  );
+}
+
+/**
+ * Updates the properties of a row object with the values from an updatedAltIndexDto object for import.
+ * @param {Object} rowObj - The row object to be updated.
+ * @param {Object} updatedAltIndexDto - The updatedAltIndexDto object containing the new values.
+ * @returns {Object} - The updated row object.
+ */
+function updateImportRowDataTableObj(rowObj, updatedAltIndexDto) {
+  if (updatedAltIndexDto.Index != undefined)
+    rowObj.Index = updatedAltIndexDto.Index;
+  if (updatedAltIndexDto.Moq != undefined) rowObj.Moq = updatedAltIndexDto.Moq;
+  if (updatedAltIndexDto.CostCurrency != undefined)
+    rowObj.CostCurrency = updatedAltIndexDto.CostCurrency;
+  if (updatedAltIndexDto.LastUpdated != undefined)
+    rowObj.LastUpdated = updatedAltIndexDto.LastUpdated;
+  if (updatedAltIndexDto.Quality != undefined)
+    rowObj.Quality = updatedAltIndexDto.Quality;
+  if (updatedAltIndexDto.SupplierPartType != undefined)
+    rowObj.SupplierPartType = updatedAltIndexDto.SupplierPartType;
+  if (updatedAltIndexDto.WcpPartType != undefined)
+    rowObj.WcpPartType = updatedAltIndexDto.WcpPartType;
+
+  return rowObj;
 }

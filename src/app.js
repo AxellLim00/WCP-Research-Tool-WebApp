@@ -24,6 +24,7 @@ import {
   updateProduct,
   deleteProduct,
   insertNewProduct,
+  updateNewProduct,
   deleteNewProduct,
   insertKType,
   updateKType,
@@ -48,6 +49,7 @@ const connectedClients = [];
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // run server using "npm run dev"
 app.use(express.static(path.join(__dirname + "/../public")));
+app.use("/js/dist", express.static(path.join(__dirname, "/../public/js/dist")));
 
 app.get("/", (_, res) => {
   res.sendFile("public/html/login.html");
@@ -229,6 +231,11 @@ io.on("connect", async function (socket) {
         await insertNewProduct(separatedLists["NewProduct_new"])
       );
 
+    if (separatedLists["NewProduct_edit"]) {
+      resultArray.push(
+        await updateNewProduct(separatedLists["NewProduct_edit"])
+      );
+    }
     if (separatedLists["NewProduct_delete"])
       resultArray.push(
         await deleteNewProduct(separatedLists["NewProduct_delete"])

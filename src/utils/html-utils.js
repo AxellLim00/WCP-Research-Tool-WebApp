@@ -7,6 +7,7 @@ import "datatables.net-dt";
  * @returns {void}
  */
 export function showAlert(message) {
+  console.error(message);
   // Check if alert has been made before
   if (!$(".alert").length) {
     $("body").append(`

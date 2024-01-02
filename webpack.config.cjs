@@ -2,6 +2,7 @@ const path = require("path");
 const webpack = require("webpack");
 
 module.exports = {
+  devtool: "source-map",
   entry: {
     login: "./src/login.js",
     script: "./src/script.js",
@@ -15,6 +16,8 @@ module.exports = {
   output: {
     filename: "[name].bundle.js",
     path: path.resolve(__dirname, "public/js/dist"),
+    publicPath: "/js/dist/",
+    sourceMapFilename: "[name].bundle.js.map",
   },
   mode: "development",
   module: {

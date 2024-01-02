@@ -35,7 +35,6 @@ export function productSelectedChanged(
   selectTab(tabId);
 }
 
-
 /**
  * Retrieves the currency rates from local storage or the system.
  * If the currency rates are stored in local storage and were updated within the last 7 days,
@@ -262,21 +261,25 @@ export async function updateDataOnDatabase(socket, changes) {
  * @param {Object[]} newProductArray - Array of New Product from Database
  * @param {Object[]} productArray - Array of Product from Database
  */
-export function updateProductRequestHistory(newProductArray, productArray) {
+export function syncProductRequestHistoryWithDatabase(
+  newProductArray,
+  productArray
+) {
   let productRequestHistoryArray = JSON.parse(
     sessionStorage.getItem("productRequestHistory")
   );
-
   newProductArray.forEach((product) => {
     if (
       !productRequestHistoryArray.find(
         (p) => p.researchIdentifier === product.ResearchID
       )
     ) {
-      let productDetailMatch = productArray.find(
+      // Find matching product in database
+      const productDatabaseMatch = productArray.find(
         (p) => p.ResearchID === product.ResearchID
       );
-      let newProduct = new ProductRequestHistoryDto(
+      // Create new product request history object with the product database information
+      const newProductRequest = new ProductRequestHistoryDto(
         null,
         product.PartTypeCode,
         product.PartType,
@@ -289,14 +292,27 @@ export function updateProductRequestHistory(newProductArray, productArray) {
         product.Model,
         "",
         product.IcDescription,
-        productDetailMatch ? productDetailMatch.SKU : "",
+        productDatabaseMatch ? productDatabaseMatch.SKU : "",
         "",
         "",
         product.AveragePrice,
         0
       );
-      newProduct.researchIdentifier = product.ResearchID;
-      productRequestHistoryArray.push({ ...newProduct });
+      if (!product.ResearchID || !product.ProductID) {
+        if (!product.ResearchID)
+          console.error(
+            `ERROR! Research ID is empty for ${product.ResearchID}`
+          );
+        if (!product.ProductID)
+          console.error(`ERROR! ProductID is empty for ${product.ProductID}`);
+        console.error(product);
+        showAlert(
+          `ERROR! Product has missing attribute, contact administrator or developer!`
+        );
+        return;
+      }
+      newProductRequest.researchIdentifier = product.ResearchID;
+      productRequestHistoryArray.push({ ...newProductRequest });
     }
   });
 
@@ -306,6 +322,10 @@ export function updateProductRequestHistory(newProductArray, productArray) {
   );
 }
 
+/**
+ * Adds a new product to the Session Storage's product request history.
+ * @param {Object} newProduct - The new product to be added.
+ */
 export function addNewProductRequestHistory(newProduct) {
   let productRequestHistoryArray = JSON.parse(
     sessionStorage.getItem("productRequestHistory")
@@ -330,7 +350,7 @@ export function addNewProductRequestHistory(newProduct) {
     0,
     0
   );
-  productToAdd.researchIdentifier = newProduct.ResearchID;
+  productToAdd.researchIdentifier = newProduct.Id;
   productRequestHistoryArray.push({ ...productToAdd });
 
   sessionStorage.setItem(

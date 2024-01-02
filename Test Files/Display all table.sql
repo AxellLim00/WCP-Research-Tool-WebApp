@@ -7,4 +7,10 @@ Select * from [Supplier]
 Select * from [AlternateIndex]
 Select * from [Oem]
 
-Select * from [Product] Where [ResearchID] IS NULL AND [SKU] is NULL
+
+Select * from [Product] Where [ResearchID] IS not NULL AND [SKU] is not NULL ORDER BY [ResearchID]
+Select * from [NewProduct]
+Select [ResearchID] from [NewProduct]
+Select * from [AlternateIndex] ORDER BY [AltIndexNumber]
+
+SELECT * FROM [Product] WHERE [ResearchID] LIKE 'R-2%' AND [ResearchID] != 'R-2037ML-BF73'

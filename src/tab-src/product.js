@@ -37,7 +37,6 @@ import {
   generateProductID,
   findMatchingProductDetail,
 } from "../utils/tab-utils.js";
-// import socket from "../utils/socket-utils.js";
 import {
   fetchProductDataFromDatabase,
   fetchSupplierFromDatabase,
@@ -51,6 +50,8 @@ $(async function () {
   const tableName = "#productTable";
   const productObjectList = [];
   const socket = window.socket;
+  const newProductRequestHistory = []; // Array of ProductDto
+  const updatedProductRequestHistory = []; // Array of ProductDto
 
   let formSelected;
   let isEmptyData = true;
@@ -61,20 +62,18 @@ $(async function () {
 
   showLoadingScreen("Loading All Products...");
 
-  let productDetails;
+  let productDatabase;
 
   try {
     const result = await fetchProductDataFromDatabase(socket);
-    productDetails = result.Product;
+    productDatabase = result.Product;
   } catch {
     return;
   }
-
   //Load table from API
-  const productReqHistWorkflowArray = JSON.parse(
+  let productReqHistWorkflowArray = JSON.parse(
     sessionStorage.getItem("productRequestHistory")
   ).map((object) => Object.assign(new ProductRequestHistoryDto(), object));
-
   // Check if both productWorkflowArray and productDatabaseArray are empty
   isEmptyData = !Boolean(productReqHistWorkflowArray);
 
@@ -99,7 +98,6 @@ $(async function () {
       // Error handled in fetchOemFromDatabase
       throw error;
     }
-
     // Add all product from productDtoArray to productObjectList
     productReqHistWorkflowArray.forEach((currObject, idx, array) => {
       // If current product's SKU is not empty,
@@ -120,7 +118,7 @@ $(async function () {
 
       // Find productDetail Match in database
       let productDetailMatch = findMatchingProductDetail(
-        productDetails,
+        productDatabase,
         currObject
       );
 
@@ -304,6 +302,18 @@ $(async function () {
   $('button[name="saveBtn"]').on("click", function () {
     //on successful save
     if (saveChanges(socket)) {
+      if (newProductRequestHistory.length > 0) {
+        newProductRequestHistory.forEach((product) => {
+          addNewProductRequestHistory(product);
+        });
+        newProductRequestHistory.length = 0;
+      }
+      if (updatedProductRequestHistory.length > 0) {
+        updatedProductRequestHistory.forEach((product) => {
+          syncProductRequestHistoryWithDatabase(product);
+        });
+        updatedProductRequestHistory.length = 0;
+      }
       updateHasChanges(false);
     }
   });
@@ -529,30 +539,32 @@ $(async function () {
             `OEM type <i>${row[oemTypeVal]}</i> must be a valid value`
           );
         }
+        // sync productReqHistWorkflowArray variable
+        productReqHistWorkflowArray = JSON.parse(
+          sessionStorage.getItem("productRequestHistory")
+        ).map((object) =>
+          Object.assign(new ProductRequestHistoryDto(), object)
+        );
         // Check if imported data is in ProductHistoryRequest, if yes, change type to update and table to Product
         const productReq = findProductInProductRequestHistory(
           productReqHistWorkflowArray,
           newObject
         );
-        let isNew = true;
+
+        // If product is found in ProductHistoryRequest, change type to update and table to Product
         if (productReq) {
           let tableDatabase = "NewProduct";
           newObject.Id = productReq.researchIdentifier;
-
+          // If product is found in ProductHistoryRequest, change type to update and table to Product
           if (productReq.productStockNumber) {
             nonUpdateWarning = true;
             tableDatabase = "Product";
           }
           return { type: "edit", table: tableDatabase, productObj: newObject };
         }
+        if (sessionStorage.getItem("debug")) debugger;
         return { type: "new", table: "NewProduct", productObj: newObject };
       });
-      const newImportProduct = importProducts
-        .filter((product) => product.type === "new")
-        .map((product) => product.productObj);
-      const editImportProduct = importProducts.filter(
-        (product) => product.type === "edit"
-      );
 
       if (errorMessage.length) {
         showAlert(
@@ -560,14 +572,26 @@ $(async function () {
         );
         return;
       }
-      if (isEmptyData) {
-        // Empty Table if DataTable previously was empty
-        isEmptyData = false;
-        table.clear().draw();
-      }
+      // Filter out new and edit import data
+      const newImportProduct = importProducts
+        .filter((product) => product.type === "new")
+        .map((product) => {
+          // Add new product to sessionStorage's ("productRequestHistory")
+          newProductRequestHistory.push(product.productObj);
+          return product.productObj;
+        });
+      const editImportProduct = importProducts.filter(
+        (product) => product.type === "edit"
+      );
 
       // Add new import data to database changes
-      if (newImportProduct.length > 0)
+      if (newImportProduct.length > 0) {
+        if (isEmptyData) {
+          // Empty Table if DataTable previously was empty
+          isEmptyData = false;
+          table.clear().draw();
+        }
+
         changesMade.push(
           new Map([
             ["type", "new"],
@@ -576,33 +600,43 @@ $(async function () {
             ["changes", newImportProduct],
           ])
         );
-      // Add edit import data to database changes and update rows
-      editImportProduct.forEach((product) => {
-        changesMade.push(
-          new Map([
-            ["type", "edit"],
-            ["user", user],
-            ["id", product.productObj.Sku ?? product.productObj.Id],
-            ["table", product.table],
-            ["changes", product.productObj],
-          ])
-        );
-        const { rowIndex, rowObject } = findRowObject(
-          table,
-          product.productObj
-        );
-        if (!isStatusEmpty) rowObject.Status = product.productObj.Status;
-        if (!isOemCategoryEmpty) rowObject.Oem = product.productObj.Oem;
-        // Update rows in table
-        table.row(rowIndex).data(rowObject).invalidate();
-      });
 
-      // Add new import data to table
-      table.rows.add(newImportProduct).draw();
+        // Add new import data to table
+        table.rows.add(newImportProduct).draw();
+      }
+
+      // Add edit import data to database changes and update rows
+      if (editImportProduct.length > 0) {
+        editImportProduct.forEach((product) => {
+          changesMade.push(
+            new Map([
+              ["type", "edit"],
+              ["user", user],
+              ["id", product.productObj.Sku ?? product.productObj.Id],
+              ["table", product.table],
+              ["changes", product.productObj],
+            ])
+          );
+          const { idx: rowIndex, obj: rowObject } = findRowObject(
+            table,
+            product.productObj
+          );
+          if (product.table === "NewProduct") {
+            // Update rowObject with new values
+            updateRowData(rowObject, product.productObj);
+          } else {
+            if (!isStatusEmpty) rowObject.Status = product.productObj.Status;
+            if (!isOemCategoryEmpty) rowObject.Oem = product.productObj.Oem;
+          }
+          // Update rows in table
+          updatedProductRequestHistory.push(product.productObj);
+          table.row(rowIndex).data(rowObject).invalidate().draw();
+        });
+      }
+
       // Exit Row
       exitPopUpForm(formSelected);
       if (nonUpdateWarning) {
-        debugger;
         showAlert(
           "WARNING: Duplicate SKU found in file. Products in Pinnacle will not update the uneditable data."
         );
@@ -644,7 +678,7 @@ $(async function () {
       table.row.add(newProduct).draw();
 
       // Add NewProduct to sessionStorage's ("productRequestHistory")
-      addNewProductRequestHistory(newProduct);
+      newProductRequestHistory.push(newProduct);
       exitPopUpForm(formSelected);
     }
     // Edit Form Save
@@ -672,6 +706,8 @@ $(async function () {
         ])
       );
       productSelected = updateObject(productSelected, newUpdate);
+      // Does not update product request history as no attribute that is editable is in product request history
+      // updatedProductRequestHistory.push(productSelected);
       // Redraw the table to reflect the changes
       table.row(rowIndexSelected).data(rowData).invalidate().draw();
     }
@@ -760,28 +796,26 @@ async function fillOemTextBoxDataList(socket) {
 /**
  * Creates a product object for the table.
  *
- * @param {Object} currentProductObject - The current product object.
- * @param {Object} productDetailMatch - The product detail match.
+ * @param {ProductRequestHistoryDto} currentProductReq - The current product object.
+ * @param {Object} productDatabaseMatch - The product Database match.
  * @param {Array} oemList - The OEM list.
  * @param {Array} altIndexList - The alternate index list.
  * @returns {ProductDto} The created product object.
  */
 function createProductObjectForTable(
-  currentProductObject,
-  productDetailMatch,
+  currentProductReq,
+  productDatabaseMatch,
   oemList,
   altIndexList
 ) {
   let oemProductList = [];
   let altIndexProductList = new Set();
   // Add VendorId (Supplier Number) to Supplier List if VendorId  is not empty
-  if (currentProductObject.vendorId)
-    altIndexProductList.add(
-      String(currentProductObject.vendorId).toUpperCase()
-    );
+  if (currentProductReq.vendorId)
+    altIndexProductList.add(String(currentProductReq.vendorId).toUpperCase());
 
-  // When productDetailMatch does exist
-  if (productDetailMatch) {
+  // When productDatabaseMatch does exist
+  if (productDatabaseMatch) {
     // Filter OEM List by their SKU or ResearchID to match Product's
     const filteredOemList = oemList.filter((oemObject) => {
       const sku = oemObject.Sku;
@@ -789,15 +823,16 @@ function createProductObjectForTable(
 
       if (
         sku &&
-        productDetailMatch.SKU &&
-        sku.toUpperCase() === productDetailMatch.SKU.toUpperCase()
+        productDatabaseMatch.SKU &&
+        sku.toUpperCase() === productDatabaseMatch.SKU.toUpperCase()
       )
         return true;
 
       if (
         researchId &&
-        productDetailMatch.ResearchID &&
-        researchId.toUpperCase() === productDetailMatch.ResearchID.toUpperCase()
+        productDatabaseMatch.ResearchID &&
+        researchId.toUpperCase() ===
+          productDatabaseMatch.ResearchID.toUpperCase()
       )
         return true;
 
@@ -817,15 +852,16 @@ function createProductObjectForTable(
 
       if (
         sku &&
-        productDetailMatch.SKU &&
-        sku.toUpperCase() === productDetailMatch.SKU.toUpperCase()
+        productDatabaseMatch.SKU &&
+        sku.toUpperCase() === productDatabaseMatch.SKU.toUpperCase()
       )
         return true;
 
       if (
         researchId &&
-        productDetailMatch.ResearchID &&
-        researchId.toUpperCase() === productDetailMatch.ResearchID.toUpperCase()
+        productDatabaseMatch.ResearchID &&
+        researchId.toUpperCase() ===
+          productDatabaseMatch.ResearchID.toUpperCase()
       )
         return true;
 
@@ -837,33 +873,33 @@ function createProductObjectForTable(
     );
   }
   return new ProductDto(
-    productDetailMatch
-      ? productDetailMatch.ResearchID
-      : currentProductObject.researchIdentifier,
-    currentProductObject.productStockNumber,
-    currentProductObject.vehicleManufacturers.split("\r").join("; "),
-    currentProductObject.vehicleModels.split("\r").join("; "),
-    currentProductObject.partTypeFriendlyName,
-    currentProductObject.interchangeVersion
-      ? `${currentProductObject.interchangeNumber.trim()} ${
-          currentProductObject.interchangeVersion
+    productDatabaseMatch
+      ? productDatabaseMatch.ResearchID
+      : currentProductReq.researchIdentifier,
+    currentProductReq.productStockNumber,
+    currentProductReq.vehicleManufacturers.split("\r").join("; "),
+    currentProductReq.vehicleModels.split("\r").join("; "),
+    currentProductReq.partTypeFriendlyName,
+    currentProductReq.interchangeVersion
+      ? `${currentProductReq.interchangeNumber.trim()} ${
+          currentProductReq.interchangeVersion
         }`
-      : currentProductObject.interchangeNumber.trim(),
-    currentProductObject.interchangeDescriptions
-      ? currentProductObject.interchangeDescriptions.split("\r").join("; ")
+      : currentProductReq.interchangeNumber.trim(),
+    currentProductReq.interchangeDescriptions
+      ? currentProductReq.interchangeDescriptions.split("\r").join("; ")
       : "",
-    productDetailMatch ? productDetailMatch.Status : "",
-    productDetailMatch ? productDetailMatch.OemType : "",
+    productDatabaseMatch ? productDatabaseMatch.Status : "",
+    productDatabaseMatch ? productDatabaseMatch.OemType : "",
     Array.from(altIndexProductList),
     oemProductList,
-    currentProductObject.partTypeCode
+    currentProductReq.partTypeCode
   );
 }
 
 /**
  * Finds a product in the product request history based on the given criteria.
- * @param {Array} productReqHistWorkflowArray - The array of product request history objects.
- * @param {Object} newProductObject - The new product object to search for.
+ * @param {ProductRequestHistoryDto[]} productReqHistWorkflowArray - The array of product request history objects.
+ * @param {ProductDto} newProductObject - The new product object to search for.
  * @returns {Object|undefined} - The found product request object, or undefined if not found.
  */
 function findProductInProductRequestHistory(
@@ -876,8 +912,9 @@ function findProductInProductRequestHistory(
       productReq.interchangeNumber +
       productReq.interchangeVersion +
       productReq.partTypeCode;
-    const objectIc_PartType = String(newProductObject.Num).replace(/\s/g, "");
-    +newProductObject.TypeCode;
+    const objectIc_PartType =
+      String(newProductObject.Num).replace(/\s/g, "") +
+      newProductObject.TypeCode;
     if (
       sku &&
       newProductObject.Sku &&
@@ -885,7 +922,6 @@ function findProductInProductRequestHistory(
         newProductObject.Sku.toLowerCase()
     )
       return true;
-
     if (ic_PartType.toLowerCase() === objectIc_PartType.toLowerCase())
       return true;
 
@@ -896,8 +932,8 @@ function findProductInProductRequestHistory(
 /**
  * Finds the row object in a table based on the given product request.
  * @param {DataTable} table - The table to search in.
- * @param {Object} productObj - The product request object containing the product stock number and research identifier.
- * @returns {Object} - An object containing the rowIndex and rowObject of the found row, or null if not found.
+ * @param {ProductDto} productObj - The product request object containing the product stock number and research identifier.
+ * @returns {Object} - An object containing the idx (row Index) and obj (row Object) of the found row, or null if not found.
  */
 function findRowObject(table, productObj) {
   let rowIndex;
@@ -918,7 +954,6 @@ function findRowObject(table, productObj) {
   if (!rowObject) {
     rowObject = table
       .row((idx, data) => {
-        rowIndex = idx;
         if (
           data.Id &&
           productObj.Id &&
@@ -931,6 +966,58 @@ function findRowObject(table, productObj) {
       })
       .data();
   }
+  return { idx: rowIndex, obj: rowObject };
+}
 
-  return { rowIndex, rowObject };
+/**
+ * Updates the row data with the values from the updated object.
+ * @param {ProductDto} rowObject - The row object to be updated.
+ * @param {ProductDto} updatedObject - The object containing the updated values.
+ * @returns {void}
+ */
+function updateRowData(rowObject, updatedObject) {
+  rowObject.Make = updatedObject.Make;
+  rowObject.Model = updatedObject.Model;
+  rowObject.Type = updatedObject.Type;
+  rowObject.Desc = updatedObject.Desc;
+  if (updatedObject.Status) rowObject.Status = updatedObject.Status;
+  if (updatedObject.Oem) rowObject.Oem = updatedObject.Oem;
+}
+
+/**
+ * Updates the product request history with the provided updated object.
+ * @param {ProductDto} updatedObject - The updated object containing the changes.
+ */
+function syncProductRequestHistoryWithDatabase(updatedObject) {
+  const productRequestHistoryArray = JSON.parse(
+    sessionStorage.getItem("productRequestHistory")
+  );
+  const { Sku, Id } = updatedObject;
+  const updatedIdentifier = Sku ? "productStockNumber" : "researchIdentifier";
+
+  const productRequest = productRequestHistoryArray.find((request) => {
+    return request[updatedIdentifier] === (Sku ? Sku : Id);
+  });
+
+  if (productRequest) {
+    updateProductRequestProperty(productRequest, updatedObject);
+  }
+
+  // Update sessionStorage
+  sessionStorage.setItem(
+    "productRequestHistory",
+    JSON.stringify(productRequestHistoryArray)
+  );
+}
+
+/**
+ * Updates the product request with the provided updated object.
+ * @param {ProductRequestHistoryDto} productRequest - The original product request object.
+ * @param {ProductDto} updatedObject - The updated object containing the new values.
+ */
+function updateProductRequestProperty(productRequest, updatedObject) {
+  productRequest.vehicleManufacturers = updatedObject.Make;
+  productRequest.vehicleModels = updatedObject.Model;
+  productRequest.partTypeFriendlyName = updatedObject.Type;
+  productRequest.interchangeDescriptions = updatedObject.Desc;
 }

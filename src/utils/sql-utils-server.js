@@ -421,7 +421,6 @@ export async function insertNewProduct(mapChange) {
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
-    console.log("Inserting new product information...");
     const query = `INSERT INTO Product (ID, UserID, ResearchID, SKU, Status, OemType, LastUpdate)
       VALUES
         ${mapChange
@@ -443,17 +442,21 @@ export async function insertNewProduct(mapChange) {
           .map((changeMap) =>
             changeMap.get("changes").map(
               (product) =>
-                `('${changeMap.get("id")}', 
+                `('${product.Id}', 
                 '${product.Make}', '${product.Model}', 
                 '${product.Type}', 
               '${product.Num}', '${product.Desc}', 
               (SELECT TOP 1 ID 
                 FROM Product 
-                WHERE ResearchID = '${changeMap.get("id")}'),
+                WHERE ResearchID = '${product.Id}'),
               '${product.TypeCode}', 0, 0, 0, 0)`
             )
           )
           .join(",\n")};`;
+    // console.log(query);
+    // debugger;
+
+    console.log("Inserting new product information...");
     const result = await pool.query(query);
     console.log("Inserted new product information");
 
@@ -728,7 +731,6 @@ export async function insertAltIndexBySupplier(mapChange) {
           .join()};`
       )
       .join("\n")}`;
-
     console.log("Inserting new AltIndex...");
     const result = await pool.query(query);
     console.log("Inserted new AltIndex");
@@ -925,13 +927,14 @@ export async function updateNewProduct(mapChange) {
         setUpdates.push(`AveragePrice = ${changes.AveragePrice}`);
 
       updateQueries.push(`UPDATE NewProduct
-        JOIN Product ON NewProduct.ProductID = Product.ID
         SET ${setUpdates.join()} 
+        FROM NewProduct
+        JOIN Product ON NewProduct.ProductID = Product.ID
         WHERE Product.ResearchID = '${productID}';`);
 
       updateQueries.push(`UPDATE Product
         SET ${
-          setUpdates.length > 0 ? setUpdates.join() + "," : ""
+          setProductUpdates.length > 0 ? setProductUpdates.join() + "," : ""
         } LastUpdate = '${new Date()
         .toISOString()
         .slice(0, 19)
@@ -939,8 +942,8 @@ export async function updateNewProduct(mapChange) {
         WHERE SKU = '${productID}' OR ResearchID = '${productID}';`);
     });
     const query = updateQueries.join("\n");
-    // console.log(query);
-    // debugger;
+    console.log(query);
+    debugger;
     console.log("Updating NewProduct...");
     let result = await pool.query(query);
     console.log("Updated NewProduct");
@@ -1162,18 +1165,38 @@ export async function updateAltIndex(mapChange) {
       const productID = item.get("id");
       const setUpdates = [];
       // Translate DataTable value to SQL int value
-      if ("Index" in changes)
+      if ("Index" in changes && changes.Index)
         setUpdates.push(`AltIndexNumber = '${changes.Index}'`);
 
-      if ("Number" in changes)
+      if ("Number" in changes && changes.Number)
         setUpdates.push(`SupplierNumber = '${changes.Number}'`);
 
-      if ("CostAud" in changes) setUpdates.push(`CostAud = ${changes.CostAud}`);
+      if ("CostAud" in changes && typeof changes.CostAud === "number")
+        setUpdates.push(`CostAud = ${changes.CostAud}`);
 
-      if ("Quality" in changes)
+      if ("Quality" in changes && typeof changes.Quality)
         setUpdates.push(
           `Quality = ${ValueDictionary.Quality[changes.Quality]}`
         );
+
+      if ("Moq" in changes && typeof changes.Moq === "number") {
+        setUpdates.push(`MOQ = ${changes.Moq}`);
+      }
+
+      if ("SupplierPartType" in changes && changes.SupplierPartType) {
+        setUpdates.push(`SupplierPartType = '${changes.SupplierPartType}'`);
+      }
+
+      if ("WcpPartType" in changes && changes.WcpPartType) {
+        setUpdates.push(`WCPPartType = '${changes.WcpPartType}'`);
+      }
+
+      if (
+        "CostCurrency" in changes &&
+        typeof changes.CostCurrency === "number"
+      ) {
+        setUpdates.push(`CostCurrency = ${changes.CostCurrency}`);
+      }
 
       if ("IsMain" in changes && typeof changes.IsMain === "boolean") {
         setUpdates.push(`IsMain = ${Number(changes.IsMain)}`);
@@ -1200,10 +1223,11 @@ export async function updateAltIndex(mapChange) {
         (SELECT TOP 1 ID
           FROM Product
           WHERE SKU = '${productID}' OR ResearchID = '${productID}')
-        AND SupplierNumber = '${item.get("number")}';`);
+        AND SupplierNumber = '${item.get("supplier")}';`);
     });
     const query = updateQueries.join("\n");
     // console.log(query);
+    // debugger;
 
     console.log("Updating Alternate Index...");
     let result = await pool.query(query);

@@ -13,7 +13,7 @@ import {
 } from "./utils/fetchSQL-utils.js";
 import {
   updateDataOnDatabase,
-  updateProductRequestHistory,
+  syncProductRequestHistoryWithDatabase,
   generateProductID,
   findMatchingProductDetail,
 } from "./utils/tab-utils.js";
@@ -440,6 +440,6 @@ async function updateProductRequestsWithDatabase(socket) {
     );
 
   // Update productRequestHistory in StorageSession with new Product-Details from the New Product Table (Database)
-  updateProductRequestHistory(newProductSaved, productDetails);
+  syncProductRequestHistoryWithDatabase(newProductSaved, productDetails);
   return { Product: productDetails, NewProduct: newProductSaved };
 }

@@ -14,7 +14,7 @@ import { exportDataTable } from "../utils/table-utils.js";
 import {
   saveChanges,
   updateChanges,
-  updateProductRequestHistory,
+  syncProductRequestHistoryWithDatabase,
 } from "../utils/tab-utils.js";
 import {
   fetchUserDataFromDatabase,
@@ -81,7 +81,7 @@ $(async function () {
     );
   } else {
     // Put New Products into Product Request History
-    updateProductRequestHistory(
+    syncProductRequestHistoryWithDatabase(
       periodTableData.NewProduct,
       periodTableData.Product
     );

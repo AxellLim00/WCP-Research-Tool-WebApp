@@ -7,4 +7,8 @@ DELETE from [Product]
 DELETE from [Supplier]
 DELETE from [Users]
 
-DELETE from [Product] WHERE [ResearchID] is NULL or [SKU] is NULL
+DELETE FROM [NewProduct] WHERE ProductID IN (SELECT ID FROM [Product] WHERE [ResearchID] LIKE 'R-2%' AND [ResearchID] != 'R-2037ML-BF73')
+-- DELETE FROM [AlternateIndex] WHERE ProductID IN (SELECT ID FROM [Product] WHERE [ResearchID] IS NOT NULL AND [SKU] IS NOT NULL)
+DELETE from [Product] WHERE [ResearchID] LIKE 'R-2%' AND [ResearchID] != 'R-2037ML-BF73'
+
+
