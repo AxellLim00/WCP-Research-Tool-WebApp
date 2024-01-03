@@ -690,7 +690,7 @@ $(async function () {
           );
           if (typeof rowIdx !== "number" || rowIdx < 0) return;
           // Update row object with new data
-          updateImportRowDataTableObj(rowObj, altIndexDto);
+          updateRowDataForImport(rowObj, altIndexDto);
           table.row(rowIdx).data(rowObj).invalidate();
         });
       }
@@ -993,7 +993,7 @@ function getSupplierByNumber(supplierNumber, supplierArray) {
  * @param {Object} updatedAltIndexDto - The updatedAltIndexDto object containing the new values.
  * @returns {Object} - The updated row object.
  */
-function updateImportRowDataTableObj(rowObj, updatedAltIndexDto) {
+function updateRowDataForImport(rowObj, updatedAltIndexDto) {
   if (updatedAltIndexDto.Index != undefined)
     rowObj.Index = updatedAltIndexDto.Index;
   if (updatedAltIndexDto.Moq != undefined) rowObj.Moq = updatedAltIndexDto.Moq;

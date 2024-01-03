@@ -37,34 +37,34 @@ export function findMissingColumnHeader(rowObject, arrayHeader) {
  * Read XLSX and XLS file to JSON representation format/
  * @param {String} filenameInput HTML file input Id
  * @param {String[] | String[String[]]} columnHeader List of Column Header names or List of Worksheet's List of header (when located in different worksheet)
- * @param {Boolean} worksheetSeperated Defaults to false
+ * @param {Boolean} worksheetSeparated Defaults to false
  * @param {String[]} worksheetName  Defaults to empty list
  * @returns {Promise<Map> | undefined} Excel Worksheet data in JSON format when resolved, if fail to read or rejects returns undefined
  */
 export async function readFileToJson(
   filenameInput,
   columnHeader,
-  worksheetSeperated = false,
+  worksheetSeparated = false,
   worksheetName = []
 ) {
   // Read file
-  const FILE = $(filenameInput).prop("files");
-  const READER = new FileReader();
+  const file = $(filenameInput).prop("files");
+  const reader = new FileReader();
 
   return new Promise((resolve, reject) => {
-    READER.onloadend = function () {
-      const FILE_DATA = new Uint8Array(READER.result);
-      const WORKBOOK = XLSX.read(FILE_DATA, { type: "array" });
+    reader.onloadend = function () {
+      const fileData = new Uint8Array(reader.result);
+      const workbook = XLSX.read(fileData, { type: "array" });
 
       // Assuming the first sheet of the workbook is the relevant one
-      if (!worksheetSeperated) {
-        const SHEET_NAME = WORKBOOK.SheetNames[0];
-        const SHEET = WORKBOOK.Sheets[SHEET_NAME];
+      if (!worksheetSeparated) {
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
         // Get all header cell location
         let headerCell = [];
         // const SHEET_ARRAY = XLSX.utils.sheet_to_json(SHEET);
-        for (let cellAddress in SHEET)
-          if (columnHeader.includes(String(SHEET[cellAddress].v))) {
+        for (let cellAddress in sheet)
+          if (columnHeader.includes(String(sheet[cellAddress].v))) {
             headerCell.push(cellAddress);
           }
         // sort for index 0 to be the most top left cell
@@ -75,12 +75,12 @@ export async function readFileToJson(
         }
 
         //encode range
-        let range = XLSX.utils.decode_range(SHEET["!ref"]);
+        let range = XLSX.utils.decode_range(sheet["!ref"]);
         range.s = XLSX.utils.decode_cell(headerCell[0]);
         let new_range = XLSX.utils.encode_range(range);
         // Fix with this solution https://github.com/SheetJS/sheetjs/issues/728
         resolve(
-          XLSX.utils.sheet_to_json(SHEET, {
+          XLSX.utils.sheet_to_json(sheet, {
             range: new_range,
           })
         );
@@ -89,12 +89,12 @@ export async function readFileToJson(
         let errorMessage = [];
 
         worksheetName.forEach((sheetName, index) => {
-          if (!WORKBOOK.SheetNames.includes(sheetName)) {
+          if (!workbook.SheetNames.includes(sheetName)) {
             errorMessage.push(`Worksheet "${sheetName}" not found.`);
             return;
           }
 
-          let worksheet = WORKBOOK.Sheets[sheetName];
+          let worksheet = workbook.Sheets[sheetName];
           let worksheetData = XLSX.utils.sheet_to_json(worksheet, {
             header: columnHeader[index],
           });
@@ -145,15 +145,13 @@ export async function readFileToJson(
         resolve(combinedData);
       }
     };
-    READER.onerror = function () {
-      showAlert(
-        `<strong>Error!</strong> File fail to load: ${fileReader.error}`
-      );
+    reader.onerror = function () {
+      showAlert(`<strong>Error!</strong> File fail to load: ${reader.error}`);
 
       reject(undefined);
     };
 
-    READER.readAsArrayBuffer(FILE[0]);
+    reader.readAsArrayBuffer(file[0]);
   });
 }
 

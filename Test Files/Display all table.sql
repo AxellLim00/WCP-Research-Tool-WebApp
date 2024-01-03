@@ -13,4 +13,4 @@ Select * from [NewProduct]
 Select [ResearchID] from [NewProduct]
 Select * from [AlternateIndex] ORDER BY [AltIndexNumber]
 
-SELECT * FROM [Product] WHERE [ResearchID] LIKE 'R-2%' AND [ResearchID] != 'R-2037ML-BF73'
+SELECT * FROM [Product] WHERE [ResearchID] LIKE 'R-2%' AND [ResearchID] != 'R-2037ML-BF73' ORDER BY [ResearchID]

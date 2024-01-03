@@ -514,7 +514,7 @@ $(async function () {
       // Put map data into Object List
       const updatedRows = [];
       const importProducts = jsonSheet.map((row) => {
-        let newObject = new ProductDto(
+        let newProductObj = new ProductDto(
           generateProductID(row[icNumVal], row[partTypeCodeVal]),
           isSkuEmpty ? "" : row[skuVal],
           row[makeVal],
@@ -529,12 +529,12 @@ $(async function () {
           row[partTypeCodeVal]
         );
 
-        if (newObject.Status === null) {
+        if (newProductObj.Status === null) {
           errorMessage.push(
             `STATUS <i>${row[statusVal]}</i> must be a valid value`
           );
         }
-        if (newObject.Oem === null) {
+        if (newProductObj.Oem === null) {
           errorMessage.push(
             `OEM type <i>${row[oemTypeVal]}</i> must be a valid value`
           );
@@ -545,25 +545,33 @@ $(async function () {
         ).map((object) =>
           Object.assign(new ProductRequestHistoryDto(), object)
         );
-        // Check if imported data is in ProductHistoryRequest, if yes, change type to update and table to Product
-        const productReq = findProductInProductRequestHistory(
-          productReqHistWorkflowArray,
-          newObject
+        // // Check if imported data is in ProductHistoryRequest, if yes, change type to update and table to Product
+        // const productReq = findProductInProductRequestHistory(
+        //   productReqHistWorkflowArray,
+        //   newObject
+        // );
+        const { rowIndex: _, rowObject: rowDataMatch } = findProductInTable(
+          table,
+          newProductObj
         );
 
         // If product is found in ProductHistoryRequest, change type to update and table to Product
-        if (productReq) {
+        if (rowDataMatch) {
           let tableDatabase = "NewProduct";
-          newObject.Id = productReq.researchIdentifier;
+          newProductObj.Id = rowDataMatch.Id;
           // If product is found in ProductHistoryRequest, change type to update and table to Product
-          if (productReq.productStockNumber) {
+          if (rowDataMatch.Sku) {
             nonUpdateWarning = true;
             tableDatabase = "Product";
           }
-          return { type: "edit", table: tableDatabase, productObj: newObject };
+          return {
+            type: "edit",
+            table: tableDatabase,
+            productObj: newProductObj,
+          };
         }
-        if (sessionStorage.getItem("debug")) debugger;
-        return { type: "new", table: "NewProduct", productObj: newObject };
+        // if (sessionStorage.getItem("debug")) debugger;
+        return { type: "new", table: "NewProduct", productObj: newProductObj };
       });
 
       if (errorMessage.length) {
@@ -694,6 +702,7 @@ $(async function () {
 
       // exit if no changes were made
       if (Object.keys(newUpdate).length === 0) {
+        console.log("No changes were made.");
         exitPopUpForm(formSelected);
         return;
       }
@@ -710,6 +719,7 @@ $(async function () {
       // updatedProductRequestHistory.push(productSelected);
       // Redraw the table to reflect the changes
       table.row(rowIndexSelected).data(rowData).invalidate().draw();
+      exitPopUpForm(formSelected);
     }
     // save changes in rows into sessionStorage
     updateChanges(changesMade);
@@ -930,9 +940,48 @@ function findProductInProductRequestHistory(
 }
 
 /**
- * Finds the row object in a table based on the given product request.
+ * Finds a product in a table based on SKU or Research ID's Unique identifier's IC Number + Version + Part Type Code.
  * @param {DataTable} table - The table to search in.
- * @param {ProductDto} productObj - The product request object containing the product stock number and research identifier.
+ * @param {ProductDto} newProductObject - The object representing the new product.
+ * @returns {Object} - An object containing the index of the found row and the row object.
+ */
+function findProductInTable(table, newProductObject) {
+  const sku = newProductObject.Sku;
+  const ic_PartType =
+    String(newProductObject.Num).replace(/\s/g, "") + newProductObject.TypeCode;
+  const researchID = newProductObject.Id;
+
+  let rowIndex;
+  let rowObject = table
+    .row((idx, data) => {
+      if (data.Sku && sku && data.Sku.toUpperCase() === sku.toUpperCase()) {
+        rowIndex = idx;
+        return true;
+      }
+      if (data.Id && researchID) {
+        const researchIDParts = data.Id.split("-");
+        if (researchIDParts.length > 2) {
+          const icPartTypeFromResearchID = researchIDParts
+            .slice(1, -1)
+            .join("-");
+          if (
+            icPartTypeFromResearchID.toLowerCase() === ic_PartType.toLowerCase()
+          ) {
+            rowIndex = idx;
+            return true;
+          }
+        }
+      }
+      return false;
+    })
+    .data();
+  return { rowIndex, rowObject };
+}
+
+/**
+ * Finds the row object in a table based on the given product Object's known SKU and/or ResearchID.
+ * @param {DataTable} table - The table to search in.
+ * @param {ProductDto} productObj - The product object containing the product stock number and research identifier.
  * @returns {Object} - An object containing the idx (row Index) and obj (row Object) of the found row, or null if not found.
  */
 function findRowObject(table, productObj) {

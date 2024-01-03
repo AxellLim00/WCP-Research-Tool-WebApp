@@ -630,16 +630,20 @@ export async function insertKType(mapChange) {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
-    console.log("Inserting new KType...");
     const query = `INSERT INTO KeyType (KTypeKey, KeyType, ProductID)
       VALUES 
-      ${mapChange.map(
-        (Map) =>
-          `(NEWID(), '${Map.get("changes").KType}', 
+      ${mapChange
+        .map(
+          (Map) =>
+            `(NEWID(), '${Map.get("changes").KType}', 
             (SELECT TOP 1 ID FROM Product
               WHERE Product.ResearchID = '${Map.get("id")}' 
-              OR Product.SKU = '${Map.get("id")}'));`
-      )}`;
+              OR Product.SKU = '${Map.get("id")}'))`
+        )
+        .join()}`;
+    // console.log(query);
+    // debugger;
+    console.log("Inserting new KType...");
     const result = await pool.query(query);
     console.log("Inserted new KType");
     console.log("Result: ", result.rowsAffected);
@@ -669,15 +673,20 @@ export async function insertEpid(mapChange) {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
-    console.log("Inserting new ePID...");
-    let result = await pool.query(`INSERT INTO EPID (EPID, ProductID)
-      VALUES ${mapChange.map(
-        (Map) =>
-          `('${Map.get("changes").EPID}', 
+    const query = `INSERT INTO EPID (EPID, ProductID)
+      VALUES ${mapChange
+        .map(
+          (Map) =>
+            `('${Map.get("changes").EPID}', 
           (SELECT TOP 1 ID FROM Product
             WHERE Product.ResearchID = '${Map.get("id")}' 
             OR Product.SKU = '${Map.get("id")}'))`
-      )}`);
+        )
+        .join()}`;
+    // console.log(query);
+    // debugger;
+    console.log("Inserting new ePID...");
+    const result = await pool.query(query);
     console.log("Inserted new ePID");
     console.log("Result: ", result.rowsAffected);
     return {
@@ -943,8 +952,8 @@ export async function updateNewProduct(mapChange) {
     });
     const query = updateQueries.join("\n");
     console.log(query);
-    debugger;
-    console.log("Updating NewProduct...");
+    // debugger;
+    // console.log("Updating NewProduct...");
     let result = await pool.query(query);
     console.log("Updated NewProduct");
 
