@@ -60,6 +60,7 @@ $(async function () {
   const currencySupplierMap = new Map();
   const productIdArray = getProductIdentifier(productRequestArray);
   const productIdSelected = sessionStorage.getItem("productIDSelected");
+  const newAltIndexToAdd = [];
 
   let isTableEmpty = true;
   let formSelected;
@@ -342,6 +343,7 @@ $(async function () {
     //on successful save
     if (saveChanges(socket)) {
       updateHasChanges(false);
+      newAltIndexToAdd.length = 0;
     }
   });
 
@@ -521,7 +523,7 @@ $(async function () {
         wcpPartTypeVal,
         QualityVal,
       ];
-      columnHeader.filter((n) => n);
+      columnHeader = columnHeader.filter((n) => n);
 
       const jsonSheet = await readFileToJson("#importFile", columnHeader);
 
@@ -556,6 +558,26 @@ $(async function () {
         // Exit save function
         return;
       }
+
+      // Check if there are any empty cells in the following columns
+      const emptyCellHeaders = [];
+      jsonSheet.forEach((row) => {
+        columnHeader.forEach((header) => {
+          if (row[header] === undefined || row[header] === "") {
+            emptyCellHeaders.push(header);
+          }
+        });
+      });
+      // On Error Empty Cells
+      if (emptyCellHeaders.length > 0) {
+        showAlert(
+          `Some cells in the following columns are empty: ${emptyCellHeaders.join(
+            ", "
+          )}`
+        );
+        return;
+      }
+
       // Get all altIndex from database based on Supplier Number
       // to check if altIndex already exists
       let altIndexBySupplierNumber;
@@ -600,12 +622,20 @@ $(async function () {
           missingProductID.push(altIndexDto.ProductID);
         }
 
-        // Check if altIndex already exists in database
+        // Check if altIndex already exists in database or added in previous import (not saved yet)
+        if (sessionStorage.debug === "1") debugger;
         if (
           altIndexBySupplierNumber.find(
-            (x) =>
-              (x.SKU && x.SKU === row[productVal]) ||
-              (x.ResearchID && x.ResearchID === row[productVal])
+            (altIndex) =>
+              (altIndex.SKU && altIndex.SKU === row[productVal]) ||
+              (altIndex.ResearchID && altIndex.ResearchID === row[productVal])
+          ) ||
+          newAltIndexToAdd.find(
+            (altIndex) =>
+              altIndex.Number === supNumVal &&
+              ((altIndex.ProductID && altIndex.ProductID === row[productVal]) ||
+                (altIndex.ProductAlias &&
+                  altIndex.ProductAlias === row[productVal]))
           )
         ) {
           type = "edit";
@@ -614,7 +644,6 @@ $(async function () {
         // the currency the supplier quotes in against the supplier and the import will just be a $ value
         return { type: type, altIndex: altIndexDto };
       });
-
       if (missingSupplierNumber.length > 0) {
         errorMessage.push(
           `Supplier Number ${missingSupplierNumber.join(
@@ -634,7 +663,6 @@ $(async function () {
         // Exit save function
         return;
       }
-
       // Separate new Alternate Indexes and Alternate Indexes to edit
       const newImportAltIndexesDto = importAltIndexes
         .filter((item) => item.type === "newSupplier")
@@ -643,7 +671,7 @@ $(async function () {
         .filter((item) => item.type === "edit")
         .map((obj) => obj.altIndex);
       // Check if there are any new Alternate Indexes
-      if (newImportAltIndexesDto.length > 0)
+      if (newImportAltIndexesDto.length > 0) {
         changesMade.push(
           new Map([
             ["type", "newSupplier"],
@@ -652,6 +680,24 @@ $(async function () {
             ["changes", newImportAltIndexesDto],
           ])
         );
+        newImportAltIndexesDto.forEach((altIndex) => {
+          // Get Product Data
+          const productData = getProductFromID(
+            altIndex.ProductID,
+            productRequestArray
+          );
+          console.log(productData);
+          // Update Product Alias
+          altIndex.ProductAlias = getProductIDAlias(
+            altIndex.ProductID,
+            productData
+          );
+          console.log(altIndex.ProductAlias);
+          // Add to newAltIndexToAdd
+          newAltIndexToAdd.push(altIndex);
+        });
+      }
+
       // Check if there are any Alternate Indexes to edit
       editImportAltIndexesDto.forEach((altIndex) => {
         // Remove unnecessary data

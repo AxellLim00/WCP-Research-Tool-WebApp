@@ -153,6 +153,8 @@ export class AlternateIndexDto {
     this.WcpPartType = wcpPartType ?? "";
     this.IsMain = isMain ?? false;
     this.ProductID = productID;
+    // For identifying purposes
+    this.ProductAlias = "";
   }
 }
 

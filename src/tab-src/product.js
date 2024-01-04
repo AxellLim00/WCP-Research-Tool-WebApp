@@ -570,7 +570,6 @@ $(async function () {
             productObj: newProductObj,
           };
         }
-        // if (sessionStorage.getItem("debug")) debugger;
         return { type: "new", table: "NewProduct", productObj: newProductObj };
       });
 
