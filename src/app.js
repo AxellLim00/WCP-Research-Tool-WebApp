@@ -201,11 +201,10 @@ io.on("connect", async function (socket) {
   );
 
   socket.on("update database", async (updateList, callback) => {
-    // TODO: Change from using map to just Objects
     // Use reduce to split the list based on table Name and action
-    updateList = updateList.map((obj) => new Map(JSON.parse(obj)));
+    updateList = updateList.map((obj) => JSON.parse(obj));
     const separatedLists = updateList.reduce((acc, item) => {
-      const key = `${item.get("table")}_${item.get("type")}`;
+      const key = `${item.Table}_${item.Type}`;
       if (!acc[key]) {
         acc[key] = [];
       }
@@ -220,16 +219,16 @@ io.on("connect", async function (socket) {
     if (separatedLists["Product_new"])
       resultArray.push(await insertProduct(separatedLists["Product_new"]));
 
+    if (separatedLists["NewProduct_new"])
+      resultArray.push(
+        await insertNewProduct(separatedLists["NewProduct_new"])
+      );
+
     if (separatedLists["Product_edit"])
       resultArray.push(await updateProduct(separatedLists["Product_edit"]));
 
     if (separatedLists["Product_delete"])
       resultArray.push(await deleteProduct(separatedLists["Product_delete"]));
-
-    if (separatedLists["NewProduct_new"])
-      resultArray.push(
-        await insertNewProduct(separatedLists["NewProduct_new"])
-      );
 
     if (separatedLists["NewProduct_edit"]) {
       resultArray.push(

@@ -287,14 +287,12 @@ $(async function () {
           break;
       }
 
-      changesMade.push(
-        new Map([
-          ["type", "new"],
-          ["id", productIdSelected],
-          ["table", tableDatabaseName],
-          ["changes", newItem],
-        ])
-      );
+      changesMade.push({
+        Type: "new",
+        Id: productIdSelected,
+        Table: tableDatabaseName,
+        Changes: newItem,
+      });
       // Add data to table
       table.row.add({ item: Object.values(newItem)[0] }).draw();
     }
@@ -320,15 +318,13 @@ $(async function () {
         exitPopUpForm(formSelected);
         return;
       }
-      changesMade.push(
-        new Map([
-          ["type", "edit"],
-          ["id", productIdSelected],
-          ["table", tableDatabaseName],
-          ["oldValue", itemSelected.value],
-          ["newValue", newUpdateValue],
-        ])
-      );
+      changesMade.push({
+        Type: "edit",
+        Id: productIdSelected,
+        Table: tableDatabaseName,
+        OldValue: itemSelected.value,
+        NewValue: newUpdateValue,
+      });
       itemSelected.value = EDIT_VALUE;
       // Redraw the table to reflect the changes
       table.row(rowIndexSelected).data(rowData).invalidate().draw();

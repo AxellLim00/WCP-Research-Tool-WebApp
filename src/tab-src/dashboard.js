@@ -65,12 +65,10 @@ $(async function () {
     );
     if (currentUser) fillDashboardTexts(currentUser, userTableData);
     else {
-      Array.from(new Set(userTableData.map((user) => user.Team))).forEach(
-        (team) =>
-          $("#newTeamSelect").append(
-            $("<option>").attr("value", team).text(team)
-          )
-      );
+      const uniqueTeams = [...new Set(userTableData.map((user) => user.Team))];
+      uniqueTeams.forEach((team) => {
+        $("#newTeamSelect").append($("<option>").attr("value", team).text(team));
+      });
       showPopUpForm("new", "New User?");
     }
   }
@@ -233,13 +231,7 @@ $(async function () {
       Team: team,
     };
     console.log(newUser);
-    updateChanges([
-      new Map([
-        ["type", "new"],
-        ["table", "Users"],
-        ["changes", [newUser]],
-      ]),
-    ]);
+    updateChanges([{ Type: "new", Table: "Users", Changes: [newUser] }]);
     let isSaved = await saveChanges(socket);
     if (isSaved) {
       newUser.ProductCount = 0;

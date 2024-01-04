@@ -285,14 +285,12 @@ $(async function () {
         );
 
         // Store each new row locally
-        changesMade.push(
-          new Map([
-            ["type", "edit"],
-            ["id", newObject.Id],
-            ["table", "Product"],
-            ["changes", newObject],
-          ])
-        );
+        changesMade.push({
+          Type: "edit",
+          Id: newObject.Id,
+          Table: "Product",
+          Changes: newObject,
+        });
         return newObject;
       });
 
@@ -351,14 +349,12 @@ $(async function () {
         exitPopUpForm(formSelected);
         return;
       }
-      changesMade.push(
-        new Map([
-          ["type", "edit"],
-          ["id", productIdSelected],
-          ["table", "Product"],
-          ["changes", newUpdate],
-        ])
-      );
+      changesMade.push({
+        Type: "edit",
+        Id: productIdSelected,
+        Table: "Product",
+        Changes: newUpdate,
+      });
       costVolSelected = updateObject(costVolSelected, newUpdate);
       $.each(Object.keys(costVolSelected), function (i, val) {
         $table.find("tr").find("td").eq(i).text(costVolSelected[val]);

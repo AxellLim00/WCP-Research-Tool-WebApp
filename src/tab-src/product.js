@@ -599,14 +599,12 @@ $(async function () {
           table.clear().draw();
         }
 
-        changesMade.push(
-          new Map([
-            ["type", "new"],
-            ["user", user],
-            ["table", "NewProduct"],
-            ["changes", newImportProduct],
-          ])
-        );
+        changesMade.push({
+          Type: "new",
+          User: user,
+          Table: "NewProduct",
+          Changes: newImportProduct,
+        });
 
         // Add new import data to table
         table.rows.add(newImportProduct).draw();
@@ -615,15 +613,13 @@ $(async function () {
       // Add edit import data to database changes and update rows
       if (editImportProduct.length > 0) {
         editImportProduct.forEach((product) => {
-          changesMade.push(
-            new Map([
-              ["type", "edit"],
-              ["user", user],
-              ["id", product.productObj.Sku ?? product.productObj.Id],
-              ["table", product.table],
-              ["changes", product.productObj],
-            ])
-          );
+          changesMade.push({
+            Type: "edit",
+            User: user,
+            Id: product.productObj.Sku ?? product.productObj.Id,
+            Table: product.table,
+            Changes: product.productObj,
+          });
           const { idx: rowIndex, obj: rowObject } = findRowObject(
             table,
             product.productObj
@@ -636,7 +632,7 @@ $(async function () {
             if (!isOemCategoryEmpty) rowObject.Oem = product.productObj.Oem;
           }
           // Update rows in table
-          updatedProductRequestHistory.push(product.productObj);
+          updatedProductRequestHistory.push(rowObject);
           table.row(rowIndex).data(rowObject).invalidate().draw();
         });
       }
@@ -671,15 +667,13 @@ $(async function () {
         table.clear().draw();
       }
       // save new rows into sessionStorage
-      changesMade.push(
-        new Map([
-          ["type", "new"],
-          ["id", newProduct.Id],
-          ["user", user],
-          ["table", "NewProduct"],
-          ["changes", [newProduct]],
-        ])
-      );
+      changesMade.push({
+        Type: "new",
+        User: user,
+        Id: newProduct.Id,
+        Table: "NewProduct",
+        Changes: [newProduct],
+      });
 
       // Add data to table
       table.row.add(newProduct).draw();
@@ -705,14 +699,12 @@ $(async function () {
         exitPopUpForm(formSelected);
         return;
       }
-      changesMade.push(
-        new Map([
-          ["type", "edit"],
-          ["id", productSelected.Id],
-          ["table", "Product"],
-          ["changes", newUpdate],
-        ])
-      );
+      changesMade.push({
+        Type: "edit",
+        Id: productSelected.Id,
+        Table: "Product",
+        Changes: newUpdate,
+      });
       productSelected = updateObject(productSelected, newUpdate);
       // Does not update product request history as no attribute that is editable is in product request history
       // updatedProductRequestHistory.push(productSelected);
@@ -899,7 +891,7 @@ function createProductObjectForTable(
       : "",
     productDatabaseMatch ? productDatabaseMatch.Status : "",
     productDatabaseMatch ? productDatabaseMatch.OemType : "",
-    Array.from(altIndexProductList),
+    Array.from(altIndexProductList), // Set to Array
     oemProductList,
     currentProductReq.partTypeCode
   );

@@ -324,11 +324,14 @@ export async function getEpid(productID) {
 }
 
 /**
- * Insert User data into the SQL Database.
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
- * @returns {String | Error} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
+ * Inserts new Users into the database.
+ * @param {Array} changeObjArray - An array of objects containing Changes to be made.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function insertUser(mapChange) {
+export async function insertUser(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
@@ -337,11 +340,11 @@ export async function insertUser(mapChange) {
     let result = await pool.query(
       `INSERT INTO Users (UserID, Team)
       VALUES
-        ${mapChange
-          .map((changeMap) =>
-            changeMap
-              .get("changes")
-              .map((user) => `('${user.UserID}', '${user.Team}')`)
+        ${changeObjArray
+          .map((changeObj) =>
+            changeObj.Changes.map(
+              (user) => `('${user.UserID}', '${user.Team}')`
+            )
           )
           .join(",\n")};`
     );
@@ -364,11 +367,14 @@ export async function insertUser(mapChange) {
 }
 
 /**
- * Insert Product data into the SQL Database that already exists from the Workflow API.
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
- * @returns {String | Error} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
+ * Inserts product details into the database.
+ * @param {Array} changeObjArray - An array of objects containing Changes to be made.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function insertProduct(mapChange) {
+export async function insertProduct(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
@@ -376,11 +382,11 @@ export async function insertProduct(mapChange) {
 
     const query = `INSERT INTO Product (ID, UserID, ResearchID, SKU, Status, OemType, LastUpdate)
       VALUES
-        ${mapChange
-          .map((changeMap) =>
-            changeMap.get("changes").map(
+        ${changeObjArray
+          .map((changeObj) =>
+            changeObj.Changes.map(
               (product) =>
-                `(NEWID(), '${changeMap.get("user")}', 
+                `(NEWID(), '${changeObj.User}', 
               ${product.Id ? "'" + product.Id + "'" : "NULL"}, 
               ${product.Sku ? "'" + product.Sku + "'" : "NULL"}, 
               ${ValueDictionary.Status[product.Status]}, 
@@ -411,11 +417,11 @@ export async function insertProduct(mapChange) {
 }
 
 /**
- * Insert Product data into the database that does not exist in the workflow API.
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
- * @returns {String | Error} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
+ * Inserts new product information into the database.
+ * @param {Array} changeObjArray - An array of objects containing the Changes to be made.
+ * @returns {Object} - An object containing the status and message of the operation.
  */
-export async function insertNewProduct(mapChange) {
+export async function insertNewProduct(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
@@ -423,11 +429,11 @@ export async function insertNewProduct(mapChange) {
 
     const query = `INSERT INTO Product (ID, UserID, ResearchID, SKU, Status, OemType, LastUpdate)
       VALUES
-        ${mapChange
-          .map((changeMap) =>
-            changeMap.get("changes").map(
+        ${changeObjArray
+          .map((changeObj) =>
+            changeObj.Changes.map(
               (product) =>
-                `(NEWID(), '${changeMap.get("user")}', 
+                `(NEWID(), '${changeObj.User}', 
                 '${product.Id}', 
               ${product.Sku ? "'" + product.Sku + "'" : "NULL"}, 
               ${ValueDictionary.Status[product.Status]}, 
@@ -438,9 +444,9 @@ export async function insertNewProduct(mapChange) {
           .join(",\n")};
       INSERT INTO NewProduct (ResearchID, Make, Model, PartType, IcNumber, IcDescription, ProductID, PartTypeCode, Request, RequestNF, UnitSold, AveragePrice)
       VALUES
-        ${mapChange
+        ${changeObjArray
           .map((changeMap) =>
-            changeMap.get("changes").map(
+            changeMap.Changes.map(
               (product) =>
                 `('${product.Id}', 
                 '${product.Make}', '${product.Model}', 
@@ -479,11 +485,14 @@ export async function insertNewProduct(mapChange) {
 }
 
 /**
- * Insert Supplier data into the database.
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
- * @returns {int[] | Error} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
+ * Inserts a new supplier into the database.
+ * @param {Array} changeObjArray - An array of objects representing the Changes to be made.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function insertSupplier(mapChange) {
+export async function insertSupplier(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
@@ -491,14 +500,12 @@ export async function insertSupplier(mapChange) {
     console.log("Inserting new supplier...");
     const query = `INSERT INTO Supplier (SupplierNumber, SupplierName, Currency)
       VALUES 
-      ${mapChange
-        .map((changeMap) =>
-          changeMap
-            .get("changes")
-            .map(
-              (supplier) =>
-                `('${supplier.SupplierNumber}', '${supplier.SupplierName}', '${supplier.Currency}')`
-            )
+      ${changeObjArray
+        .map((changeObj) =>
+          changeObj.Changes.map(
+            (supplier) =>
+              `('${supplier.SupplierNumber}', '${supplier.SupplierName}', '${supplier.Currency}')`
+          )
         )
         .join(",\n")};`;
     const result = await pool.query(query);
@@ -521,33 +528,40 @@ export async function insertSupplier(mapChange) {
 }
 
 /**
- * Insert Oem data into the SQL Database based on the Product ID specified.
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
- * @returns {Object} Status ("OK" or "ERROR"), with Message of success with number of successful row inserts OR an Error Object.
+ * Inserts OEMs by product into the database.
+ * @param {Array<Object>} changeObjArray - An array of objects representing the Changes to be made.
+ * Each object should have the following properties:
+ *   - Id: The ID of the product.
+ *   - Changes: An array of objects representing the Changes to be made for the product.
+ *     Each object should have the following properties:
+ *       - Supplier: The supplier number.
+ *       - Oem: The OEM value.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function insertOemByProduct(mapChange) {
+export async function insertOemByProduct(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new Oem...");
     const query = `DECLARE @productKey uniqueidentifier;
-    ${mapChange
+    ${changeObjArray
       .map(
-        (Map) =>
+        (changeObj) =>
           `SET @productKey =
         (SELECT TOP 1 ID
           FROM Product
-          WHERE Product.ResearchID = '${Map.get("id")}' 
-          OR Product.SKU = '${Map.get("id")}');
+          WHERE Product.ResearchID = '${changeObj.Id}' 
+          OR Product.SKU = '${changeObj.Id}');
         INSERT INTO Oem (OemKey, SupplierNumber, OEM, productID)
         VALUES
-          ${Map.get("changes")
-            .map(
-              (pair) =>
-                `(NEWID(), '${pair.Supplier}', '${pair.Oem}', @productKey)`
-            )
-            .join(",\n")};`
+          ${changeObj.Changes.map(
+            (pair) =>
+              `(NEWID(), '${pair.Supplier}', '${pair.Oem}', @productKey)`
+          ).join(",\n")};`
       )
       .join("\n")}`;
     const result = await pool.query(query);
@@ -572,31 +586,31 @@ export async function insertOemByProduct(mapChange) {
 }
 
 /**
- * Insert Oem data into the SQL Database based on the Supplier Number specified.
- * @param {string} supplierNumber Supplier's Number or Identification.
- * @param {Object[]} oemProductPairs list of oem-productID (SKU or Research ID) pair object.
- * @returns {Object} Status ("OK" or "ERROR"), with Message of success with number of successful row inserts OR an Error Object.
+ * Inserts OEMs by supplier into the database.
+ * @param {Array} changeObjArray - An array of objects containing the Changes to be made.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function insertOemBySupplier(mapChange) {
+export async function insertOemBySupplier(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
     console.log("Inserting new Oem...");
-    const query = `${mapChange
+    const query = `${changeObjArray
       .map(
-        (Map) =>
+        (changeObj) =>
           `INSERT INTO Oem (OemKey, SupplierNumber, OEM, productID) VALUES
-            ${Map.get("changes")
-              .map(
-                (pair) =>
-                  `(NEWID(), '${Map.get("Supplier")}', '${pair.Oem}', 
+            ${changeObj.Changes.map(
+              (pair) =>
+                `(NEWID(), '${changeObj.Supplier}', '${pair.Oem}', 
                   (SELECT TOP 1 ID FROM Product
                   WHERE SKU = '${pair.ProductID}' 
                   OR ResearchID = '${pair.ProductID}'))`
-              )
-              .join(",\n")};`
+            ).join(",\n")};`
       )
       .join("\n")}`;
     const result = await pool.query(query);
@@ -621,24 +635,27 @@ export async function insertOemBySupplier(mapChange) {
 }
 
 /**
- * Insert KType (Key Type) data into the SQL Database.
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
- * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
+ * Inserts an array of change objects into the KeyType table in the SQL database.
+ * @param {Array} changeObjArray - The array of change objects to be inserted.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function insertKType(mapChange) {
+export async function insertKType(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     const query = `INSERT INTO KeyType (KTypeKey, KeyType, ProductID)
       VALUES 
-      ${mapChange
+      ${changeObjArray
         .map(
-          (Map) =>
-            `(NEWID(), '${Map.get("changes").KType}', 
+          (changeObj) =>
+            `(NEWID(), '${changeObj.Changes.KType}', 
             (SELECT TOP 1 ID FROM Product
-              WHERE Product.ResearchID = '${Map.get("id")}' 
-              OR Product.SKU = '${Map.get("id")}'))`
+              WHERE Product.ResearchID = '${changeObj.Id}' 
+              OR Product.SKU = '${changeObj.Id}'))`
         )
         .join()}`;
     // console.log(query);
@@ -664,23 +681,29 @@ export async function insertKType(mapChange) {
 }
 
 /**
- * Insert EPID (eBay Product ID) data into the SQL Database.
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
- * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
+ * Inserts an array of change objects into the EPID table in the SQL database.
+ * Each change object contains an EPID value and an ID value that corresponds to a Product in the Product table.
+ * The ID value can be either a ResearchID or a SKU.
+ *
+ * @param {Array<Object>} changeObjArray - The array of change objects to be inserted.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function insertEpid(mapChange) {
+export async function insertEpid(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     const query = `INSERT INTO EPID (EPID, ProductID)
-      VALUES ${mapChange
+      VALUES ${changeObjArray
         .map(
-          (Map) =>
-            `('${Map.get("changes").EPID}', 
+          (changeObj) =>
+            `('${changeObj.Changes.EPID}', 
           (SELECT TOP 1 ID FROM Product
-            WHERE Product.ResearchID = '${Map.get("id")}' 
-            OR Product.SKU = '${Map.get("id")}'))`
+            WHERE Product.ResearchID = '${changeObj.Id}' 
+            OR Product.SKU = '${changeObj.Id}'))`
         )
         .join()}`;
     // console.log(query);
@@ -706,38 +729,39 @@ export async function insertEpid(mapChange) {
 }
 
 /**
- * Insert Alternate Index data into the SQL Database based on the Supplier.
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
- * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
+ * Inserts alternate index records into the database by supplier.
+ * @param {Array} changeObjArray - An array of change objects containing the alternate index data.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function insertAltIndexBySupplier(mapChange) {
+export async function insertAltIndexBySupplier(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
-    const query = `${mapChange
+    const query = `${changeObjArray
       .map(
-        (Map) =>
+        (changeObj) =>
           `INSERT INTO AlternateIndex (AltIndexKey, MOQ, CostAud, LastUpdate, Quality, SupplierPartType, WCPPartType, ProductID, SupplierNumber, AltIndexNumber, CostCurrency)
-        VALUES ${Map.get("changes")
-          .map(
-            (altIndex) => `(NEWID(), ${altIndex.Moq}, ${
-              altIndex.CostAud ? altIndex.CostAud : -1
-            },
+        VALUES ${changeObj.Changes.map(
+          (altIndex) => `(NEWID(), ${altIndex.Moq}, ${
+            altIndex.CostAud ? altIndex.CostAud : -1
+          },
             '${new Date().toISOString().slice(0, 19).replace("T", " ")}',
             ${ValueDictionary.Quality[altIndex.Quality]}, '${
-              altIndex.SupplierPartType
-            }', 
+            altIndex.SupplierPartType
+          }', 
             '${altIndex.WcpPartType}', 
             (SELECT TOP 1 ID FROM Product
               WHERE SKU = '${altIndex.ProductID}' 
               OR ResearchID = '${altIndex.ProductID}'), 
-            '${Map.get("supplier")}',
+            '${changeObj.Supplier}',
             '${altIndex.Index}',
             ${altIndex.CostCurrency})`
-          )
-          .join()};`
+        ).join()};`
       )
       .join("\n")}`;
     console.log("Inserting new AltIndex...");
@@ -762,37 +786,39 @@ export async function insertAltIndexBySupplier(mapChange) {
 }
 
 /**
- * Insert Alternate Index data into the SQL Database based on the Product.
- * @param {String} ProductID Product's id (SKU or Research ID) selected.
- * @param {Object[]} altIndexObjects List of Alternate Index object.
- * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row inserts OR an Error Object.
+ * Inserts alternate indexes for products into the database.
+ * @param {Array<Object>} changeObjArray - An array of objects representing the Changes to be made.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function insertAltIndexByProduct(mapChange) {
+export async function insertAltIndexByProduct(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Inserting new AltIndex...");
     const query = `DECLARE @productKey uniqueidentifier
-    ${mapChange
+    ${changeObjArray
       .map(
-        (Map) =>
+        (changeObj) =>
           `SET @productKey = (SELECT TOP 1 ID FROM Product
-          WHERE Product.ResearchID = '${Map.get("id")}' 
-            OR Product.SKU = '${Map.get("id")}');
+          WHERE Product.ResearchID = '${changeObj.Id}' 
+            OR Product.SKU = '${changeObj.Id}');
           INSERT INTO AlternateIndex (AltIndexKey, MOQ, CostAud, LastUpdate, Quality, SupplierPartType, WCPPartType, ProductID, SupplierNumber, AltIndexNumber, CostCurrency)
-          VALUES ${Map.get("changes")
-            .map(
-              (altIndex) =>
-                `(NEWID(), ${altIndex.Moq}, ${altIndex.CostAud ?? -1}, 
+          VALUES ${changeObj.Changes.map(
+            (altIndex) =>
+              `(NEWID(), ${altIndex.Moq}, ${altIndex.CostAud ?? -1}, 
                 '${new Date().toISOString().slice(0, 19).replace("T", " ")}',
-                ${altIndex.Quality}, '${altIndex.SupplierPartType}', 
+                ${ValueDictionary.Quality[altIndex.Quality]}, '${
+                altIndex.SupplierPartType
+              }', 
                 '${altIndex.WcpPartType}', @productKey, 
                 '${altIndex.Number}',
                 '${altIndex.Index}',
                 ${altIndex.CostCurrency})`
-            )
-            .join()};`
+          ).join()};`
       )
       .join("\n")}`;
     const result = await pool.query(query);
@@ -815,44 +841,47 @@ export async function insertAltIndexByProduct(mapChange) {
 }
 
 /**
- * Updates Product value based on the new changes' mapping key-values to the SQL Database.
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
- * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ * Updates the product in the SQL database based on the provided change objects.
+ * @param {Array} changeObjArray - An array of change objects containing the Changes to be made to the product.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function updateProduct(mapChange) {
+export async function updateProduct(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
     const updateQueries = [];
-    mapChange.forEach((item) => {
-      let changes = item.get("changes");
-      let productID = item.get("id");
+    changeObjArray.forEach((changeObj) => {
+      let Changes = changeObj.Changes;
+      let productID = changeObj.Id;
       let setUpdates = [];
       // Translate DataTable value to SQL int value
-      if ("Status" in changes)
-        setUpdates.push(`Status = ${ValueDictionary.Status[changes.Status]}`);
+      if ("Status" in Changes)
+        setUpdates.push(`Status = ${ValueDictionary.Status[Changes.Status]}`);
 
-      if ("Oem" in changes)
-        setUpdates.push(`OemType = ${ValueDictionary.OemType[changes.Oem]}`);
+      if ("Oem" in Changes)
+        setUpdates.push(`OemType = ${ValueDictionary.OemType[Changes.Oem]}`);
 
-      if ("EstSaleVol" in changes)
-        setUpdates.push(`EstSales = ${changes.EstSaleVol}`);
+      if ("EstSaleVol" in Changes)
+        setUpdates.push(`EstSales = ${Changes.EstSaleVol}`);
 
-      if ("Note" in changes) setUpdates.push(`Note = '${changes.Note}'`);
+      if ("Note" in Changes) setUpdates.push(`Note = '${Changes.Note}'`);
 
-      if ("CostUSD" in changes) setUpdates.push(`CostUSD = ${changes.CostUSD}`);
+      if ("CostUSD" in Changes) setUpdates.push(`CostUSD = ${Changes.CostUSD}`);
 
-      if ("EstimateCostAUD" in changes)
-        setUpdates.push(`EstCostAud = ${changes.EstimateCostAUD}`);
+      if ("EstimateCostAUD" in Changes)
+        setUpdates.push(`EstCostAud = ${Changes.EstimateCostAUD}`);
 
-      if ("EstimateSell" in changes)
-        setUpdates.push(`EstSell = ${changes.EstimateSell}`);
+      if ("EstimateSell" in Changes)
+        setUpdates.push(`EstSell = ${Changes.EstimateSell}`);
 
-      if ("Postage" in changes) setUpdates.push(`Postage = ${changes.Postage}`);
+      if ("Postage" in Changes) setUpdates.push(`Postage = ${Changes.Postage}`);
 
-      if ("ExtGP" in changes) setUpdates.push(`ExtGp = ${changes.ExtGP}`);
+      if ("ExtGP" in Changes) setUpdates.push(`ExtGp = ${Changes.ExtGP}`);
 
       updateQueries.push(`UPDATE Product
       SET ${setUpdates.join()}, LastUpdate = '${new Date()
@@ -896,44 +925,47 @@ export async function updateProduct(mapChange) {
 }
 
 /**
- * Updates New Product value based on the new changes' mapping key-values to the SQL Database.
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
- * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ * Updates the NewProduct table in the SQL database with the provided Changes.
+ * @param {Array} changeObjArray - An array of objects representing the Changes to be made.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function updateNewProduct(mapChange) {
+export async function updateNewProduct(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
     const updateQueries = [];
-    mapChange.forEach((item) => {
-      let changes = item.get("changes");
-      let productID = item.get("id");
+    changeObjArray.forEach((changeObj) => {
+      let Changes = changeObj.Changes;
+      let productID = changeObj.Id;
       const setUpdates = [];
       const setProductUpdates = [];
       // Translate DataTable value to SQL int value
-      if ("Status" in changes && changes.Status != "")
+      if ("Status" in Changes && Changes.Status != "")
         setProductUpdates.push(
-          `Status = ${ValueDictionary.Status[changes.Status]}`
+          `Status = ${ValueDictionary.Status[Changes.Status]}`
         );
 
-      if ("Oem" in changes && changes.Oem != "")
+      if ("Oem" in Changes && Changes.Oem != "")
         setProductUpdates.push(
-          `OemType = ${ValueDictionary.OemType[changes.Oem]}`
+          `OemType = ${ValueDictionary.OemType[Changes.Oem]}`
         );
-      if ("Make" in changes) setUpdates.push(`Make = '${changes.Make}'`);
-      if ("Model" in changes) setUpdates.push(`Model = '${changes.Model}'`);
-      if ("Type" in changes) setUpdates.push(`PartType = '${changes.Type}'`);
-      if ("Desc" in changes)
-        setUpdates.push(`IcDescription = '${changes.Desc}'`);
-      if ("Request" in changes) setUpdates.push(`Request = ${changes.Request}`);
-      if ("RequestNF" in changes)
-        setUpdates.push(`RequestNF = ${changes.RequestNF}`);
-      if ("UnitSold" in changes)
-        setUpdates.push(`UnitSold = ${changes.UnitSold}`);
-      if ("AveragePrice" in changes)
-        setUpdates.push(`AveragePrice = ${changes.AveragePrice}`);
+      if ("Make" in Changes) setUpdates.push(`Make = '${Changes.Make}'`);
+      if ("Model" in Changes) setUpdates.push(`Model = '${Changes.Model}'`);
+      if ("Type" in Changes) setUpdates.push(`PartType = '${Changes.Type}'`);
+      if ("Desc" in Changes)
+        setUpdates.push(`IcDescription = '${Changes.Desc}'`);
+      if ("Request" in Changes) setUpdates.push(`Request = ${Changes.Request}`);
+      if ("RequestNF" in Changes)
+        setUpdates.push(`RequestNF = ${Changes.RequestNF}`);
+      if ("UnitSold" in Changes)
+        setUpdates.push(`UnitSold = ${Changes.UnitSold}`);
+      if ("AveragePrice" in Changes)
+        setUpdates.push(`AveragePrice = ${Changes.AveragePrice}`);
 
       updateQueries.push(`UPDATE NewProduct
         SET ${setUpdates.join()} 
@@ -951,7 +983,7 @@ export async function updateNewProduct(mapChange) {
         WHERE SKU = '${productID}' OR ResearchID = '${productID}';`);
     });
     const query = updateQueries.join("\n");
-    console.log(query);
+    // console.log(query);
     // debugger;
     // console.log("Updating NewProduct...");
     let result = await pool.query(query);
@@ -985,23 +1017,26 @@ export async function updateNewProduct(mapChange) {
 }
 
 /**
- * Updates Oem value based on the new changes' mapping key-values to the SQL Database.
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
- * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ * Updates the OEM value in the database for the given change objects.
+ * @param {Array<Object>} changeObjArray - An array of change objects containing the old and new values.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function updateOem(mapChange) {
+export async function updateOem(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
-    var updateQueries = [];
-    mapChange.forEach((item) => {
-      let productID = item.get("id");
+    const updateQueries = [];
+    changeObjArray.forEach((changeObj) => {
+      const productID = changeObj.Id;
 
       updateQueries.push(`UPDATE Oem
-      SET OEM = '${item.get("newValue")}'
-      WHERE OEM = '${item.get("oldValue")}' 
+      SET OEM = '${changeObj.NewValue}'
+      WHERE OEM = '${changeObj.OldValue}'}' 
         AND ProductID =
           (SELECT TOP 1 ID
           FROM Product
@@ -1015,10 +1050,11 @@ export async function updateOem(mapChange) {
       WHERE SKU = '${productID}' OR ResearchID = '${productID}'`);
     });
     const query = updateQueries.join("\n");
-    console.log(query);
+    // console.log(query);
+    // debugger;
 
     console.log("Updating Oem...");
-    let result = await pool.query(query);
+    const result = await pool.query(query);
     console.log("Updated Oem");
 
     console.log("Result: ", result.rowsAffected);
@@ -1044,23 +1080,26 @@ export async function updateOem(mapChange) {
 }
 
 /**
- * Updates KType value based on the new changes' mapping key-values to the SQL Database.
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
- * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ * Updates the KeyType in the SQL database based on the provided change objects.
+ * @param {Array<Object>} changeObjArray - An array of change objects containing the ID, oldValue, and newValue.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function updateKType(mapChange) {
+export async function updateKType(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
-    var updateQueries = [];
-    mapChange.forEach((item) => {
-      let productID = item.get("id");
+    const updateQueries = [];
+    changeObjArray.forEach((changeObj) => {
+      const productID = changeObj.Id;
 
       updateQueries.push(`UPDATE KeyType
-      SET KeyType = '${item.get("newValue")}'
-      WHERE KeyType = '${item.get("oldValue")}' 
+      SET KeyType = '${changeObj.NewValue}'
+      WHERE KeyType = '${changeObj.OldValue}' 
         AND ProductID =
           (SELECT TOP 1 ID
           FROM Product
@@ -1075,7 +1114,7 @@ export async function updateKType(mapChange) {
     });
 
     console.log("Updating KType...");
-    let result = await pool.query(updateQueries.join("\n"));
+    const result = await pool.query(updateQueries.join("\n"));
     console.log("Updated KType");
 
     console.log("Result: ", result.rowsAffected);
@@ -1101,23 +1140,26 @@ export async function updateKType(mapChange) {
 }
 
 /**
- * Updates ePID value based on the new changes' mapping key-values to the SQL Database.
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
- * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ * Updates the EPID values in the database based on the provided change objects.
+ * @param {Array<Object>} changeObjArray - An array of change objects containing the old and new EPID values.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function updateEpid(mapChange) {
+export async function updateEpid(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
-    var updateQueries = [];
-    mapChange.forEach((item) => {
-      let productID = item.get("id");
+    const updateQueries = [];
+    changeObjArray.forEach((changeObj) => {
+      const productID = changeObj.Id;
 
       updateQueries.push(`UPDATE EPID
-      SET EPID = '${item.get("newValue")}'
-      WHERE EPID = '${item.get("oldValue")}' 
+      SET EPID = '${changeObj.NewValue}'
+      WHERE EPID = '${changeObj.OldValue}' 
         AND ProductID =
           (SELECT TOP 1 ID
           FROM Product
@@ -1132,7 +1174,7 @@ export async function updateEpid(mapChange) {
     });
 
     console.log("Updating ePID...");
-    let result = await pool.query(updateQueries.join("\n"));
+    const result = await pool.query(updateQueries.join("\n"));
     console.log("Updated ePID");
 
     console.log("Result: ", result.rowsAffected);
@@ -1158,58 +1200,61 @@ export async function updateEpid(mapChange) {
 }
 
 /**
- * Updates Alternate Index value based on the new changes' mapping key-values to the SQL Database.
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
- * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ * Updates the alternate index in the SQL database based on the provided change objects.
+ * @param {Array} changeObjArray - An array of change objects containing the updates to be made.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function updateAltIndex(mapChange) {
+export async function updateAltIndex(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
     let updateQueries = [];
-    mapChange.forEach((item) => {
-      const changes = item.get("changes");
-      const productID = item.get("id");
+    changeObjArray.forEach((changeObj) => {
+      const Changes = changeObj.Changes;
+      const productID = changeObj.Id;
       const setUpdates = [];
       // Translate DataTable value to SQL int value
-      if ("Index" in changes && changes.Index)
-        setUpdates.push(`AltIndexNumber = '${changes.Index}'`);
+      if ("Index" in Changes && Changes.Index)
+        setUpdates.push(`AltIndexNumber = '${Changes.Index}'`);
 
-      if ("Number" in changes && changes.Number)
-        setUpdates.push(`SupplierNumber = '${changes.Number}'`);
+      if ("Number" in Changes && Changes.Number)
+        setUpdates.push(`SupplierNumber = '${Changes.Number}'`);
 
-      if ("CostAud" in changes && typeof changes.CostAud === "number")
-        setUpdates.push(`CostAud = ${changes.CostAud}`);
+      if ("CostAud" in Changes && typeof Changes.CostAud === "number")
+        setUpdates.push(`CostAud = ${Changes.CostAud}`);
 
-      if ("Quality" in changes && typeof changes.Quality)
+      if ("Quality" in Changes && typeof Changes.Quality)
         setUpdates.push(
-          `Quality = ${ValueDictionary.Quality[changes.Quality]}`
+          `Quality = ${ValueDictionary.Quality[Changes.Quality]}`
         );
 
-      if ("Moq" in changes && typeof changes.Moq === "number") {
-        setUpdates.push(`MOQ = ${changes.Moq}`);
+      if ("Moq" in Changes && typeof Changes.Moq === "number") {
+        setUpdates.push(`MOQ = ${Changes.Moq}`);
       }
 
-      if ("SupplierPartType" in changes && changes.SupplierPartType) {
-        setUpdates.push(`SupplierPartType = '${changes.SupplierPartType}'`);
+      if ("SupplierPartType" in Changes && Changes.SupplierPartType) {
+        setUpdates.push(`SupplierPartType = '${Changes.SupplierPartType}'`);
       }
 
-      if ("WcpPartType" in changes && changes.WcpPartType) {
-        setUpdates.push(`WCPPartType = '${changes.WcpPartType}'`);
+      if ("WcpPartType" in Changes && Changes.WcpPartType) {
+        setUpdates.push(`WCPPartType = '${Changes.WcpPartType}'`);
       }
 
       if (
-        "CostCurrency" in changes &&
-        typeof changes.CostCurrency === "number"
+        "CostCurrency" in Changes &&
+        typeof Changes.CostCurrency === "number"
       ) {
-        setUpdates.push(`CostCurrency = ${changes.CostCurrency}`);
+        setUpdates.push(`CostCurrency = ${Changes.CostCurrency}`);
       }
 
-      if ("IsMain" in changes && typeof changes.IsMain === "boolean") {
-        setUpdates.push(`IsMain = ${Number(changes.IsMain)}`);
-        if (changes.IsMain) {
+      if ("IsMain" in Changes && typeof Changes.IsMain === "boolean") {
+        setUpdates.push(`IsMain = ${Number(Changes.IsMain)}`);
+        if (Changes.IsMain) {
           updateQueries.push(`UPDATE AlternateIndex
           SET IsMain = 0, LastUpdate = '${new Date()
             .toISOString()
@@ -1232,14 +1277,14 @@ export async function updateAltIndex(mapChange) {
         (SELECT TOP 1 ID
           FROM Product
           WHERE SKU = '${productID}' OR ResearchID = '${productID}')
-        AND SupplierNumber = '${item.get("supplier")}';`);
+        AND SupplierNumber = '${changeObj.Supplier}';`);
     });
     const query = updateQueries.join("\n");
     // console.log(query);
     // debugger;
 
     console.log("Updating Alternate Index...");
-    let result = await pool.query(query);
+    const result = await pool.query(query);
     console.log("Updated Alternate Index");
 
     console.log("Result: ", result.rowsAffected);
@@ -1270,35 +1315,38 @@ export async function updateAltIndex(mapChange) {
 }
 
 /**
- * Updates Supplier value based on the new changes' mapping key-values to the SQL Database.
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
- * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ * Updates the Supplier table in the SQL database with the provided Changes.
+ * @param {Array} changeObjArray - An array of objects containing the Changes to be made.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function updateSupplier(mapChange) {
+export async function updateSupplier(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
     let updateQueries = [];
-    mapChange.forEach((item) => {
-      const changes = item.get("changes");
-      const productID = item.get("id");
+    changeObjArray.forEach((changeObj) => {
+      const Changes = changeObj.Changes;
+      const productID = changeObj.Id;
       const setUpdates = [];
       // Translate DataTable value to SQL int value
 
-      if ("Currency" in changes)
-        setUpdates.push(`Currency = '${changes.Currency}'`);
+      if ("Currency" in Changes)
+        setUpdates.push(`Currency = '${Changes.Currency}'`);
 
       updateQueries.push(`UPDATE Supplier
       SET ${setUpdates.join()}
-      WHERE SupplierNumber = '${item.get("supplier")}';`);
+      WHERE SupplierNumber = '${changeObj.Supplier}';`);
     });
     const query = updateQueries.join("\n");
     // console.log(query);
 
     console.log("Updating Supplier...");
-    let result = await pool.query(query);
+    const result = await pool.query(query);
     console.log("Updated Supplier");
 
     console.log("Result: ", result.rowsAffected);
@@ -1329,23 +1377,28 @@ export async function updateSupplier(mapChange) {
 }
 
 /**
- * Delete Product from NewProduct Table based on the ResearchID given.
- * @param {Map} mapChange The mapping of changes synced with the Workflow API.
- * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ * Deletes new products from the database based on the provided change object array.
+ * @param {Array<Object>} changeObjArray - The array of change objects containing the IDs of the products to be deleted.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function deleteNewProduct(mapChange) {
+export async function deleteNewProduct(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
-    console.log("Deleting New Product...");
-    let result = await pool.query(`DELETE FROM NewProduct 
-    WHERE ResearchID in (${mapChange
-      .map((item) => {
-        return `'${item.get("id")}'`;
+    const query = `DELETE FROM NewProduct 
+    WHERE ResearchID in (${changeObjArray
+      .map((changeObj) => {
+        return `'${changeObj.Id}'`;
       })
-      .join()})`);
+      .join()})`;
+
+    console.log("Deleting New Product...");
+    const result = await pool.query(query);
     console.log("Deleted New Product");
 
     console.log("Result: ", result.rowsAffected);
@@ -1371,24 +1424,27 @@ export async function deleteNewProduct(mapChange) {
 }
 
 /**
- * Delete Product from Product Table based on the ResearchID OR SKU given.
- * @param {Map} mapChange The mapping of changes synced with the Workflow API.
- * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ * Deletes products from the database based on the provided change objects.
+ * @param {Array<Object>} changeObjArray - An array of change objects containing the IDs of the products to be deleted.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function deleteProduct(mapChange) {
+export async function deleteProduct(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
 
     const query = `DELETE FROM Product 
-    WHERE ResearchID in (${mapChange
-      .map((Map) => {
-        return `'${Map.get("id")}'`;
+    WHERE ResearchID in (${changeObjArray
+      .map((changeObj) => {
+        return `'${changeObj.Id}'`;
       })
-      .join()}) OR SKU in (${mapChange
-      .map((Map) => {
-        return `'${Map.get("id")}'`;
+      .join()}) OR SKU in (${changeObjArray
+      .map((changeObj) => {
+        return `'${changeObj.Id}'`;
       })
       .join()})`;
 
@@ -1419,20 +1475,25 @@ export async function deleteProduct(mapChange) {
 }
 
 /**
- * Delete User from Users Table based on the UserID.
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
- * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
- */
-export async function deleteUser(mapChange) {
+ * Deletes users from the database.
+ * @param {Array} changeObjArray - An array of objects containing Changes to be made.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR"). */
+export async function deleteUser(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
+
+    const query = `DELETE FROM Users 
+    WHERE UserID IN (${changeObjArray
+      .map((changeObj) => changeObj.Changes.map((user) => `'${user}'`))
+      .join()});`;
+
     console.log("Deleting User...");
-    let result = await pool.query(`DELETE FROM Users 
-    WHERE UserID IN (${mapChange
-      .map((changeMap) => changeMap.get("changes").map((user) => `'${user}'`))
-      .join()});`);
+    const result = await pool.query(query);
     console.log("Deleted User");
 
     console.log("Result: ", result.rowsAffected);
@@ -1457,22 +1518,28 @@ export async function deleteUser(mapChange) {
 }
 
 /**
- * Delete User from Users Table.
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
- * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ * Deletes suppliers from the database based on the provided change objects.
+ * @param {Array<Object>} changeObjArray - An array of change objects containing the supplier numbers to be deleted.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function deleteSupplier(mapChange) {
+export async function deleteSupplier(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
-    console.log("Deleting Supplier...");
-    let result = await pool.query(`DELETE FROM Supplier 
-    WHERE SupplierNumber IN (${mapChange
-      .map((changeMap) =>
-        changeMap.get("changes").map((supplierNumber) => `'${supplierNumber}'`)
+
+    const query = `DELETE FROM Supplier 
+    WHERE SupplierNumber IN (${changeObjArray
+      .map((changeObj) =>
+        changeObj.Changes.map((supplierNumber) => `'${supplierNumber}'`)
       )
-      .join()});`);
+      .join()});`;
+
+    console.log("Deleting Supplier...");
+    const result = await pool.query(query);
     console.log("Deleted Supplier");
 
     console.log("Result: ", result.rowsAffected);
@@ -1497,29 +1564,33 @@ export async function deleteSupplier(mapChange) {
 }
 
 /**
- * Delete KeyType from KeyType Table
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
- * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ * Deletes KeyType from the SQL database based on the provided change objects.
+ * @param {Array<Object>} changeObjArray - An array of change objects containing the necessary information for deletion.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function deleteKType(mapChange) {
+export async function deleteKType(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
-    console.log("Deleting KeyType...");
-    let result = await pool.query(
-      `${mapChange
-        .map(
-          (Map) =>
-            `DELETE FROM KeyType 
-              WHERE KeyType = '${Map.get("changes").KType}'
+
+    const query = `${changeObjArray
+      .map(
+        (changeObj) =>
+          `DELETE FROM KeyType 
+              WHERE KeyType = '${changeObj.Changes.KType}'
               AND ProductID = 
               (SELECT TOP 1 ID FROM Product
-                WHERE Product.ResearchID = '${Map.get("id")}'
-                OR Product.SKU = '${Map.get("id")}');`
-        )
-        .join("\n")}`
-    );
+                WHERE Product.ResearchID = '${changeObj.Id}'
+                OR Product.SKU = '${changeObj.Id}');`
+      )
+      .join("\n")}`;
+
+    console.log("Deleting KeyType...");
+    const result = await pool.query(query);
     console.log("Deleted KeyType");
 
     console.log("Result: ", result.rowsAffected);
@@ -1544,26 +1615,29 @@ export async function deleteKType(mapChange) {
 }
 
 /**
- * Delete EPID from EPID Table
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
- * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ * Deletes ePID records from the EPID table based on the provided change objects.
+ * @param {Array<Map>} changeObjArray - An array of change objects containing the necessary information for deletion.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function deleteEpid(mapChange) {
+export async function deleteEpid(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Deleting ePID...");
-    let result = await pool.query(
-      `${mapChange
+    const result = await pool.query(
+      `${changeObjArray
         .map(
-          (Map) =>
+          (changeObj) =>
             `DELETE FROM EPID 
-              WHERE EPID = '${Map.get("changes").EPID}'
+              WHERE EPID = '${changeObj.Changes.EPID}'
               AND ProductID = 
               (SELECT TOP 1 ID FROM Product
-                WHERE Product.ResearchID = '${Map.get("id")}'
-                OR Product.SKU = '${Map.get("id")}');`
+                WHERE Product.ResearchID = '${changeObj.Id}'
+                OR Product.SKU = '${changeObj.Id}');`
         )
         .join("\n")}`
     );
@@ -1591,28 +1665,33 @@ export async function deleteEpid(mapChange) {
 }
 
 /**
- * Delete OEM from Oem Table
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
- * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
+ * Deletes OEM records from the database based on the provided change objects.
+ * @param {Array} changeObjArray - An array of change objects containing the necessary information for deletion.
+ * @returns {Promise<Object>} A promise that resolves to an object with the following properties:
+ *   - status: The status of the operation ("OK" or "ERROR").
+ *   - message: A message indicating the result of the operation.
+ *   - error: The error object (if status is "ERROR").
  */
-export async function deleteOem(mapChange) {
+export async function deleteOem(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
-    console.log("Deleting OEM...");
-    let query = `${mapChange
+
+    const query = `${changeObjArray
       .map(
-        (Map) =>
+        (changeObj) =>
           `DELETE FROM Oem 
-              WHERE OEM = '${Map.get("changes").Oem}'
-              AND SupplierNumber = '${Map.get("changes").Supplier}'
+              WHERE OEM = '${changeObj.Changes.Oem}'
+              AND SupplierNumber = '${changeObj.Changes.Supplier}'
               AND ProductID = 
               (SELECT TOP 1 ID FROM Product
-                WHERE Product.ResearchID = '${Map.get("id")}'
-                OR Product.SKU = '${Map.get("id")}');`
+                WHERE Product.ResearchID = '${changeObj.Id}'
+                OR Product.SKU = '${changeObj.Id}');`
       )
       .join("\n")}`;
+
+    console.log("Deleting OEM...");
     let result = await pool.query(query);
     console.log("Deleted OEM");
 
@@ -1639,24 +1718,24 @@ export async function deleteOem(mapChange) {
 
 /**
  * Delete Alternate Index from AlternateIndex Table
- * @param {Map} mapChange The mapping of changes made to the DataTable on the client side.
+ * @param {Map} changeObjArray The mapping of Changes made to the DataTable on the client side.
  * @returns {Object} Status ("OK" or "ERROR"), with Message of success with numbers of successful row updated OR an Error Object.
  */
-export async function deleteAltIndex(mapChange) {
+export async function deleteAltIndex(changeObjArray) {
   try {
     console.log("Connecting to SQL...");
     var pool = await sql.connect(sqlConfig);
     console.log("Connected to SQL");
     console.log("Deleting AltIndex...");
-    let query = `${mapChange
+    let query = `${changeObjArray
       .map(
-        (Map) =>
+        (changeObj) =>
           `DELETE FROM AlternateIndex 
-              WHERE SupplierNumber = '${Map.get("changes").Supplier}'
+              WHERE SupplierNumber = '${changeObj.Changes.Supplier}'
               AND ProductID = 
               (SELECT TOP 1 ID FROM Product
-                WHERE Product.ResearchID = '${Map.get("id")}'
-                OR Product.SKU = '${Map.get("id")}');`
+                WHERE Product.ResearchID = '${changeObj.Id}'
+                OR Product.SKU = '${changeObj.Id}');`
       )
       .join("\n")}`;
     let result = await pool.query(query);

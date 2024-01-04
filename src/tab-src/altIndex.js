@@ -62,6 +62,7 @@ $(async function () {
   const productIdSelected = sessionStorage.getItem("productIDSelected");
   const newAltIndexToAdd = [];
 
+  let altIndexFromDB;
   let isTableEmpty = true;
   let formSelected;
   let altIndexSelected = new AlternateIndexDto();
@@ -104,13 +105,14 @@ $(async function () {
     //#region Load table
 
     // Load table from Database - Server side
+
     try {
-      const altIndexFromDatabase = await fetchAltIndexFromDatabase(
+      altIndexFromDB = await fetchAltIndexFromDatabase(
         socket,
         productIdSelected
       );
       altIndexObjectArray.push(
-        ...altIndexFromDatabase.map((x) => {
+        ...altIndexFromDB.map((x) => {
           return new AlternateIndexDto(
             x.AltIndexNumber,
             x.SupplierName,
@@ -387,6 +389,7 @@ $(async function () {
     $(`#${formSelected}Date`).text(
       altIndexSelected.LastUpdated.toLocaleString("en-AU")
     );
+    console.log(altIndexSelected.Quality);
     $(`#${formSelected}Quality`).val(altIndexSelected.Quality);
     $(`#${formSelected}SupType`).text(altIndexSelected.SupplierPartType);
     $(`#${formSelected}WcpType`).text(altIndexSelected.WcpPartType);
@@ -430,20 +433,26 @@ $(async function () {
   //#region Row Click event
   $(`${tableName} tbody`).on("click", "tr", function () {
     if (isTableEmpty) return;
+
     // Clear highlight of all row in DataTable
     table.rows().nodes().to$().css("background-color", "");
+
     // highlight clicked row
     $(this).css("background-color", "#D5F3FE");
+
     // Assign row to productSelected
     altIndexSelected = new AlternateIndexDto(
       ...Object.values(table.row(this).data())
     );
+
+    // Calculate AUD if not already calculated
     if (altIndexSelected.CostAud == -1)
       altIndexSelected.CostAud = calculateAUD(
         currencySupplierMap[altIndexSelected.Number] ?? "AUD",
         altIndexSelected.CostCurrency
       );
     rowIndexSelected = table.row(this).index();
+
     // Enable Edit button
     $('button[name="editBtn"]').prop("disabled", false);
   });
@@ -482,9 +491,7 @@ $(async function () {
             productVal
         ) && supNameVal != "-";
     } else if (formSelected === "edit") {
-      isFormFilled = Boolean(
-        altIndexVal && supNumVal && costAUDVal && QualityVal
-      );
+      isFormFilled = Boolean(altIndexVal && supNumVal && QualityVal);
     } else if (formSelected === "editSupplier") {
       const isCurrencyValid = Object.keys(currencyRates.data).includes(
         currencyVal
@@ -595,7 +602,7 @@ $(async function () {
       }
       const missingProductID = [];
       const missingSupplierNumber = [];
-      const importAltIndexes = jsonSheet.map((row) => {
+      const importAltIndexArray = jsonSheet.map((row) => {
         const altIndexDto = new AlternateIndexDto(
           row[altIndexVal],
           supNameVal,
@@ -623,7 +630,6 @@ $(async function () {
         }
 
         // Check if altIndex already exists in database or added in previous import (not saved yet)
-        if (sessionStorage.debug === "1") debugger;
         if (
           altIndexBySupplierNumber.find(
             (altIndex) =>
@@ -664,23 +670,21 @@ $(async function () {
         return;
       }
       // Separate new Alternate Indexes and Alternate Indexes to edit
-      const newImportAltIndexesDto = importAltIndexes
+      const newImportAltIndexesArray = importAltIndexArray
         .filter((item) => item.type === "newSupplier")
         .map((obj) => obj.altIndex);
-      const editImportAltIndexesDto = importAltIndexes
+      const editImportAltIndexesArray = importAltIndexArray
         .filter((item) => item.type === "edit")
         .map((obj) => obj.altIndex);
       // Check if there are any new Alternate Indexes
-      if (newImportAltIndexesDto.length > 0) {
-        changesMade.push(
-          new Map([
-            ["type", "newSupplier"],
-            ["supplier", supNumVal],
-            ["table", "AlternateIndex"],
-            ["changes", newImportAltIndexesDto],
-          ])
-        );
-        newImportAltIndexesDto.forEach((altIndex) => {
+      if (newImportAltIndexesArray.length > 0) {
+        changesMade.push({
+          Type: "newSupplier",
+          Supplier: supNumVal,
+          Table: "AlternateIndex",
+          Changes: newImportAltIndexesArray,
+        });
+        newImportAltIndexesArray.forEach((altIndex) => {
           // Get Product Data
           const productData = getProductFromID(
             altIndex.ProductID,
@@ -699,22 +703,20 @@ $(async function () {
       }
 
       // Check if there are any Alternate Indexes to edit
-      editImportAltIndexesDto.forEach((altIndex) => {
+      editImportAltIndexesArray.forEach((altIndex) => {
         // Remove unnecessary data
         const temp = Object.assign({}, altIndex);
         altIndex.IsMain = null;
         altIndex.CostAud = null;
         altIndex.SupplierNumber = null;
         altIndex.SupplierName = null;
-        changesMade.push(
-          new Map([
-            ["type", "edit"],
-            ["id", altIndex.ProductID],
-            ["table", "AlternateIndex"],
-            ["supplier", supNumVal],
-            ["changes", altIndex],
-          ])
-        );
+        changesMade.push({
+          Type: "edit",
+          Id: altIndex.ProductID,
+          Supplier: supNumVal,
+          Table: "AlternateIndex",
+          Changes: altIndex,
+        });
         // Reassign data
         altIndex.IsMain = temp.IsMain;
         altIndex.CostAud = temp.CostAud;
@@ -723,13 +725,14 @@ $(async function () {
       });
 
       // Check if there are any Alternate Indexes to edit in table
-      const editAltIndexFilteredDto = editImportAltIndexesDto.filter(
-        (altIndex) =>
-          altIndex.ProductID === productIdSelected ||
-          altIndex.ProductID === productIdAlias
-      );
-      if (editAltIndexFilteredDto.length > 0) {
-        editAltIndexFilteredDto.forEach((altIndexDto) => {
+      const editedImportAltIndexFilteredArray =
+        editImportAltIndexesArray.filter(
+          (altIndex) =>
+            altIndex.ProductID === productIdSelected ||
+            altIndex.ProductID === productIdAlias
+        );
+      if (editedImportAltIndexFilteredArray.length > 0) {
+        editedImportAltIndexFilteredArray.forEach((altIndexDto) => {
           const { idx: rowIdx, obj: rowObj } = findRowObject(
             table,
             altIndexDto
@@ -742,14 +745,14 @@ $(async function () {
       }
 
       // Check if there are any new Alternate Indexes to add to table
-      const newEditAltIndexFilteredDto = newImportAltIndexesDto.filter(
+      const newImportAltIndexFilteredArray = newImportAltIndexesArray.filter(
         (altIndex) =>
           altIndex.ProductID === productIdSelected ||
           altIndex.ProductID === productIdAlias
       );
 
       // Add data to table
-      if (newEditAltIndexFilteredDto.length > 0) {
+      if (newImportAltIndexFilteredArray.length > 0) {
         // Empty Data if data before is is empty
         if (isTableEmpty) {
           isTableEmpty = false;
@@ -757,20 +760,50 @@ $(async function () {
           $dateToFilter.attr("disabled", isTableEmpty);
           table.clear().draw();
         }
-        table.rows.add(newEditAltIndexFilteredDto).draw();
+        table.rows.add(newImportAltIndexFilteredArray).draw();
+        newImportAltIndexFilteredArray.forEach((altIndexDto) => {
+          altIndexFromDB.push({ SupplierNumber: altIndexDto.Number });
+        });
       }
     }
     // Edit Form Save
     else if (formSelected === "edit") {
-      if (!isFloat(costAUDVal)) {
+      if (costAUDVal && !isFloat(costAUDVal)) {
         showAlert(`<strong>ERROR!</strong> ${errorMessage.join(".\n")}`);
         // Exit save function
         return;
       }
 
+      let typeChange = "edit";
       let rowData = table.row(rowIndexSelected).data();
       // Save if there are any changes compared to old value (can be found in productSelected)
       let newUpdate = {};
+      let change = newUpdate;
+      // Check if alternate index already exists in database
+      const altIndexDBMatch = altIndexFromDB.find(
+        (altIndexDB) => altIndexDB.SupplierNumber === altIndexSelected.Number
+      );
+
+      if (!altIndexDBMatch) {
+        newUpdate = new AlternateIndexDto(
+          altIndexVal,
+          supNameVal,
+          String(supNumVal),
+          0,
+          0,
+          costAUDVal ? costAUDVal : -1,
+          new Date(),
+          QualityVal,
+          "",
+          "",
+          isMainVal,
+          productIdSelected
+        );
+        rowData = { ...newUpdate };
+        typeChange = "newProduct";
+        altIndexFromDB.push({ SupplierNumber: supNumVal });
+        change = [newUpdate];
+      }
 
       if (altIndexSelected.Index != altIndexVal)
         newUpdate.Index = rowData.Index = altIndexVal;
@@ -793,20 +826,18 @@ $(async function () {
         // Change previous Main Supplier into normal supplier in table
         if (prevMainSupplier && prevMainSupplier != altIndexSelected.Number) {
           // column index 1 for Supplier Number
-          let prevMainRow = table.column(1).data().indexOf(prevMainSupplier);
-          let prevMainRowData = table.row(prevMainRow).data();
-          let updatePrevMain = {};
+          const prevMainRow = table.column(1).data().indexOf(prevMainSupplier);
+          const prevMainRowData = table.row(prevMainRow).data();
+          const updatePrevMain = {};
           prevMainRowData.IsMain = updatePrevMain.IsMain = false;
 
-          changesMade.push(
-            new Map([
-              ["type", "edit"],
-              ["id", productIdSelected],
-              ["table", "AlternateIndex"],
-              ["supplier", prevMainRowData.Number],
-              ["changes", updatePrevMain],
-            ])
-          );
+          changesMade.push({
+            Type: "edit",
+            Id: productIdSelected,
+            Supplier: prevMainRowData.Number,
+            Table: "AlternateIndex",
+            Changes: updatePrevMain,
+          });
 
           table.row(prevMainRow).data(prevMainRowData).invalidate().draw();
         }
@@ -817,18 +848,20 @@ $(async function () {
         return;
       }
 
-      changesMade.push(
-        new Map([
-          ["type", "edit"],
-          ["id", productIdSelected],
-          ["table", "AlternateIndex"],
-          ["supplier", altIndexSelected.Number],
-          ["changes", newUpdate],
-        ])
-      );
+      changesMade.push({
+        Type: typeChange,
+        Id: productIdSelected,
+        Supplier: altIndexSelected.Number,
+        Table: "AlternateIndex",
+        Changes: change,
+      });
       altIndexSelected = updateObject(altIndexSelected, newUpdate);
+      // Update AUD Cost if alt Index not in DB
+      if (!altIndexDBMatch) altIndexSelected.CostAud = 0;
+
       // Redraw the table to reflect the changes
       table.row(rowIndexSelected).data(rowData).invalidate().draw();
+      console.log(altIndexFromDB);
     }
     // Edit Supplier Form Save
     else if (formSelected === "editSupplier") {
@@ -844,14 +877,12 @@ $(async function () {
         return;
       }
 
-      changesMade.push(
-        new Map([
-          ["type", "edit"],
-          ["supplier", supNumVal],
-          ["table", "Supplier"],
-          ["changes", newUpdate],
-        ])
-      );
+      changesMade.push({
+        Type: "edit",
+        Supplier: supNumVal,
+        Table: "Supplier",
+        Changes: newUpdate,
+      });
 
       // Redraw the table to reflect the changes in currency
       table.rows().every(function (rowIdx, tableLoop, rowLoop) {

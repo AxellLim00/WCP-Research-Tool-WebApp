@@ -138,7 +138,6 @@ export class AlternateIndexDto {
       case "normal":
       case "normalquality":
       case "n":
-      case "":
         this.Quality = "normal";
         break;
       case "bad":

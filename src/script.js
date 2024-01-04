@@ -59,9 +59,9 @@ $(async function () {
       console.error("An error occurred:", error);
       return;
     }
+    
     // Sync with database
     await syncWorkflowDatabaseData();
-
     // Get unique Supplier Set Array and insert them to the database
     let isSuccessful = await updateSuppliers(socket, productReqHistArray);
     console.log("isSuccessful", isSuccessful);
@@ -231,14 +231,10 @@ async function updateSuppliers(socket, jsonArray) {
     // Insert new suppliers into database if there is any
     if (filteredNewSupplier.length > 0) {
       console.log("Inserting new suppliers into database");
-      let changes = [
-        new Map([
-          ["table", "Supplier"],
-          ["type", "new"],
-          ["changes", filteredNewSupplier],
-        ]),
+      const changes = [
+        { Table: "Supplier", Type: "new", Changes: filteredNewSupplier },
       ];
-      let isSuccessful = await updateDataOnDatabase(socket, changes);
+      const isSuccessful = await updateDataOnDatabase(socket, changes);
       return isSuccessful;
     }
     console.log("No new supplier found");
@@ -378,11 +374,7 @@ function findProductDetailsToDelete(
         productDetail.SKU !== null
           ? productDetail.SKU
           : productDetail.ResearchID;
-      const map = new Map([
-        ["type", "delete"],
-        ["table", "Product"],
-        ["id", id],
-      ]);
+      const map = { Type: "delete", Table: "Product", Id: id };
       productDetailsToDelete.push(map);
     }
   });
@@ -415,12 +407,12 @@ async function insertNewWorkflowProductToDatabase(
       endIndex
     );
 
-    const changes = new Map([
-      ["type", "new"],
-      ["table", "Product"],
-      ["user", "product-research-tool"],
-      ["changes", productsToInsert],
-    ]);
+    const changes = {
+      Type: "new",
+      Table: "Product",
+      User: "product-research-tool",
+      Changes: productsToInsert,
+    };
 
     updateChanges([changes]);
     await saveChanges(socket);

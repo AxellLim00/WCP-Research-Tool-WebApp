@@ -245,12 +245,12 @@ $(async function () {
 
     if (!jQuery.isEmptyObject(update)) {
       updateChanges([
-        new Map([
-          ["type", "edit"],
-          ["id", productIdSelected],
-          ["table", "Product"],
-          ["changes", update],
-        ]),
+        {
+          Type: "edit",
+          Id: productIdSelected,
+          Table: "Product",
+          Changes: update,
+        },
       ]);
     }
 
@@ -310,7 +310,7 @@ $(async function () {
     const fileVal = $(`#${formSelected}File`).val();
     const oemVal = $(`#${formSelected}Oem`).val();
     const supplierVal = $(`#${formSelected}Number`).val();
-    let changesMade = [];
+    const changesMade = [];
     let isFormFilled = Boolean(oemVal);
 
     if (formSelected === "import")
@@ -353,21 +353,17 @@ $(async function () {
         return;
       }
 
-      const editChanges = [];
       const importOems = sheetJson.map(function (row) {
         const newObject = { Oem: row[oemVal], Supplier: row[supplierVal] };
-        editChanges.push(newObject);
         return newObject;
       });
 
-      changesMade.push(
-        new Map([
-          ["type", "newProduct"],
-          ["id", productIdSelected],
-          ["table", "Oem"],
-          ["changes", editChanges],
-        ])
-      );
+      changesMade.push({
+        Type: "newProduct",
+        Id: productIdSelected,
+        Table: "Oem",
+        Changes: importOems,
+      });
 
       // Add data to table
       if (isOemEmpty) {
@@ -404,15 +400,13 @@ $(async function () {
         exitPopUpForm(formSelected);
         return;
       }
-      changesMade.push(
-        new Map([
-          ["type", "edit"],
-          ["id", productIdSelected],
-          ["table", "Oem"],
-          ["oldValue", oemSelected.data],
-          ["newValue", oemVal],
-        ])
-      );
+      changesMade.push({
+        Type: "edit",
+        Id: productIdSelected,
+        Table: "Oem",
+        OldValue: oemSelected.data,
+        NewValue: oemVal,
+      });
       // Redraw the table to reflect the changes
       oemTable.row(rowIndexSelected).data(rowData).invalidate().draw();
       oemSelected.data = oemVal;

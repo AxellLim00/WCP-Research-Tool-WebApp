@@ -169,10 +169,7 @@ export function getProductIdentifier(productDtoArray) {
  * @returns {Object} new object with updated values
  */
 export function updateObject(object, updates) {
-  Object.entries(updates).forEach(([key, value]) => {
-    object[key] = value;
-  });
-  return object;
+  return { ...object, ...updates };
 }
 
 /**
@@ -194,12 +191,9 @@ export function updateHasChanges(hasChange) {
  */
 export function updateChanges(change) {
   let storedChanges = sessionStorage.getItem("savedChanges") || "[]";
-  storedChanges = JSON.parse(storedChanges).map((array) => new Map(array));
+  storedChanges = JSON.parse(storedChanges);
   storedChanges.push(...change);
-  sessionStorage.setItem(
-    "savedChanges",
-    JSON.stringify(storedChanges.map((map) => Array.from(map.entries())))
-  );
+  sessionStorage.setItem("savedChanges", JSON.stringify(storedChanges));
 }
 
 /**
@@ -210,7 +204,7 @@ export function updateChanges(change) {
  */
 export async function saveChanges(socket) {
   const storedChanges = sessionStorage.getItem("savedChanges");
-  const savedChanges = JSON.parse(storedChanges).map((array) => new Map(array));
+  const savedChanges = JSON.parse(storedChanges);
 
   if (!storedChanges || savedChanges.size === 0) {
     showAlert(
@@ -232,12 +226,12 @@ export async function saveChanges(socket) {
 /**
  * Call emit function to update the database
  * @param {Socket<DefaultEventsMap, DefaultEventsMap>} socket
- * @param {Map[]} changes array of changes to update
+ * @param {Array} changesArray Array of changes to update
  * @returns {Promise<boolean>} true if all works well, false when there is an error
  */
-export async function updateDataOnDatabase(socket, changes) {
-  const serializedChanges = changes.map((map) =>
-    JSON.stringify(Array.from(map.entries()))
+export async function updateDataOnDatabase(socket, changesArray) {
+  const serializedChanges = changesArray.map((changesObj) =>
+    JSON.stringify(changesObj)
   );
 
   return new Promise((resolve, reject) => {
@@ -258,8 +252,8 @@ export async function updateDataOnDatabase(socket, changes) {
 
 /**
  * Update product request history with new products
- * @param {Object[]} newProductArray - Array of New Product from Database
- * @param {Object[]} productArray - Array of Product from Database
+ * @param {Array} newProductArray - Array of New Product from Database
+ * @param {Array} productArray - Array of Product from Database
  */
 export function syncProductRequestHistoryWithDatabase(
   newProductArray,
