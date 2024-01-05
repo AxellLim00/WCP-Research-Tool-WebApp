@@ -1036,7 +1036,7 @@ export async function updateOem(changeObjArray) {
 
       updateQueries.push(`UPDATE Oem
       SET OEM = '${changeObj.NewValue}'
-      WHERE OEM = '${changeObj.OldValue}'}' 
+      WHERE OEM = '${changeObj.OldValue}' 
         AND ProductID =
           (SELECT TOP 1 ID
           FROM Product
@@ -1050,8 +1050,8 @@ export async function updateOem(changeObjArray) {
       WHERE SKU = '${productID}' OR ResearchID = '${productID}'`);
     });
     const query = updateQueries.join("\n");
-    // console.log(query);
-    // debugger;
+    console.log(query);
+    debugger;
 
     console.log("Updating Oem...");
     const result = await pool.query(query);

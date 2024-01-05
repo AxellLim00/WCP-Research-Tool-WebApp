@@ -42,7 +42,7 @@ $(async function () {
   let isTableEmpty = true;
   let productIdSelected = sessionStorage.getItem("productIDSelected");
   let costVolSelected = new CostVolumeDto();
-  let productData;
+  let productReqSelected;
   let productIdAlias;
 
   //#region Initialization
@@ -59,10 +59,13 @@ $(async function () {
 
   //Load table from API
   if (productIdSelected) {
-    productData = getProductFromID(productIdSelected, productRequestArray);
-    productIdAlias = getProductIDAlias(productData, productRequestArray);
-    costVolSelected.Id = productData.researchIdentifier
-      ? productData.researchIdentifier
+    productReqSelected = getProductFromID(
+      productIdSelected,
+      productRequestArray
+    );
+    productIdAlias = getProductIDAlias(productIdSelected, productReqSelected);
+    costVolSelected.Id = productReqSelected.researchIdentifier
+      ? productReqSelected.researchIdentifier
       : "No Research ID Assigned";
 
     // Fetch Product Detail from Database
@@ -101,7 +104,7 @@ $(async function () {
   //#endregion
 
   // if loading from API/Server-side empty
-  isTableEmpty = !Boolean(productData);
+  isTableEmpty = !Boolean(productReqSelected);
   if (isTableEmpty) {
     $('tr[name="values"]').children().text("-");
     $('button[name="editBtn"]').prop("disabled", true);
@@ -303,6 +306,7 @@ $(async function () {
       let foundCostVol = importCosVol.find(
         (obj) => obj.Id == productIdSelected || obj.Id == productIdAlias
       );
+      console.log(foundCostVol);
       if (foundCostVol) {
         // Add data to table
         $.each(Object.keys(foundCostVol), function (i, val) {

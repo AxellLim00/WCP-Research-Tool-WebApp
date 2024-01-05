@@ -50,7 +50,7 @@ $(async function () {
         );
       });
 
-      await handleSocketResponse(socket, token, productReqHistArray);
+      await getProductAPI(socket, token, productReqHistArray);
       sessionStorage.setItem(
         "productRequestHistory",
         JSON.stringify(productReqHistArray)
@@ -59,7 +59,7 @@ $(async function () {
       console.error("An error occurred:", error);
       return;
     }
-    
+
     // Sync with database
     await syncWorkflowDatabaseData();
     // Get unique Supplier Set Array and insert them to the database
@@ -67,10 +67,12 @@ $(async function () {
     console.log("isSuccessful", isSuccessful);
     // if updateSuppliers is not successful, do not continue
     if (!isSuccessful) return;
+    hideLoadingScreen();
+    selectTab("tab0");
+  } else {
+    hideLoadingScreen();
+    selectTab("tab0");
   }
-
-  hideLoadingScreen();
-  selectTab("tab0");
 
   $("#menu").on("click", function () {
     if (menuToggle) {
@@ -172,7 +174,7 @@ function menuCollapse() {
  * @param {String} token User token
  * @param {Array} jsonArray Array to push all products to
  */
-async function handleSocketResponse(socket, token, jsonArray) {
+async function getProductAPI(socket, token, jsonArray) {
   return new Promise((resolve) => {
     console.log("Getting Product from system");
     socket.emit("get all products", token, (response) => {

@@ -428,12 +428,12 @@ export function getProductFromID(productIdSelected, productRequestArray) {
 /**
  * Returns the product ID alias based on the selected product ID and product data.
  * @param {string} productIdSelected - The selected product ID.
- * @param {object} productData - The product data object.
+ * @param {object} productReqData - The product data object.
  * @returns {string} - The product ID alias.
  */
-export function getProductIDAlias(productIdSelected, productData) {
-  if (productIdSelected === productData.productStockNumber) {
-    return productData.researchIdentifier;
+export function getProductIDAlias(productIdSelected, productReqData) {
+  if (productIdSelected === productReqData.productStockNumber) {
+    return productReqData.researchIdentifier;
   }
-  return productData.productStockNumber;
+  return productReqData.productStockNumber;
 }
